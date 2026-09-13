@@ -10,6 +10,7 @@
       --muted: #6b7280;
       --line: #e3e6ea;
       --accent: #2f6fed;
+      --danger: #c0392b;
       --bg: #f6f7f9;
     }
 
@@ -104,16 +105,17 @@
       padding: 10px 12px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      cursor: pointer;
     }
 
     .habit-item:hover {
       border-color: #c9d6f5;
     }
 
-    .habit-item.active {
-      border-color: var(--accent);
-      background: #f2f6ff;
+    .habit-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
     }
 
     .habit-item .habit-name-text {
@@ -121,10 +123,39 @@
       word-break: break-all;
     }
 
-    .habit-item .habit-count {
+    .habit-meta {
       font-size: 12px;
       color: var(--muted);
-      white-space: nowrap;
+    }
+
+    .habit-actions {
+      display: flex;
+      flex-shrink: 0;
+      gap: 8px;
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-small:hover {
+      background: #255dd0;
+    }
+
+    .btn-danger {
+      color: var(--danger);
+      background: #fff;
+      border: 1px solid #f0c4c0;
+    }
+
+    .btn-danger:hover {
+      background: #fdeaea;
     }
 
     .habit-empty {
@@ -136,10 +167,10 @@
     /* 日历 */
     .calendar-head {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
       flex-wrap: wrap;
     }
 
@@ -148,10 +179,57 @@
       font-weight: 600;
     }
 
+    .calendar-nav {
+      display: flex;
+      gap: 6px;
+    }
+
+    .calendar-nav button {
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--ink);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .calendar-nav button:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
     .calendar-hint {
+      margin: 0 0 12px;
       font-size: 12px;
       color: var(--muted);
     }
+
+    .calendar-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin: 0 0 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .dot-done { background: var(--accent); }
+    .dot-missed { background: #e05a4f; }
+    .dot-muted { background: #c9ced4; }
 
     .calendar-grid {
       display: grid;
@@ -171,47 +249,143 @@
       font-size: 13px;
       text-align: center;
       border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .calendar-grid .day:hover {
+      filter: brightness(0.96);
     }
 
     .calendar-grid .day.blank {
       visibility: hidden;
+      cursor: default;
     }
 
-    .calendar-grid .day.today {
+    /* 蓝色：当日全部习惯都已完成 */
+    .calendar-grid .day.done {
       color: #fff;
       font-weight: 600;
       background: var(--accent);
     }
 
-    .calendar-grid .day.checkable {
+    /* 红色：当日有习惯未完成 */
+    .calendar-grid .day.missed {
+      color: #c0392b;
+      background: #fdeaea;
+    }
+
+    /* 灰色：未来日期，或当天还没有任何习惯 */
+    .calendar-grid .day.muted {
+      color: #a8b0b8;
+      background: #f2f4f6;
+    }
+
+    .calendar-grid .day.today {
+      box-shadow: inset 0 0 0 2px #1f2933;
+    }
+
+    .calendar-grid .day.selected {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    /* 某一天的打卡详情 */
+    .day-detail {
+      display: none;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .detail-title {
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .detail-empty {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .detail-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 8px 0;
+      font-size: 13px;
+    }
+
+    .detail-name {
+      flex: 1 1 120px;
+      min-width: 0;
+      word-break: break-all;
+    }
+
+    .badge {
+      padding: 2px 8px;
+      font-size: 12px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .badge-done {
+      color: #1c4fd6;
+      background: #e8f0ff;
+    }
+
+    .badge-missed {
+      color: var(--danger);
+      background: #fdeaea;
+    }
+
+    .thumb {
+      width: 44px;
+      height: 44px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      border-radius: 6px;
       cursor: pointer;
     }
 
-    .calendar-grid .day.checkable:hover {
-      background: #eef3fe;
+    .detail-note {
+      font-size: 12px;
+      color: var(--muted);
     }
 
-    .calendar-grid .day.today.checkable:hover {
-      background: #255dd0;
+    .detail-row .btn-small {
+      padding: 4px 10px;
     }
 
-    .calendar-grid .day.checked {
-      position: relative;
+    /* 照片预览 */
+    .photo-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(15, 20, 28, 0.72);
     }
 
-    .calendar-grid .day.checked::after {
-      content: "";
-      position: absolute;
-      left: 50%;
-      bottom: 4px;
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: var(--accent);
-      transform: translateX(-50%);
+    .photo-overlay[hidden] {
+      display: none;
     }
 
-    .calendar-grid .day.today.checked::after {
+    .photo-overlay-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .photo-overlay img {
+      max-width: min(520px, 90vw);
+      max-height: 74vh;
+      border-radius: 10px;
       background: #fff;
     }
   </style>
@@ -226,6 +400,7 @@
         <input id="habit-name" type="text" placeholder="请输入习惯名称，例如：早起背单词">
         <button id="habit-submit" type="button">提交</button>
       </div>
+      <input id="habit-photo" type="file" accept="image/*" capture="environment" hidden>
       <ul class="habit-list" id="habit-list"></ul>
       <p class="habit-empty" id="habit-empty">还没有添加习惯，请在上方输入后点击提交。</p>
     </section>
@@ -233,10 +408,28 @@
     <section>
       <div class="calendar-head">
         <span class="calendar-month" id="calendar-month"></span>
-        <span class="calendar-hint" id="calendar-hint"></span>
+        <div class="calendar-nav">
+          <button type="button" id="prev-month">上月</button>
+          <button type="button" id="month-reset">本月</button>
+          <button type="button" id="next-month">下月</button>
+        </div>
+      </div>
+      <p class="calendar-hint" id="calendar-hint">点击日期查看当天每条习惯的完成情况；打卡请点习惯右侧的「拍照打卡」。</p>
+      <div class="calendar-legend">
+        <span class="legend-item"><i class="dot dot-done"></i>已打卡（当天习惯全部完成）</span>
+        <span class="legend-item"><i class="dot dot-missed"></i>未打卡（有习惯未完成）</span>
+        <span class="legend-item"><i class="dot dot-muted"></i>未来日期 / 当天无习惯</span>
       </div>
       <div class="calendar-grid" id="calendar-grid"></div>
+      <div class="day-detail" id="day-detail"></div>
     </section>
+  </div>
+
+  <div class="photo-overlay" id="photo-overlay" hidden>
+    <div class="photo-overlay-inner">
+      <img id="photo-overlay-img" alt="打卡照片预览">
+      <button type="button" class="btn-small" id="photo-overlay-close">关闭</button>
+    </div>
   </div>
 
   <script>
@@ -244,6 +437,11 @@
     (function () {
       var HABITS_KEY = 'ai-habit-checkin:habits';
       var CHECKINS_KEY = 'ai-habit-checkin:checkins';
+      var DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+      function pad2(number) {
+        return number < 10 ? '0' + number : String(number);
+      }
 
       function readJSON(key, fallback) {
         try {
@@ -266,7 +464,22 @@
         return 'h_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       }
 
-      /* 习惯列表：[{ id, name, createdAt }] */
+      /* 把 createdAt（UTC ISO 字符串）换算成本地日期，避免时区导致差一天 */
+      function normalizeCreatedDate(item, createdAt) {
+        if (item && typeof item === 'object' &&
+            typeof item.createdDate === 'string' && DATE_PATTERN.test(item.createdDate)) {
+          return item.createdDate;
+        }
+        if (createdAt) {
+          var parsed = new Date(createdAt);
+          if (!isNaN(parsed.getTime())) {
+            return parsed.getFullYear() + '-' + pad2(parsed.getMonth() + 1) + '-' + pad2(parsed.getDate());
+          }
+        }
+        return ''; // 早于本版本的旧数据：视为一直存在
+      }
+
+      /* 习惯列表：[{ id, name, createdAt, createdDate }] */
       function loadHabits() {
         var raw = readJSON(HABITS_KEY, []);
         if (!Array.isArray(raw)) {
@@ -276,45 +489,87 @@
         var list = [];
         for (var i = 0; i < raw.length; i++) {
           var item = raw[i];
+          var name = null;
+          var id = null;
+          var createdAt = '';
+
           if (typeof item === 'string') {
-            // 兼容早期"只存名称"的格式
-            list.push({ id: makeId() + '_' + i, name: item, createdAt: '' });
+            name = item; // 兼容更早期"只存名称"的格式
           } else if (item && typeof item === 'object' && typeof item.name === 'string') {
-            list.push({
-              id: typeof item.id === 'string' && item.id !== '' ? item.id : makeId() + '_' + i,
-              name: item.name,
-              createdAt: typeof item.createdAt === 'string' ? item.createdAt : ''
-            });
+            name = item.name;
+            id = typeof item.id === 'string' && item.id !== '' ? item.id : null;
+            createdAt = typeof item.createdAt === 'string' ? item.createdAt : '';
           }
+
+          if (name === null || name === '') {
+            continue;
+          }
+
+          list.push({
+            id: id || makeId() + '_' + i,
+            name: name,
+            createdAt: createdAt,
+            createdDate: normalizeCreatedDate(item, createdAt)
+          });
         }
         return list;
       }
 
       function saveHabits(habits) {
-        writeJSON(HABITS_KEY, Array.isArray(habits) ? habits : []);
+        try {
+          writeJSON(HABITS_KEY, Array.isArray(habits) ? habits : []);
+          return true;
+        } catch (error) {
+          return false;
+        }
       }
 
-      /* 打卡记录：{ habitId: ['2026-09-14', ...] } */
+      /* 打卡记录：{ habitId: { 'YYYY-MM-DD': { photo: dataURL, at: ISO字符串 } } } */
       function loadCheckins() {
         var raw = readJSON(CHECKINS_KEY, {});
         var result = {};
+
         if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
           return result;
         }
 
         Object.keys(raw).forEach(function (habitId) {
-          var dates = raw[habitId];
-          if (Array.isArray(dates)) {
-            result[habitId] = dates.filter(function (date) {
-              return typeof date === 'string' && date !== '';
+          var byDate = raw[habitId];
+          var normalized = {};
+
+          if (Array.isArray(byDate)) {
+            // 兼容上一版"按日期字符串数组"的记录（无照片）
+            byDate.forEach(function (date) {
+              if (typeof date === 'string' && DATE_PATTERN.test(date)) {
+                normalized[date] = { photo: '', at: '' };
+              }
+            });
+          } else if (byDate && typeof byDate === 'object') {
+            Object.keys(byDate).forEach(function (date) {
+              if (!DATE_PATTERN.test(date)) {
+                return;
+              }
+              var record = byDate[date];
+              normalized[date] = {
+                photo: record && typeof record.photo === 'string' ? record.photo : '',
+                at: record && typeof record.at === 'string' ? record.at : ''
+              };
             });
           }
+
+          result[habitId] = normalized;
         });
         return result;
       }
 
       function saveCheckins(checkins) {
-        writeJSON(CHECKINS_KEY, checkins && typeof checkins === 'object' ? checkins : {});
+        try {
+          writeJSON(CHECKINS_KEY, checkins && typeof checkins === 'object' ? checkins : {});
+          return true;
+        } catch (error) {
+          // 多数情况是超出 localStorage 配额（照片占空间）
+          return false;
+        }
       }
 
       window.HabitStore = {
@@ -327,26 +582,50 @@
       };
     })();
 
-    /* ---------- 页面逻辑：录入习惯、渲染列表、日历打卡 ---------- */
+    /* ---------- 页面逻辑：习惯管理、拍照打卡、日历统计 ---------- */
     (function () {
       var habits = HabitStore.load();
       var checkins = HabitStore.loadCheckins();
-      var selectedHabitId = habits.length > 0 ? habits[0].id : null;
+      var now = new Date();
+      var viewYear = now.getFullYear();
+      var viewMonth = now.getMonth();   // 0 - 11
+      var selectedKey = null;
+      var pendingHabitId = null;
 
       var inputEl = document.getElementById('habit-name');
       var submitBtn = document.getElementById('habit-submit');
+      var photoInput = document.getElementById('habit-photo');
       var listEl = document.getElementById('habit-list');
       var emptyEl = document.getElementById('habit-empty');
       var monthEl = document.getElementById('calendar-month');
-      var hintEl = document.getElementById('calendar-hint');
+      var prevBtn = document.getElementById('prev-month');
+      var nextBtn = document.getElementById('next-month');
+      var resetBtn = document.getElementById('month-reset');
       var calendarGrid = document.getElementById('calendar-grid');
+      var detailEl = document.getElementById('day-detail');
+      var overlayEl = document.getElementById('photo-overlay');
+      var overlayImgEl = document.getElementById('photo-overlay-img');
+      var overlayCloseBtn = document.getElementById('photo-overlay-close');
 
       function pad(number) {
         return number < 10 ? '0' + number : String(number);
       }
 
-      function dateKey(year, month, day) {
+      function keyOf(year, month, day) {
         return year + '-' + pad(month + 1) + '-' + pad(day);
+      }
+
+      function localKey(dateObj) {
+        return keyOf(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+      }
+
+      function todayKey() {
+        return localKey(new Date());
+      }
+
+      function formatKeyLabel(key) {
+        var parts = key.split('-');
+        return Number(parts[1]) + '月' + Number(parts[2]) + '日';
       }
 
       function createHabitId() {
@@ -362,75 +641,117 @@
         return null;
       }
 
-      function getCheckedDates(habitId) {
-        return habitId && Array.isArray(checkins[habitId]) ? checkins[habitId] : [];
+      function getRecord(habitId, key) {
+        var byDate = checkins[habitId];
+        return byDate && byDate[key] ? byDate[key] : null;
       }
 
-      function isChecked(habitId, key) {
-        return getCheckedDates(habitId).indexOf(key) !== -1;
+      function isDone(habitId, key) {
+        return getRecord(habitId, key) !== null;
       }
 
-      function toggleCheckin(habitId, key) {
-        var dates = getCheckedDates(habitId).slice();
-        var index = dates.indexOf(key);
+      function getTotal(habitId) {
+        var byDate = checkins[habitId];
+        return byDate ? Object.keys(byDate).length : 0;
+      }
 
-        if (index === -1) {
-          dates.push(key);
-        } else {
-          dates.splice(index, 1);
+      /* 连续天数：今天已打卡就从今天往前数，今天没打卡就从昨天往前数 */
+      function getStreak(habitId) {
+        var current = new Date();
+        var cursor = new Date(current.getFullYear(), current.getMonth(), current.getDate());
+
+        if (!isDone(habitId, localKey(cursor))) {
+          cursor.setDate(cursor.getDate() - 1);
         }
 
-        checkins[habitId] = dates;
-        HabitStore.saveCheckins(checkins);
-        renderHabitList();
-        renderCalendar();
+        var streak = 0;
+        while (streak < 3660 && isDone(habitId, localKey(cursor))) {
+          streak += 1;
+          cursor.setDate(cursor.getDate() - 1);
+        }
+        return streak;
       }
 
+      /* 某一天已经存在的习惯（按创建日期判断，避免把还没创建习惯的日子算成"漏打卡"） */
+      function habitsExistingOn(key) {
+        return habits.filter(function (habit) {
+          return habit.createdDate === '' || habit.createdDate <= key;
+        });
+      }
+
+      function dayStatus(key) {
+        if (key > todayKey()) {
+          return 'muted';   // 未来日期：不支持超前打卡
+        }
+        var applicable = habitsExistingOn(key);
+        if (applicable.length === 0) {
+          return 'muted';
+        }
+        for (var i = 0; i < applicable.length; i++) {
+          if (!isDone(applicable[i].id, key)) {
+            return 'missed';
+          }
+        }
+        return 'done';
+      }
+
+      /* ---------- 习惯列表 ---------- */
       function renderHabitList() {
         listEl.innerHTML = '';
-
-        if (habits.length === 0) {
-          emptyEl.style.display = 'block';
-          return;
-        }
-        emptyEl.style.display = 'none';
+        emptyEl.style.display = habits.length === 0 ? 'block' : 'none';
 
         habits.forEach(function (habit) {
           var item = document.createElement('li');
-          item.className = 'habit-item' + (habit.id === selectedHabitId ? ' active' : '');
+          item.className = 'habit-item';
+
+          var main = document.createElement('div');
+          main.className = 'habit-main';
 
           var nameEl = document.createElement('span');
           nameEl.className = 'habit-name-text';
           nameEl.textContent = habit.name;
 
-          var countEl = document.createElement('span');
-          countEl.className = 'habit-count';
-          countEl.textContent = '已打卡 ' + getCheckedDates(habit.id).length + ' 天';
+          var metaEl = document.createElement('span');
+          metaEl.className = 'habit-meta';
+          metaEl.textContent = '连续 ' + getStreak(habit.id) + ' 天 · 累计 ' + getTotal(habit.id) + ' 天';
 
-          item.appendChild(nameEl);
-          item.appendChild(countEl);
-          item.addEventListener('click', function () {
-            selectedHabitId = habit.id;
-            renderHabitList();
-            renderCalendar();
+          main.appendChild(nameEl);
+          main.appendChild(metaEl);
+
+          var actions = document.createElement('div');
+          actions.className = 'habit-actions';
+
+          var photoBtn = document.createElement('button');
+          photoBtn.type = 'button';
+          photoBtn.className = 'btn-small';
+          photoBtn.textContent = isDone(habit.id, todayKey()) ? '重新拍照' : '拍照打卡';
+          photoBtn.addEventListener('click', function () {
+            requestPhoto(habit.id);
           });
 
+          var deleteBtn = document.createElement('button');
+          deleteBtn.type = 'button';
+          deleteBtn.className = 'btn-small btn-danger';
+          deleteBtn.textContent = '删除';
+          deleteBtn.addEventListener('click', function () {
+            removeHabit(habit.id);
+          });
+
+          actions.appendChild(photoBtn);
+          actions.appendChild(deleteBtn);
+          item.appendChild(main);
+          item.appendChild(actions);
           listEl.appendChild(item);
         });
       }
 
+      /* ---------- 日历 ---------- */
       function renderCalendar() {
-        var today = new Date();
-        var year = today.getFullYear();
-        var month = today.getMonth();                          // 0 - 11
-        var firstWeekday = new Date(year, month, 1).getDay();   // 0 = 周日
-        var daysInMonth = new Date(year, month + 1, 0).getDate();
-        var currentHabit = findHabit(selectedHabitId);
+        monthEl.textContent = viewYear + '年' + (viewMonth + 1) + '月';
 
-        monthEl.textContent = year + '年' + (month + 1) + '月';
-        hintEl.textContent = currentHabit
-          ? '当前习惯：' + currentHabit.name + '（点击日期打卡 / 取消打卡）'
-          : '先在「习惯录入」添加习惯，再点击日期打卡';
+        var firstWeekday = new Date(viewYear, viewMonth, 1).getDay();   // 0 = 周日
+        var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+        var today = todayKey();
 
         calendarGrid.innerHTML = '';
 
@@ -450,29 +771,228 @@
 
         for (var day = 1; day <= daysInMonth; day++) {
           (function (dayNumber) {
-            var key = dateKey(year, month, dayNumber);
+            var key = keyOf(viewYear, viewMonth, dayNumber);
             var cell = document.createElement('div');
-            cell.className = 'day';
+
+            cell.className = 'day ' + dayStatus(key);
             cell.textContent = dayNumber;
 
-            if (dayNumber === today.getDate()) {
+            if (key === today) {
               cell.classList.add('today');
             }
-            if (currentHabit) {
-              cell.classList.add('checkable');
-              if (isChecked(currentHabit.id, key)) {
-                cell.classList.add('checked');
-              }
-              cell.addEventListener('click', function () {
-                toggleCheckin(currentHabit.id, key);
-              });
+            if (key === selectedKey) {
+              cell.classList.add('selected');
             }
+
+            cell.addEventListener('click', function () {
+              selectedKey = key;
+              renderCalendar();
+              renderDayDetail();
+            });
 
             calendarGrid.appendChild(cell);
           })(day);
         }
       }
 
+      /* ---------- 某一天的打卡详情 ---------- */
+      function renderDayDetail() {
+        detailEl.innerHTML = '';
+
+        if (!selectedKey) {
+          detailEl.style.display = 'none';
+          return;
+        }
+        detailEl.style.display = 'block';
+
+        var applicable = habitsExistingOn(selectedKey);
+        var doneCount = applicable.filter(function (habit) {
+          return isDone(habit.id, selectedKey);
+        }).length;
+        var isFuture = selectedKey > todayKey();
+        var isToday = selectedKey === todayKey();
+
+        var title = document.createElement('div');
+        title.className = 'detail-title';
+        title.textContent = formatKeyLabel(selectedKey) + '：已完成 ' + doneCount + ' / ' + applicable.length + ' 条习惯';
+        detailEl.appendChild(title);
+
+        if (isFuture) {
+          var futureNote = document.createElement('p');
+          futureNote.className = 'detail-empty';
+          futureNote.textContent = '未来日期，暂不能打卡。';
+          detailEl.appendChild(futureNote);
+          return;
+        }
+
+        if (applicable.length === 0) {
+          var noneNote = document.createElement('p');
+          noneNote.className = 'detail-empty';
+          noneNote.textContent = '这一天还没有添加任何习惯。';
+          detailEl.appendChild(noneNote);
+          return;
+        }
+
+        applicable.forEach(function (habit) {
+          var record = getRecord(habit.id, selectedKey);
+          var row = document.createElement('div');
+          row.className = 'detail-row';
+
+          var nameEl = document.createElement('span');
+          nameEl.className = 'detail-name';
+          nameEl.textContent = habit.name;
+
+          var badge = document.createElement('span');
+          badge.className = 'badge ' + (record ? 'badge-done' : 'badge-missed');
+          badge.textContent = record ? '已完成' : '未完成';
+
+          row.appendChild(nameEl);
+          row.appendChild(badge);
+
+          if (record && record.photo) {
+            var thumb = document.createElement('img');
+            thumb.className = 'thumb';
+            thumb.src = record.photo;
+            thumb.alt = habit.name + ' 的打卡照片';
+            thumb.addEventListener('click', function () {
+              openPhoto(record.photo);
+            });
+            row.appendChild(thumb);
+          } else if (record) {
+            var legacyNote = document.createElement('span');
+            legacyNote.className = 'detail-note';
+            legacyNote.textContent = '（早期记录，无照片）';
+            row.appendChild(legacyNote);
+          }
+
+          if (isToday && record) {
+            var undoBtn = document.createElement('button');
+            undoBtn.type = 'button';
+            undoBtn.className = 'btn-small btn-danger';
+            undoBtn.textContent = '撤销今日打卡';
+            undoBtn.addEventListener('click', function () {
+              undoTodayCheckin(habit.id);
+            });
+            row.appendChild(undoBtn);
+          }
+
+          detailEl.appendChild(row);
+        });
+      }
+
+      /* ---------- 照片上传即打卡 ---------- */
+      function requestPhoto(habitId) {
+        pendingHabitId = habitId;
+        photoInput.value = '';
+        photoInput.click();
+      }
+
+      function compressImage(file, callback) {
+        var reader = new FileReader();
+
+        reader.onload = function () {
+          var image = new Image();
+
+          image.onload = function () {
+            var maxSize = 720;
+            var scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+            var width = Math.max(1, Math.round(image.width * scale));
+            var height = Math.max(1, Math.round(image.height * scale));
+
+            var canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').drawImage(image, 0, 0, width, height);
+            callback(canvas.toDataURL('image/jpeg', 0.6));
+          };
+
+          image.onerror = function () {
+            callback(null);
+          };
+          image.src = reader.result;
+        };
+
+        reader.onerror = function () {
+          callback(null);
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function saveTodayCheckin(habitId, photo) {
+        var key = todayKey();
+        var previous = checkins[habitId] ? JSON.parse(JSON.stringify(checkins[habitId])) : null;
+
+        if (!checkins[habitId]) {
+          checkins[habitId] = {};
+        }
+        checkins[habitId][key] = { photo: photo, at: new Date().toISOString() };
+
+        if (!HabitStore.saveCheckins(checkins)) {
+          if (previous === null) {
+            delete checkins[habitId];
+          } else {
+            checkins[habitId] = previous;
+          }
+          alert('本地存储空间不足，本次打卡没有保存成功。请删除部分旧打卡记录后再试。');
+          return;
+        }
+
+        selectedKey = key;
+        renderHabitList();
+        renderCalendar();
+        renderDayDetail();
+      }
+
+      function undoTodayCheckin(habitId) {
+        var habit = findHabit(habitId);
+        if (!habit) {
+          return;
+        }
+        if (!window.confirm('确定撤销「' + habit.name + '」今天的打卡吗？（仅能撤销今天，历史记录不能补也不能改）')) {
+          return;
+        }
+
+        delete checkins[habitId][todayKey()];
+        HabitStore.saveCheckins(checkins);
+        renderHabitList();
+        renderCalendar();
+        renderDayDetail();
+      }
+
+      function removeHabit(habitId) {
+        var habit = findHabit(habitId);
+        if (!habit) {
+          return;
+        }
+        if (!window.confirm('确定删除习惯「' + habit.name + '」吗？它的打卡记录会一并删除，且无法恢复。')) {
+          return;
+        }
+
+        habits = habits.filter(function (item) {
+          return item.id !== habitId;
+        });
+        delete checkins[habitId];
+
+        HabitStore.save(habits);
+        HabitStore.saveCheckins(checkins);
+
+        renderHabitList();
+        renderCalendar();
+        renderDayDetail();
+      }
+
+      /* ---------- 照片预览 ---------- */
+      function openPhoto(src) {
+        overlayImgEl.src = src;
+        overlayEl.hidden = false;
+      }
+
+      function closePhoto() {
+        overlayEl.hidden = true;
+        overlayImgEl.src = '';
+      }
+
+      /* ---------- 事件绑定 ---------- */
       submitBtn.addEventListener('click', function () {
         var name = inputEl.value.trim();
 
@@ -481,23 +1001,83 @@
           return;
         }
 
+        var today = new Date();
         var habit = {
           id: createHabitId(),
           name: name,
-          createdAt: new Date().toISOString()
+          createdAt: today.toISOString(),
+          createdDate: localKey(today)
         };
 
         habits.push(habit);
-        HabitStore.save(habits);
+        if (!HabitStore.save(habits)) {
+          habits.pop();
+          alert('本地存储空间不足，习惯没有保存成功。请先清理浏览器数据后再试。');
+          return;
+        }
 
-        selectedHabitId = habit.id;
         inputEl.value = '';
         renderHabitList();
         renderCalendar();
+        renderDayDetail();
       });
 
+      photoInput.addEventListener('change', function () {
+        var file = photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
+        var habitId = pendingHabitId;
+        pendingHabitId = null;
+
+        if (!file || !habitId) {
+          return;
+        }
+        if (!/^image\//.test(file.type)) {
+          alert('请选择图片文件（可用相机拍照或从相册选择）。');
+          return;
+        }
+
+        compressImage(file, function (dataUrl) {
+          if (!dataUrl) {
+            alert('照片读取失败，请重新拍照或换一张图片。');
+            return;
+          }
+          saveTodayCheckin(habitId, dataUrl);
+        });
+      });
+
+      prevBtn.addEventListener('click', function () {
+        changeMonth(-1);
+      });
+
+      nextBtn.addEventListener('click', function () {
+        changeMonth(1);
+      });
+
+      resetBtn.addEventListener('click', function () {
+        var current = new Date();
+        viewYear = current.getFullYear();
+        viewMonth = current.getMonth();
+        selectedKey = todayKey();
+        renderCalendar();
+        renderDayDetail();
+      });
+
+      overlayEl.addEventListener('click', closePhoto);
+      overlayCloseBtn.addEventListener('click', closePhoto);
+
+      function changeMonth(step) {
+        var target = new Date(viewYear, viewMonth + step, 1);
+        viewYear = target.getFullYear();
+        viewMonth = target.getMonth();
+        selectedKey = null;
+        renderCalendar();
+        renderDayDetail();
+      }
+
+      /* ---------- 首次渲染 ---------- */
+      selectedKey = todayKey();
       renderHabitList();
       renderCalendar();
+      renderDayDetail();
     })();
   </script>
 </body>
