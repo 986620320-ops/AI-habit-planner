@@ -86,6 +86,53 @@
       background: #255dd0;
     }
 
+    /* 习惯列表 */
+    .habit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 16px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .habit-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .habit-item:hover {
+      border-color: #c9d6f5;
+    }
+
+    .habit-item.active {
+      border-color: var(--accent);
+      background: #f2f6ff;
+    }
+
+    .habit-item .habit-name-text {
+      font-size: 14px;
+      word-break: break-all;
+    }
+
+    .habit-item .habit-count {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .habit-empty {
+      margin: 16px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
     /* 日历 */
     .calendar-head {
       display: flex;
@@ -135,6 +182,38 @@
       font-weight: 600;
       background: var(--accent);
     }
+
+    .calendar-grid .day.checkable {
+      cursor: pointer;
+    }
+
+    .calendar-grid .day.checkable:hover {
+      background: #eef3fe;
+    }
+
+    .calendar-grid .day.today.checkable:hover {
+      background: #255dd0;
+    }
+
+    .calendar-grid .day.checked {
+      position: relative;
+    }
+
+    .calendar-grid .day.checked::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 4px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      transform: translateX(-50%);
+    }
+
+    .calendar-grid .day.today.checked::after {
+      background: #fff;
+    }
   </style>
 </head>
 <body>
@@ -147,96 +226,278 @@
         <input id="habit-name" type="text" placeholder="请输入习惯名称，例如：早起背单词">
         <button id="habit-submit" type="button">提交</button>
       </div>
+      <ul class="habit-list" id="habit-list"></ul>
+      <p class="habit-empty" id="habit-empty">还没有添加习惯，请在上方输入后点击提交。</p>
     </section>
 
     <section>
       <div class="calendar-head">
         <span class="calendar-month" id="calendar-month"></span>
-        <span class="calendar-hint">本月日历（暂时只做展示，打卡逻辑后续迭代）</span>
+        <span class="calendar-hint" id="calendar-hint"></span>
       </div>
       <div class="calendar-grid" id="calendar-grid"></div>
     </section>
   </div>
 
   <script>
-    /* ---------- 本地存储：习惯列表的读写接口 ---------- */
-    /* 本步先备好接口，尚未接入提交流程，下一步做打卡列表时直接调用即可。 */
+    /* ---------- 本地存储：习惯列表与打卡记录的读写接口 ---------- */
     (function () {
-      var STORAGE_KEY = 'ai-habit-checkin:habits';
+      var HABITS_KEY = 'ai-habit-checkin:habits';
+      var CHECKINS_KEY = 'ai-habit-checkin:checkins';
 
-      function loadHabits() {
+      function readJSON(key, fallback) {
         try {
-          var raw = localStorage.getItem(STORAGE_KEY);
-          var list = raw ? JSON.parse(raw) : [];
-          return Array.isArray(list) ? list : [];
+          var raw = localStorage.getItem(key);
+          if (raw === null) {
+            return fallback;
+          }
+          var value = JSON.parse(raw);
+          return value === null || value === undefined ? fallback : value;
         } catch (error) {
+          return fallback;
+        }
+      }
+
+      function writeJSON(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+      }
+
+      function makeId() {
+        return 'h_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      }
+
+      /* 习惯列表：[{ id, name, createdAt }] */
+      function loadHabits() {
+        var raw = readJSON(HABITS_KEY, []);
+        if (!Array.isArray(raw)) {
           return [];
         }
+
+        var list = [];
+        for (var i = 0; i < raw.length; i++) {
+          var item = raw[i];
+          if (typeof item === 'string') {
+            // 兼容早期"只存名称"的格式
+            list.push({ id: makeId() + '_' + i, name: item, createdAt: '' });
+          } else if (item && typeof item === 'object' && typeof item.name === 'string') {
+            list.push({
+              id: typeof item.id === 'string' && item.id !== '' ? item.id : makeId() + '_' + i,
+              name: item.name,
+              createdAt: typeof item.createdAt === 'string' ? item.createdAt : ''
+            });
+          }
+        }
+        return list;
       }
 
       function saveHabits(habits) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(habits || []));
+        writeJSON(HABITS_KEY, Array.isArray(habits) ? habits : []);
+      }
+
+      /* 打卡记录：{ habitId: ['2026-09-14', ...] } */
+      function loadCheckins() {
+        var raw = readJSON(CHECKINS_KEY, {});
+        var result = {};
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+          return result;
+        }
+
+        Object.keys(raw).forEach(function (habitId) {
+          var dates = raw[habitId];
+          if (Array.isArray(dates)) {
+            result[habitId] = dates.filter(function (date) {
+              return typeof date === 'string' && date !== '';
+            });
+          }
+        });
+        return result;
+      }
+
+      function saveCheckins(checkins) {
+        writeJSON(CHECKINS_KEY, checkins && typeof checkins === 'object' ? checkins : {});
       }
 
       window.HabitStore = {
-        key: STORAGE_KEY,
+        habitsKey: HABITS_KEY,
+        checkinsKey: CHECKINS_KEY,
         load: loadHabits,
-        save: saveHabits
+        save: saveHabits,
+        loadCheckins: loadCheckins,
+        saveCheckins: saveCheckins
       };
     })();
 
-    /* ---------- 日历：渲染当前月份的日期网格 ---------- */
+    /* ---------- 页面逻辑：录入习惯、渲染列表、日历打卡 ---------- */
     (function () {
-      var today = new Date();
-      var year = today.getFullYear();
-      var month = today.getMonth();                          // 0 - 11
-      var firstWeekday = new Date(year, month, 1).getDay();   // 0 = 周日
-      var daysInMonth = new Date(year, month + 1, 0).getDate();
+      var habits = HabitStore.load();
+      var checkins = HabitStore.loadCheckins();
+      var selectedHabitId = habits.length > 0 ? habits[0].id : null;
 
-      document.getElementById('calendar-month').textContent = year + '年' + (month + 1) + '月';
+      var inputEl = document.getElementById('habit-name');
+      var submitBtn = document.getElementById('habit-submit');
+      var listEl = document.getElementById('habit-list');
+      var emptyEl = document.getElementById('habit-empty');
+      var monthEl = document.getElementById('calendar-month');
+      var hintEl = document.getElementById('calendar-hint');
+      var calendarGrid = document.getElementById('calendar-grid');
 
-      var grid = document.getElementById('calendar-grid');
-      var weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-      var i;
-
-      for (i = 0; i < weekdays.length; i++) {
-        var head = document.createElement('div');
-        head.className = 'weekday';
-        head.textContent = weekdays[i];
-        grid.appendChild(head);
+      function pad(number) {
+        return number < 10 ? '0' + number : String(number);
       }
 
-      for (i = 0; i < firstWeekday; i++) {
-        var blank = document.createElement('div');
-        blank.className = 'day blank';
-        grid.appendChild(blank);
+      function dateKey(year, month, day) {
+        return year + '-' + pad(month + 1) + '-' + pad(day);
       }
 
-      for (var date = 1; date <= daysInMonth; date++) {
-        var cell = document.createElement('div');
-        cell.className = 'day';
-        cell.textContent = date;
-        if (date === today.getDate()) {
-          cell.classList.add('today');
+      function createHabitId() {
+        return 'h_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      }
+
+      function findHabit(habitId) {
+        for (var i = 0; i < habits.length; i++) {
+          if (habits[i].id === habitId) {
+            return habits[i];
+          }
         }
-        grid.appendChild(cell);
+        return null;
       }
-    })();
 
-    /* ---------- 提交按钮：当前只弹出提示 ---------- */
-    (function () {
-      var input = document.getElementById('habit-name');
+      function getCheckedDates(habitId) {
+        return habitId && Array.isArray(checkins[habitId]) ? checkins[habitId] : [];
+      }
 
-      document.getElementById('habit-submit').addEventListener('click', function () {
-        var name = input.value.trim();
+      function isChecked(habitId, key) {
+        return getCheckedDates(habitId).indexOf(key) !== -1;
+      }
+
+      function toggleCheckin(habitId, key) {
+        var dates = getCheckedDates(habitId).slice();
+        var index = dates.indexOf(key);
+
+        if (index === -1) {
+          dates.push(key);
+        } else {
+          dates.splice(index, 1);
+        }
+
+        checkins[habitId] = dates;
+        HabitStore.saveCheckins(checkins);
+        renderHabitList();
+        renderCalendar();
+      }
+
+      function renderHabitList() {
+        listEl.innerHTML = '';
+
+        if (habits.length === 0) {
+          emptyEl.style.display = 'block';
+          return;
+        }
+        emptyEl.style.display = 'none';
+
+        habits.forEach(function (habit) {
+          var item = document.createElement('li');
+          item.className = 'habit-item' + (habit.id === selectedHabitId ? ' active' : '');
+
+          var nameEl = document.createElement('span');
+          nameEl.className = 'habit-name-text';
+          nameEl.textContent = habit.name;
+
+          var countEl = document.createElement('span');
+          countEl.className = 'habit-count';
+          countEl.textContent = '已打卡 ' + getCheckedDates(habit.id).length + ' 天';
+
+          item.appendChild(nameEl);
+          item.appendChild(countEl);
+          item.addEventListener('click', function () {
+            selectedHabitId = habit.id;
+            renderHabitList();
+            renderCalendar();
+          });
+
+          listEl.appendChild(item);
+        });
+      }
+
+      function renderCalendar() {
+        var today = new Date();
+        var year = today.getFullYear();
+        var month = today.getMonth();                          // 0 - 11
+        var firstWeekday = new Date(year, month, 1).getDay();   // 0 = 周日
+        var daysInMonth = new Date(year, month + 1, 0).getDate();
+        var currentHabit = findHabit(selectedHabitId);
+
+        monthEl.textContent = year + '年' + (month + 1) + '月';
+        hintEl.textContent = currentHabit
+          ? '当前习惯：' + currentHabit.name + '（点击日期打卡 / 取消打卡）'
+          : '先在「习惯录入」添加习惯，再点击日期打卡';
+
+        calendarGrid.innerHTML = '';
+
+        ['日', '一', '二', '三', '四', '五', '六'].forEach(function (weekday) {
+          var head = document.createElement('div');
+          head.className = 'weekday';
+          head.textContent = weekday;
+          calendarGrid.appendChild(head);
+        });
+
+        var i;
+        for (i = 0; i < firstWeekday; i++) {
+          var blank = document.createElement('div');
+          blank.className = 'day blank';
+          calendarGrid.appendChild(blank);
+        }
+
+        for (var day = 1; day <= daysInMonth; day++) {
+          (function (dayNumber) {
+            var key = dateKey(year, month, dayNumber);
+            var cell = document.createElement('div');
+            cell.className = 'day';
+            cell.textContent = dayNumber;
+
+            if (dayNumber === today.getDate()) {
+              cell.classList.add('today');
+            }
+            if (currentHabit) {
+              cell.classList.add('checkable');
+              if (isChecked(currentHabit.id, key)) {
+                cell.classList.add('checked');
+              }
+              cell.addEventListener('click', function () {
+                toggleCheckin(currentHabit.id, key);
+              });
+            }
+
+            calendarGrid.appendChild(cell);
+          })(day);
+        }
+      }
+
+      submitBtn.addEventListener('click', function () {
+        var name = inputEl.value.trim();
 
         if (name === '') {
           alert('请先输入习惯名称');
           return;
         }
 
-        alert('您已输入习惯名称：' + name);
+        var habit = {
+          id: createHabitId(),
+          name: name,
+          createdAt: new Date().toISOString()
+        };
+
+        habits.push(habit);
+        HabitStore.save(habits);
+
+        selectedHabitId = habit.id;
+        inputEl.value = '';
+        renderHabitList();
+        renderCalendar();
       });
+
+      renderHabitList();
+      renderCalendar();
     })();
   </script>
 </body>
