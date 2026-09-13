@@ -4,8 +4,240 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI学生习惯打卡系统</title>
+  <style>
+    :root {
+      --ink: #1f2933;
+      --muted: #6b7280;
+      --line: #e3e6ea;
+      --accent: #2f6fed;
+      --bg: #f6f7f9;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 36px 16px 56px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      line-height: 1.5;
+    }
+
+    .page {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 28px;
+      font-size: 24px;
+      text-align: center;
+    }
+
+    section {
+      margin-bottom: 20px;
+      padding: 20px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* 习惯录入 */
+    .habit-form {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .habit-form input {
+      width: 320px;
+      max-width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .habit-form input:focus {
+      border-color: var(--accent);
+    }
+
+    .habit-form button {
+      padding: 10px 22px;
+      font-size: 14px;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .habit-form button:hover {
+      background: #255dd0;
+    }
+
+    /* 日历 */
+    .calendar-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .calendar-month {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .calendar-hint {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .calendar-grid .weekday {
+      padding: 4px 0;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .calendar-grid .day {
+      padding: 10px 0;
+      font-size: 13px;
+      text-align: center;
+      border-radius: 8px;
+    }
+
+    .calendar-grid .day.blank {
+      visibility: hidden;
+    }
+
+    .calendar-grid .day.today {
+      color: #fff;
+      font-weight: 600;
+      background: var(--accent);
+    }
+  </style>
 </head>
 <body>
-  <h1>AI学生习惯打卡系统</h1>
+  <div class="page">
+    <h1>AI学生习惯打卡系统</h1>
+
+    <section>
+      <h2>习惯录入</h2>
+      <div class="habit-form">
+        <input id="habit-name" type="text" placeholder="请输入习惯名称，例如：早起背单词">
+        <button id="habit-submit" type="button">提交</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="calendar-head">
+        <span class="calendar-month" id="calendar-month"></span>
+        <span class="calendar-hint">本月日历（暂时只做展示，打卡逻辑后续迭代）</span>
+      </div>
+      <div class="calendar-grid" id="calendar-grid"></div>
+    </section>
+  </div>
+
+  <script>
+    /* ---------- 本地存储：习惯列表的读写接口 ---------- */
+    /* 本步先备好接口，尚未接入提交流程，下一步做打卡列表时直接调用即可。 */
+    (function () {
+      var STORAGE_KEY = 'ai-habit-checkin:habits';
+
+      function loadHabits() {
+        try {
+          var raw = localStorage.getItem(STORAGE_KEY);
+          var list = raw ? JSON.parse(raw) : [];
+          return Array.isArray(list) ? list : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function saveHabits(habits) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(habits || []));
+      }
+
+      window.HabitStore = {
+        key: STORAGE_KEY,
+        load: loadHabits,
+        save: saveHabits
+      };
+    })();
+
+    /* ---------- 日历：渲染当前月份的日期网格 ---------- */
+    (function () {
+      var today = new Date();
+      var year = today.getFullYear();
+      var month = today.getMonth();                          // 0 - 11
+      var firstWeekday = new Date(year, month, 1).getDay();   // 0 = 周日
+      var daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      document.getElementById('calendar-month').textContent = year + '年' + (month + 1) + '月';
+
+      var grid = document.getElementById('calendar-grid');
+      var weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+      var i;
+
+      for (i = 0; i < weekdays.length; i++) {
+        var head = document.createElement('div');
+        head.className = 'weekday';
+        head.textContent = weekdays[i];
+        grid.appendChild(head);
+      }
+
+      for (i = 0; i < firstWeekday; i++) {
+        var blank = document.createElement('div');
+        blank.className = 'day blank';
+        grid.appendChild(blank);
+      }
+
+      for (var date = 1; date <= daysInMonth; date++) {
+        var cell = document.createElement('div');
+        cell.className = 'day';
+        cell.textContent = date;
+        if (date === today.getDate()) {
+          cell.classList.add('today');
+        }
+        grid.appendChild(cell);
+      }
+    })();
+
+    /* ---------- 提交按钮：当前只弹出提示 ---------- */
+    (function () {
+      var input = document.getElementById('habit-name');
+
+      document.getElementById('habit-submit').addEventListener('click', function () {
+        var name = input.value.trim();
+
+        if (name === '') {
+          alert('请先输入习惯名称');
+          return;
+        }
+
+        alert('您已输入习惯名称：' + name);
+      });
+    })();
+  </script>
 </body>
 </html>
