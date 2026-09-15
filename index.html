@@ -1,1084 +1,1714 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI学生习惯打卡系统</title>
-  <style>
-    :root {
-      --ink: #1f2933;
-      --muted: #6b7280;
-      --line: #e3e6ea;
-      --accent: #2f6fed;
-      --danger: #c0392b;
-      --bg: #f6f7f9;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>习惯打卡 · AI学生习惯打卡系统</title>
+<meta name="theme-color" content="#4f7cff">
+<style>
+:root{
+  --bg:#f4f6fb;
+  --card:#ffffff;
+  --text:#1f2937;
+  --muted:#6b7280;
+  --line:#e5e7eb;
+  --blue:#3b82f6;
+  --blue-dark:#2563eb;
+  --blue-soft:#eff6ff;
+  --red:#ef4444;
+  --red-dark:#dc2626;
+  --red-soft:#fff5f5;
+  --green:#10b981;
+  --orange:#f59e0b;
+  --radius:20px;
+  --shadow:0 6px 24px rgba(31,41,55,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+a{text-decoration:none;color:inherit}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:linear-gradient(180deg,#eef4ff 0%,#fbf3f7 52%,#f2f8f2 100%);
+  background-attachment:fixed;
+  color:var(--text);
+  line-height:1.5;
+  min-height:100vh;
+}
+.wrap{max-width:600px;margin:0 auto;padding:10px 12px calc(104px + env(safe-area-inset-bottom))}
 
-    * { box-sizing: border-box; }
+/* ---------- 顶部 ---------- */
+.app-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.app-brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand-logo{
+  flex:none;width:40px;height:40px;border-radius:13px;
+  background:linear-gradient(135deg,#4f7cff,#a855f7);
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:900;box-shadow:0 5px 12px rgba(99,102,241,.28);
+}
+.app-header h1{font-size:21px;font-weight:800;letter-spacing:.4px;white-space:nowrap}
+.brand-sub{display:block;margin-top:2px}
+.date-line{font-size:11px;color:var(--muted)}
+.motto{
+  display:inline-block;margin-top:4px;font-size:12px;font-weight:800;letter-spacing:.4px;
+  color:#6d28d9;background:linear-gradient(135deg,#ede9fe 0%,#fce7f3 100%);
+  padding:1px 10px;border-radius:99px;white-space:nowrap;
+  box-shadow:0 2px 5px rgba(109,40,217,.12);
+}
+.points-pill{
+  flex:none;display:inline-flex;align-items:center;gap:5px;
+  background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;
+  padding:6px 11px;border-radius:99px;font-weight:800;font-size:13px;
+  box-shadow:0 5px 14px rgba(245,158,11,.32);
+}
+.points-pill .star{font-size:12px}
 
-    body {
-      margin: 0;
-      padding: 36px 16px 56px;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
-      line-height: 1.5;
-    }
+/* ---------- 卡片 ---------- */
+.card{
+  background:linear-gradient(180deg,#ffffff,#faf9ff);
+  border:1px solid #eef0f4;border-radius:18px;padding:13px 15px 15px;
+  box-shadow:var(--shadow);margin-bottom:10px;
+}
+.card-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.card-head h2{font-size:17px;font-weight:800}
+.card-head .sub{font-size:12px;color:var(--muted)}
 
-    .page {
-      max-width: 640px;
-      margin: 0 auto;
-    }
+/* ---------- 月历 ---------- */
+.cal-card{background:linear-gradient(165deg,#f4f8ff 0%,#f3edff 100%);border-color:#dbe5ff}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-nav h3{font-size:17px;font-weight:800;color:#5b21b6}
+.nav-btn{
+  width:34px;height:34px;border-radius:50%;background:#fff;color:#6d28d9;
+  border:1px solid #e9e2ff;font-size:20px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+}
+.nav-btn:hover{background:#ede9fe}
+.cal-sub{margin:-6px 0 10px;font-size:12px;font-weight:700;color:#7c6bb5;text-align:center}
+.cal-week,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-week{margin-bottom:6px}
+.cal-week span{text-align:center;font-size:11px;font-weight:700;color:#8b5cf6;padding:4px 0}
+.cal-cell,.cal-blank{position:relative;aspect-ratio:1;border-radius:10px}
+.cal-blank{visibility:hidden}
+.cal-cell{
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;background:#fff;border:1px solid #eef1f7;color:#9aa4bd;
+  user-select:none;cursor:pointer;transition:transform .12s;
+}
+.cal-cell.in-scope{color:var(--text)}
+.cal-cell.success{
+  background:linear-gradient(145deg,#60a5fa,var(--blue-dark));color:#fff;border-color:transparent;
+  box-shadow:0 3px 8px rgba(37,99,235,.25);
+}
+.cal-cell.fail{
+  background:linear-gradient(145deg,#f87171,var(--red-dark));color:#fff;border-color:transparent;
+  box-shadow:0 3px 8px rgba(220,38,38,.2);
+}
+.cal-cell.pending{background:var(--red-soft);color:var(--red-dark);border-color:#fca5a5;box-shadow:inset 0 0 0 2px #fca5a5}
+.cal-cell.is-today{outline:2px solid var(--blue-dark);outline-offset:2px;z-index:1}
+.cal-cell.is-today.pending{outline-color:var(--red-dark)}
+.cal-cell.is-today::after{content:"今";position:absolute;top:3px;right:4px;font-size:9px;font-weight:800}
+.cal-cell.success::after,.cal-cell.fail::after{color:rgba(255,255,255,.85)}
+.cal-cell.pending::after{color:var(--red-dark)}
+.cal-cell.pop-now{animation:cell-pop .65s cubic-bezier(.2,1.5,.4,1)}
+@keyframes cell-pop{0%{transform:scale(.8)}45%{transform:scale(1.12)}100%{transform:scale(1)}}
+.cal-stat{margin-top:9px;font-size:12px;font-weight:700;color:#5b21b6;text-align:center}
+.cal-legend{
+  display:flex;flex-wrap:wrap;gap:7px 11px;margin-top:9px;padding-top:8px;
+  border-top:1px dashed #e4defa;font-size:10px;color:#7c6bb5;
+}
+.legend-item{display:inline-flex;align-items:center;gap:5px}
+.legend-swatch{width:12px;height:12px;border-radius:4px;display:inline-block}
+.legend-swatch.success{background:var(--blue)}
+.legend-swatch.fail{background:var(--red)}
+.legend-swatch.pending{background:#fff;box-shadow:inset 0 0 0 2px #fca5a5}
+.legend-swatch.today{background:#fff;box-shadow:0 0 0 2px var(--blue-dark)}
+.legend-swatch.off{background:#eef1f6}
 
-    h1 {
-      margin: 0 0 28px;
-      font-size: 24px;
-      text-align: center;
-    }
+/* ---------- 今日打卡 ---------- */
+.today-card{background:linear-gradient(170deg,#ffffff 0%,#fff6f0 100%);border-color:#ffebdd;padding:14px 15px 16px}
+.today-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.today-title h2{font-size:17px;font-weight:800}
+.today-title h2::before{
+  content:"";display:inline-block;width:9px;height:9px;border-radius:3px;
+  background:linear-gradient(135deg,#fb923c,#ec4899);margin-right:7px;vertical-align:2px;
+}
+.today-title .today-date{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.streak-chip{
+  flex:none;display:inline-flex;align-items:baseline;gap:4px;
+  background:linear-gradient(135deg,#fb923c,#f43f5e);color:#fff;font-size:11px;font-weight:700;
+  padding:6px 11px;border-radius:99px;box-shadow:0 4px 10px rgba(244,63,94,.22);
+}
+.streak-chip b{font-size:15px;font-weight:900}
+.today-progress{display:flex;align-items:center;gap:8px;margin:11px 0 3px}
+.today-progress .p-label{font-size:12px;font-weight:700;color:var(--muted);flex:none}
+.today-progress .progress{flex:1;height:8px;background:#e8ecf2;border-radius:99px;overflow:hidden}
+.today-progress .progress i{
+  display:block;height:100%;width:0;border-radius:99px;
+  background:linear-gradient(90deg,#60a5fa,var(--blue-dark));transition:width .35s ease;
+}
+.today-progress .p-count{flex:none;padding:2px 9px;background:#fff;border-radius:99px;font-size:14px;font-weight:900;color:var(--blue-dark)}
+.today-progress .p-count i{font-style:normal;color:#94a3b8;font-weight:700;margin:0 1px}
+.today-divider{height:1px;background:linear-gradient(90deg,#e0e7ff,#fce7f3,#dcfce7);margin:10px 0}
+.success-banner{
+  display:flex;align-items:center;gap:12px;margin:10px 0 2px;
+  background:linear-gradient(135deg,#34d399,#10b981);color:#fff;
+  border-radius:16px;padding:11px 14px;box-shadow:0 8px 20px rgba(16,185,129,.28);
+  animation:pop .45s cubic-bezier(.2,1.5,.4,1);
+}
+.success-banner .icon{font-size:22px;line-height:1}
+.success-banner .txt{font-size:13px}
+.success-banner .txt b{display:block;font-size:14px;font-weight:800;margin-bottom:2px}
+@keyframes pop{0%{transform:scale(.86);opacity:0}100%{transform:scale(1);opacity:1}}
 
-    section {
-      margin-bottom: 20px;
-      padding: 20px;
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-    }
+/* ---------- 习惯列表（拍照打卡） ---------- */
+.habit-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.habit-row{
+  display:flex;align-items:center;gap:9px;background:#fff;
+  border:1px solid #f0f1f5;border-left:4px solid #4f7cff;border-radius:13px;padding:8px 10px;
+  transition:background .2s,border-color .2s;animation:row-in .25s ease both;
+}
+@keyframes row-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.habit-row.selected{box-shadow:0 0 0 2px rgba(79,124,255,.16)}
+.media-wrap{position:relative;flex:none}
+.photo-box{
+  width:64px;height:64px;border-radius:14px;overflow:hidden;position:relative;
+  border:1.6px dashed #cbd5e1;background:#fff;color:#94a3b8;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;
+}
+.photo-box .ph-icon{font-size:17px;line-height:1}
+.photo-box .ph-text{font-size:9px;font-weight:700;text-align:center;line-height:1.3}
+.photo-box.has-photo{border-style:solid;border-color:#bfdbfe;padding:0}
+.photo-box.has-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-box .done-badge{
+  position:absolute;right:3px;bottom:3px;width:19px;height:19px;border-radius:50%;
+  background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;box-shadow:0 2px 6px rgba(37,99,235,.35);
+}
+.media-clear{
+  position:absolute;top:-6px;right:-6px;width:21px;height:21px;border-radius:50%;
+  background:#1f2937;color:#fff;font-size:11px;line-height:1;
+  display:flex;align-items:center;justify-content:center;z-index:3;
+  box-shadow:0 2px 6px rgba(0,0,0,.3);
+}
+.habit-main{flex:1;min-width:0}
+.habit-main-top{display:flex;align-items:center;gap:5px;min-width:0}
+.habit-icon-btn{
+  flex:none;width:29px;height:29px;border-radius:9px;font-size:17px;line-height:1;
+  background:#f0f4ff;display:flex;align-items:center;justify-content:center;transition:transform .12s;
+}
+.habit-icon-btn:hover{transform:scale(1.12)}
+.habit-name{font-size:15px;font-weight:700;word-break:break-all}
+.habit-sub{display:block;font-size:11px;color:#94a3b8;margin-top:2px}
+.row-actions{display:flex;flex-direction:column;gap:2px;flex:none}
+.icon-btn{width:27px;height:27px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#64748b}
+.icon-btn:hover{background:#e8ecf2}
+.icon-btn.danger:hover{background:#fee2e2;color:var(--red-dark)}
+.icon-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
-    h2 {
-      margin: 0 0 16px;
-      font-size: 15px;
-      font-weight: 600;
-    }
+/* ---------- 空状态 / 添加 ---------- */
+.empty{padding:4px 2px 0}
+.empty p{font-size:13px;color:#a1846f;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#f1f5f9;border-radius:99px;padding:5px 11px;font-size:12px;font-weight:600;color:#475569}
+.chip:hover{background:var(--blue-soft);color:var(--blue-dark)}
+.add-row{display:flex;gap:7px;margin-top:11px}
+.new-icon-btn{
+  flex:none;width:44px;border:1.5px dashed #c7d2fe;border-radius:11px;font-size:20px;
+  background:#f5f3ff;display:flex;align-items:center;justify-content:center;
+}
+.new-icon-btn:hover{background:#ede9fe}
+.add-row input{
+  flex:1;min-width:0;border:1.5px solid #ffe1cf;border-radius:11px;padding:9px 12px;
+  font:inherit;font-size:14px;background:#fff;outline:none;color:var(--text);
+}
+.add-row input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.14)}
+.add-btn{flex:none;border-radius:11px;background:var(--blue-dark);color:#fff;font-weight:700;padding:0 14px;font-size:14px}
+.add-btn:hover{background:#1d4ed8}
+.add-note{margin-top:7px;font-size:11px;line-height:1.55;color:#a1846f}
+.add-note b{color:var(--blue-dark)}
 
-    /* 习惯录入 */
-    .habit-form {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
+/* ---------- 底部导航 ---------- */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:70;
+  background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border-top:1px solid #e8ebf1;
+}
+.tabbar-inner{max-width:600px;margin:0 auto;display:grid;grid-template-columns:repeat(2,1fr);padding:7px 14px calc(7px + env(safe-area-inset-bottom))}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 0;border-radius:14px;color:#9ca3af;font-size:11px;font-weight:700}
+.tab .t-ico{font-size:19px;line-height:1}
+.tab.active{color:var(--blue-dark);background:var(--blue-soft)}
+.tab[data-view=shop].active{color:#d97706;background:#fff7ed}
 
-    .habit-form input {
-      width: 320px;
-      max-width: 100%;
-      padding: 10px 12px;
-      font-size: 14px;
-      color: var(--ink);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      outline: none;
-    }
+/* ---------- 弹窗 ---------- */
+.overlay{
+  position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
+  background:rgba(15,23,42,.5);padding:24px;animation:fade .18s ease;
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{background:#fff;border-radius:20px;padding:22px;width:100%;max-width:360px;box-shadow:0 18px 50px rgba(15,23,42,.3);animation:pop .3s cubic-bezier(.2,1.5,.4,1)}
+.modal h3{font-size:18px;font-weight:800;margin-bottom:8px}
+.modal p{font-size:14px;color:var(--muted);white-space:pre-line;margin-bottom:16px}
+.modal input{
+  width:100%;border:1.5px solid #dbe1ea;border-radius:12px;padding:11px 13px;font:inherit;
+  font-size:15px;outline:none;margin:2px 0 16px;color:var(--text);
+}
+.modal input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.14)}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end}
+.modal-btns .btn{border-radius:12px;padding:10px 20px;font-weight:700;font-size:14px}
+.btn.ghost{background:#f1f5f9;color:#475569}
+.btn.ghost:hover{background:#e2e8f0}
+.btn.primary{background:var(--blue-dark);color:#fff}
+.btn.primary:hover{background:#1d4ed8}
+.btn.danger{background:var(--red-dark);color:#fff}
+.btn.danger:hover{background:#b91c1c}
+.picker-modal{max-width:330px}
+.icon-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin:4px 0 14px}
+.icon-grid button{aspect-ratio:1;border-radius:11px;background:#f4f5fb;font-size:22px;display:flex;align-items:center;justify-content:center}
+.icon-grid button:hover,.icon-grid button.active{background:#ede9fe;box-shadow:inset 0 0 0 2px #a78bfa}
 
-    .habit-form input:focus {
-      border-color: var(--accent);
-    }
+/* ---------- 当天详情 ---------- */
+.day-modal{max-width:390px}
+.day-status{font-size:13px;font-weight:700;color:var(--blue-dark);margin:0 0 10px}
+.day-detail-list{list-style:none;display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto;margin-bottom:12px}
+.day-item{display:flex;align-items:center;gap:9px;background:#f9fafc;border-radius:12px;padding:8px 10px}
+.day-item .d-icon{flex:none;width:30px;height:30px;border-radius:9px;background:#eef2ff;display:flex;align-items:center;justify-content:center}
+.day-item .d-name{flex:1;min-width:0;font-size:13px;font-weight:700;word-break:break-all}
+.day-item .d-state{flex:none;font-size:11px;font-weight:800;color:var(--red-dark)}
+.day-item.ok .d-state{color:var(--green)}
+.day-photo{flex:none;width:36px;height:36px;border-radius:8px;object-fit:cover;background:#e8eaf0}
+.day-photo.placeholder{
+  display:flex;align-items:center;justify-content:center;
+  background:#e8eaf0;color:#94a3b8;font-size:9px;font-weight:700;
+}
+.day-note{font-size:11px;color:#9ca3af;margin-bottom:14px}
 
-    .habit-form button {
-      padding: 10px 22px;
-      font-size: 14px;
-      color: #fff;
-      background: var(--accent);
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+/* ---------- 照片大图 ---------- */
+.image-overlay{
+  position:fixed;inset:0;z-index:240;background:rgba(0,0,0,.9);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;
+}
+.image-overlay img{max-width:92vw;max-height:74vh;border-radius:14px;object-fit:contain}
+.image-overlay figcaption{color:rgba(255,255,255,.85);font-size:13px}
+.viewer-close{
+  position:absolute;top:16px;right:18px;width:38px;height:38px;border-radius:50%;
+  background:rgba(255,255,255,.16);color:#fff;font-size:20px;
+  display:flex;align-items:center;justify-content:center;
+}
+.viewer-close:hover{background:rgba(255,255,255,.3)}
 
-    .habit-form button:hover {
-      background: #255dd0;
-    }
-
-    /* 习惯列表 */
-    .habit-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin: 16px 0 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .habit-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-    }
-
-    .habit-item:hover {
-      border-color: #c9d6f5;
-    }
-
-    .habit-main {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
-    }
-
-    .habit-item .habit-name-text {
-      font-size: 14px;
-      word-break: break-all;
-    }
-
-    .habit-meta {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .habit-actions {
-      display: flex;
-      flex-shrink: 0;
-      gap: 8px;
-    }
-
-    .btn-small {
-      padding: 6px 12px;
-      font-size: 12px;
-      color: #fff;
-      background: var(--accent);
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .btn-small:hover {
-      background: #255dd0;
-    }
-
-    .btn-danger {
-      color: var(--danger);
-      background: #fff;
-      border: 1px solid #f0c4c0;
-    }
-
-    .btn-danger:hover {
-      background: #fdeaea;
-    }
-
-    .habit-empty {
-      margin: 16px 0 0;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    /* 日历 */
-    .calendar-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-    }
-
-    .calendar-month {
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .calendar-nav {
-      display: flex;
-      gap: 6px;
-    }
-
-    .calendar-nav button {
-      padding: 4px 10px;
-      font-size: 12px;
-      color: var(--ink);
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .calendar-nav button:hover {
-      color: var(--accent);
-      border-color: var(--accent);
-    }
-
-    .calendar-hint {
-      margin: 0 0 12px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .calendar-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin: 0 0 12px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
-
-    .dot-done { background: var(--accent); }
-    .dot-missed { background: #e05a4f; }
-    .dot-muted { background: #c9ced4; }
-
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-    }
-
-    .calendar-grid .weekday {
-      padding: 4px 0;
-      font-size: 12px;
-      color: var(--muted);
-      text-align: center;
-    }
-
-    .calendar-grid .day {
-      padding: 10px 0;
-      font-size: 13px;
-      text-align: center;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .calendar-grid .day:hover {
-      filter: brightness(0.96);
-    }
-
-    .calendar-grid .day.blank {
-      visibility: hidden;
-      cursor: default;
-    }
-
-    /* 蓝色：当日全部习惯都已完成 */
-    .calendar-grid .day.done {
-      color: #fff;
-      font-weight: 600;
-      background: var(--accent);
-    }
-
-    /* 红色：当日有习惯未完成 */
-    .calendar-grid .day.missed {
-      color: #c0392b;
-      background: #fdeaea;
-    }
-
-    /* 灰色：未来日期，或当天还没有任何习惯 */
-    .calendar-grid .day.muted {
-      color: #a8b0b8;
-      background: #f2f4f6;
-    }
-
-    .calendar-grid .day.today {
-      box-shadow: inset 0 0 0 2px #1f2933;
-    }
-
-    .calendar-grid .day.selected {
-      outline: 2px solid var(--accent);
-      outline-offset: 1px;
-    }
-
-    /* 某一天的打卡详情 */
-    .day-detail {
-      display: none;
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid var(--line);
-    }
-
-    .detail-title {
-      margin-bottom: 6px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .detail-empty {
-      margin: 0;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .detail-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      padding: 8px 0;
-      font-size: 13px;
-    }
-
-    .detail-name {
-      flex: 1 1 120px;
-      min-width: 0;
-      word-break: break-all;
-    }
-
-    .badge {
-      padding: 2px 8px;
-      font-size: 12px;
-      border-radius: 999px;
-      white-space: nowrap;
-    }
-
-    .badge-done {
-      color: #1c4fd6;
-      background: #e8f0ff;
-    }
-
-    .badge-missed {
-      color: var(--danger);
-      background: #fdeaea;
-    }
-
-    .thumb {
-      width: 44px;
-      height: 44px;
-      object-fit: cover;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .detail-note {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .detail-row .btn-small {
-      padding: 4px 10px;
-    }
-
-    /* 照片预览 */
-    .photo-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: rgba(15, 20, 28, 0.72);
-    }
-
-    .photo-overlay[hidden] {
-      display: none;
-    }
-
-    .photo-overlay-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .photo-overlay img {
-      max-width: min(520px, 90vw);
-      max-height: 74vh;
-      border-radius: 10px;
-      background: #fff;
-    }
-  </style>
+/* ---------- Toast / 礼花 ---------- */
+.toast-wrap{
+  position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  z-index:260;display:flex;flex-direction:column;gap:8px;width:min(92vw,420px);pointer-events:none;
+}
+.toast{
+  background:#1f2937;color:#fff;font-size:13px;font-weight:600;text-align:center;
+  padding:11px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2);animation:toast-in .22s ease;
+}
+@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.toast.hide{opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:230;overflow:hidden}
+.confetti{position:absolute;top:-14px;width:8px;height:13px;border-radius:2px;animation:fall 1.6s ease-in forwards}
+@keyframes fall{to{transform:translateY(108vh) rotate(700deg);opacity:0}}
+</style>
 </head>
 <body>
-  <div class="page">
-    <h1>AI学生习惯打卡系统</h1>
-
-    <section>
-      <h2>习惯录入</h2>
-      <div class="habit-form">
-        <input id="habit-name" type="text" placeholder="请输入习惯名称，例如：早起背单词">
-        <button id="habit-submit" type="button">提交</button>
-      </div>
-      <input id="habit-photo" type="file" accept="image/*" capture="environment" hidden>
-      <ul class="habit-list" id="habit-list"></ul>
-      <p class="habit-empty" id="habit-empty">还没有添加习惯，请在上方输入后点击提交。</p>
-    </section>
-
-    <section>
-      <div class="calendar-head">
-        <span class="calendar-month" id="calendar-month"></span>
-        <div class="calendar-nav">
-          <button type="button" id="prev-month">上月</button>
-          <button type="button" id="month-reset">本月</button>
-          <button type="button" id="next-month">下月</button>
+<div class="wrap">
+  <header class="app-header">
+    <div class="app-brand">
+      <span class="brand-logo">✓</span>
+      <div>
+        <h1>习惯打卡</h1>
+        <div class="brand-sub">
+          <div class="date-line" id="dateLine"></div>
+          <span class="motto">每天进步一点点</span>
         </div>
       </div>
-      <p class="calendar-hint" id="calendar-hint">点击日期查看当天每条习惯的完成情况；打卡请点习惯右侧的「拍照打卡」。</p>
-      <div class="calendar-legend">
-        <span class="legend-item"><i class="dot dot-done"></i>已打卡（当天习惯全部完成）</span>
-        <span class="legend-item"><i class="dot dot-missed"></i>未打卡（有习惯未完成）</span>
-        <span class="legend-item"><i class="dot dot-muted"></i>未来日期 / 当天无习惯</span>
-      </div>
-      <div class="calendar-grid" id="calendar-grid"></div>
-      <div class="day-detail" id="day-detail"></div>
-    </section>
-  </div>
+    </div>
+    <a class="points-pill" href="shop.html" id="pointsPill" aria-label="查看积分商城">
+      <span class="star">★</span> <b id="headerBalance">0</b>
+    </a>
+  </header>
 
-  <div class="photo-overlay" id="photo-overlay" hidden>
-    <div class="photo-overlay-inner">
-      <img id="photo-overlay-img" alt="打卡照片预览">
-      <button type="button" class="btn-small" id="photo-overlay-close">关闭</button>
+  <!-- 打卡月历 -->
+  <section class="card cal-card" aria-label="打卡月历">
+    <div class="cal-nav">
+      <button class="nav-btn" id="prevMonth" type="button" aria-label="上一月">‹</button>
+      <h3 id="calTitle"></h3>
+      <button class="nav-btn" id="nextMonth" type="button" aria-label="下一月">›</button>
+    </div>
+    <p class="cal-sub" id="calSub"></p>
+    <div class="cal-week">
+      <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <p class="cal-stat" id="calStat"></p>
+    <div class="cal-legend">
+      <span class="legend-item"><i class="legend-swatch success"></i>已完成</span>
+      <span class="legend-item"><i class="legend-swatch fail"></i>未完成</span>
+      <span class="legend-item"><i class="legend-swatch pending"></i>进行中</span>
+      <span class="legend-item"><i class="legend-swatch today"></i>今天</span>
+      <span class="legend-item"><i class="legend-swatch off"></i>无记录 / 未来</span>
+    </div>
+  </section>
+
+  <!-- 今日打卡 -->
+  <section class="card today-card" aria-label="今日打卡">
+    <div class="today-head">
+      <div class="today-title">
+        <h2>今日打卡</h2>
+        <span class="today-date" id="todayDate"></span>
+      </div>
+      <span class="streak-chip">🔥 连续 <b id="streakNum">0</b> 天</span>
+    </div>
+    <div class="today-progress">
+      <span class="p-label">今日进度</span>
+      <div class="progress"><i id="progressFill"></i></div>
+      <span class="p-count"><b id="doneCount">0</b><i>/</i><b id="totalCount">0</b></span>
+    </div>
+    <div class="today-divider"></div>
+
+    <div id="successBanner" class="success-banner" hidden>
+      <span class="icon">🎉</span>
+      <div class="txt"><b>今日打卡全部完成！</b><span id="successText"></span></div>
+    </div>
+
+    <ul class="habit-list" id="habitList"></ul>
+    <div class="empty" id="emptyState" hidden>
+      <p>还没有习惯，添加一个开始拍照打卡吧～</p>
+      <div class="chips" id="suggestionChips"></div>
+    </div>
+
+    <form class="add-row" id="addForm" autocomplete="off">
+      <button type="button" class="new-icon-btn" id="newHabitIcon" title="选择习惯图标" aria-label="选择习惯图标">💧</button>
+      <input id="newHabitName" type="text" maxlength="20" placeholder="添加一个新习惯，如：背单词" aria-label="新习惯名称">
+      <button class="add-btn" type="submit">＋ 添加</button>
+    </form>
+    <p class="add-note">
+      打卡方式：点相机图标<b>拍照或上传照片</b>，每完成一项 <b>+10 积分</b>；删除照片即取消打卡，扣回本次 10 分。<br>
+      只支持<b>当天</b>拍照打卡，不支持补卡和超前打卡；点击月历日期可以查看当天打卡情况。
+    </p>
+  </section>
+</div>
+
+<nav class="tabbar" aria-label="页面导航">
+  <div class="tabbar-inner">
+    <a class="tab active" data-view="checkin" href="index.html">
+      <span class="t-ico">✓</span><span>打卡</span>
+    </a>
+    <a class="tab" data-view="shop" href="shop.html">
+      <span class="t-ico">★</span><span>积分商城</span>
+    </a>
+  </div>
+</nav>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<div id="confetti"></div>
+
+<div class="overlay" id="promptOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3 id="promptTitle"></h3>
+    <p id="promptMsg" hidden></p>
+    <input id="promptInput" type="text" maxlength="20" aria-label="输入内容">
+    <div class="modal-btns">
+      <button class="btn ghost" id="promptCancel" type="button">取消</button>
+      <button class="btn primary" id="promptOk" type="button">确定</button>
     </div>
   </div>
+</div>
 
-  <script>
-    /* ---------- 本地存储：习惯列表与打卡记录的读写接口 ---------- */
-    (function () {
-      var HABITS_KEY = 'ai-habit-checkin:habits';
-      var CHECKINS_KEY = 'ai-habit-checkin:checkins';
-      var DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+<div class="overlay" id="iconOverlay" hidden>
+  <div class="modal picker-modal" role="dialog" aria-modal="true">
+    <h3>选择图标</h3>
+    <div class="icon-grid" id="iconGrid"></div>
+    <div class="modal-btns">
+      <button class="btn ghost" id="iconCancel" type="button">取消</button>
+    </div>
+  </div>
+</div>
 
-      function pad2(number) {
-        return number < 10 ? '0' + number : String(number);
-      }
+<div class="overlay" id="dayOverlay" hidden>
+  <div class="modal day-modal" role="dialog" aria-modal="true">
+    <h3 id="dayTitle"></h3>
+    <p class="day-status" id="dayStatus"></p>
+    <ul class="day-detail-list" id="dayList"></ul>
+    <p class="day-note" id="dayNote"></p>
+    <div class="modal-btns">
+      <button class="btn primary" id="dayClose" type="button">关闭</button>
+    </div>
+  </div>
+</div>
 
-      function readJSON(key, fallback) {
-        try {
-          var raw = localStorage.getItem(key);
-          if (raw === null) {
-            return fallback;
-          }
-          var value = JSON.parse(raw);
-          return value === null || value === undefined ? fallback : value;
-        } catch (error) {
-          return fallback;
-        }
-      }
+<div class="image-overlay" id="imageOverlay" hidden>
+  <button class="viewer-close" id="viewerClose" aria-label="关闭照片">×</button>
+  <figure style="display:flex;flex-direction:column;align-items:center;gap:12px">
+    <img id="viewerImg" alt="打卡照片">
+    <figcaption id="viewerCaption"></figcaption>
+  </figure>
+</div>
 
-      function writeJSON(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
-      }
+<script>
+/* ============ 本地存储：习惯 / 打卡 / 积分 / 奖励 + 照片 ============ */
+(function () {
+  var HABITS_KEY = 'ai-habit-checkin:habits';
+  var CHECKINS_KEY = 'ai-habit-checkin:checkins';
+  var POINTS_KEY = 'ai-habit-checkin:points';
+  var REWARDS_KEY = 'ai-habit-checkin:rewards';
+  var PHOTO_DB = 'ai-habit-checkin-media';
+  var PHOTO_STORE = 'photos';
 
-      function makeId() {
-        return 'h_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-      }
+  var DEFAULT_REWARDS = [
+    { id: 'reward_default_1', name: '看一集喜欢的剧', cost: 50, icon: '📺' },
+    { id: 'reward_default_2', name: '买一杯想喝的奶茶', cost: 100, icon: '🧋' },
+    { id: 'reward_default_3', name: '周末看一场电影', cost: 200, icon: '🎬' }
+  ];
 
-      /* 把 createdAt（UTC ISO 字符串）换算成本地日期，避免时区导致差一天 */
-      function normalizeCreatedDate(item, createdAt) {
-        if (item && typeof item === 'object' &&
-            typeof item.createdDate === 'string' && DATE_PATTERN.test(item.createdDate)) {
-          return item.createdDate;
-        }
-        if (createdAt) {
-          var parsed = new Date(createdAt);
-          if (!isNaN(parsed.getTime())) {
-            return parsed.getFullYear() + '-' + pad2(parsed.getMonth() + 1) + '-' + pad2(parsed.getDate());
-          }
-        }
-        return ''; // 早于本版本的旧数据：视为一直存在
-      }
+  function readJSON(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (raw === null) return fallback;
+      var value = JSON.parse(raw);
+      return value === null || value === undefined ? fallback : value;
+    } catch (error) {
+      return fallback;
+    }
+  }
 
-      /* 习惯列表：[{ id, name, createdAt, createdDate }] */
-      function loadHabits() {
-        var raw = readJSON(HABITS_KEY, []);
-        if (!Array.isArray(raw)) {
-          return [];
-        }
+  function writeJSON(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
 
-        var list = [];
-        for (var i = 0; i < raw.length; i++) {
-          var item = raw[i];
-          var name = null;
-          var id = null;
-          var createdAt = '';
+  function makeId(prefix) {
+    return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
 
-          if (typeof item === 'string') {
-            name = item; // 兼容更早期"只存名称"的格式
-          } else if (item && typeof item === 'object' && typeof item.name === 'string') {
-            name = item.name;
-            id = typeof item.id === 'string' && item.id !== '' ? item.id : null;
-            createdAt = typeof item.createdAt === 'string' ? item.createdAt : '';
-          }
+  /* 习惯列表：[{ id, name, icon, createdAt }] */
+  function loadHabits() {
+    var raw = readJSON(HABITS_KEY, []);
+    if (!Array.isArray(raw)) return [];
 
-          if (name === null || name === '') {
-            continue;
-          }
-
-          list.push({
-            id: id || makeId() + '_' + i,
-            name: name,
-            createdAt: createdAt,
-            createdDate: normalizeCreatedDate(item, createdAt)
-          });
-        }
-        return list;
-      }
-
-      function saveHabits(habits) {
-        try {
-          writeJSON(HABITS_KEY, Array.isArray(habits) ? habits : []);
-          return true;
-        } catch (error) {
-          return false;
-        }
-      }
-
-      /* 打卡记录：{ habitId: { 'YYYY-MM-DD': { photo: dataURL, at: ISO字符串 } } } */
-      function loadCheckins() {
-        var raw = readJSON(CHECKINS_KEY, {});
-        var result = {};
-
-        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-          return result;
-        }
-
-        Object.keys(raw).forEach(function (habitId) {
-          var byDate = raw[habitId];
-          var normalized = {};
-
-          if (Array.isArray(byDate)) {
-            // 兼容上一版"按日期字符串数组"的记录（无照片）
-            byDate.forEach(function (date) {
-              if (typeof date === 'string' && DATE_PATTERN.test(date)) {
-                normalized[date] = { photo: '', at: '' };
-              }
-            });
-          } else if (byDate && typeof byDate === 'object') {
-            Object.keys(byDate).forEach(function (date) {
-              if (!DATE_PATTERN.test(date)) {
-                return;
-              }
-              var record = byDate[date];
-              normalized[date] = {
-                photo: record && typeof record.photo === 'string' ? record.photo : '',
-                at: record && typeof record.at === 'string' ? record.at : ''
-              };
-            });
-          }
-
-          result[habitId] = normalized;
+    var list = [];
+    for (var i = 0; i < raw.length; i++) {
+      var item = raw[i];
+      if (typeof item === 'string') {
+        list.push({ id: makeId('h') + '_' + i, name: item, icon: '', createdAt: '' });
+      } else if (item && typeof item === 'object' && typeof item.name === 'string' && item.name !== '') {
+        list.push({
+          id: typeof item.id === 'string' && item.id !== '' ? item.id : makeId('h') + '_' + i,
+          name: item.name,
+          icon: typeof item.icon === 'string' ? item.icon : '',
+          createdAt: typeof item.createdAt === 'string' ? item.createdAt : ''
         });
-        return result;
+      }
+    }
+    return list;
+  }
+
+  function saveHabits(habits) {
+    writeJSON(HABITS_KEY, Array.isArray(habits) ? habits : []);
+  }
+
+  /* 日期必须是真实存在的 YYYY-MM-DD */
+  function isValidDateKey(key) {
+    if (typeof key !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+    var parts = key.split('-');
+    var year = Number(parts[0]);
+    var month = Number(parts[1]);
+    var day = Number(parts[2]);
+    var date = new Date(year, month - 1, day);
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+  }
+
+  /* 每个习惯每天只算一次：过滤非法值并去重 */
+  function normalizeDates(dates) {
+    var seen = {};
+    var list = [];
+    for (var i = 0; i < dates.length; i++) {
+      var date = dates[i];
+      if (!isValidDateKey(date) || seen[date]) continue;
+      seen[date] = true;
+      list.push(date);
+    }
+    return list;
+  }
+
+  /* 打卡记录：{ habitId: ['2026-09-14', ...] } */
+  function loadCheckins() {
+    var raw = readJSON(CHECKINS_KEY, {});
+    var result = {};
+    var dirty = false;
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return result;
+
+    Object.keys(raw).forEach(function (habitId) {
+      var dates = raw[habitId];
+      if (!Array.isArray(dates)) { dirty = true; return; }
+      var clean = normalizeDates(dates);
+      if (clean.length !== dates.length) dirty = true;
+      result[habitId] = clean;
+    });
+
+    if (dirty) saveCheckins(result);
+    return result;
+  }
+
+  function saveCheckins(checkins) {
+    writeJSON(CHECKINS_KEY, checkins && typeof checkins === 'object' ? checkins : {});
+  }
+
+  /* 积分：{ total, bonus: { habitId: { runStart, awarded } }, ledger: [...] } */
+  function loadPoints() {
+    var raw = readJSON(POINTS_KEY, {});
+    var total = 0;
+    var bonus = {};
+    var ledger = [];
+
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+      if (typeof raw.total === 'number' && isFinite(raw.total)) total = Math.round(raw.total);
+
+      if (raw.bonus && typeof raw.bonus === 'object' && !Array.isArray(raw.bonus)) {
+        Object.keys(raw.bonus).forEach(function (habitId) {
+          var item = raw.bonus[habitId];
+          if (item && typeof item === 'object') {
+            bonus[habitId] = {
+              runStart: typeof item.runStart === 'string' ? item.runStart : '',
+              awarded: typeof item.awarded === 'number' && item.awarded > 0 ? Math.round(item.awarded) : 0
+            };
+          }
+        });
       }
 
-      function saveCheckins(checkins) {
-        try {
-          writeJSON(CHECKINS_KEY, checkins && typeof checkins === 'object' ? checkins : {});
-          return true;
-        } catch (error) {
-          // 多数情况是超出 localStorage 配额（照片占空间）
-          return false;
-        }
+      if (Array.isArray(raw.ledger)) {
+        raw.ledger.forEach(function (entry) {
+          if (!entry || typeof entry !== 'object') return;
+          if (typeof entry.points !== 'number' || !isFinite(entry.points)) return;
+          ledger.push({
+            id: typeof entry.id === 'string' && entry.id !== '' ? entry.id : makeId('pt'),
+            ts: typeof entry.ts === 'number' && isFinite(entry.ts) ? entry.ts : Date.now(),
+            type: typeof entry.type === 'string' ? entry.type : 'checkin',
+            points: Math.round(entry.points),
+            habitName: typeof entry.habitName === 'string' ? entry.habitName : '',
+            date: typeof entry.date === 'string' ? entry.date : ''
+          });
+        });
       }
+    }
+    return { total: total, bonus: bonus, ledger: ledger.slice(-200) };
+  }
 
-      window.HabitStore = {
-        habitsKey: HABITS_KEY,
-        checkinsKey: CHECKINS_KEY,
-        load: loadHabits,
-        save: saveHabits,
-        loadCheckins: loadCheckins,
-        saveCheckins: saveCheckins
+  function savePoints(points) {
+    writeJSON(POINTS_KEY, {
+      total: points && typeof points.total === 'number' ? points.total : 0,
+      bonus: points && points.bonus && typeof points.bonus === 'object' ? points.bonus : {},
+      ledger: points && Array.isArray(points.ledger) ? points.ledger.slice(-200) : []
+    });
+  }
+
+  /* 奖励：{ tiers: [{ id, name, cost, icon }], unlocked: [tierId] } */
+  function loadRewards() {
+    var raw = readJSON(REWARDS_KEY, null);
+    var tiers = [];
+    var unlocked = [];
+
+    if (raw && typeof raw === 'object' && Array.isArray(raw.tiers)) {
+      raw.tiers.forEach(function (tier) {
+        if (!tier || typeof tier.name !== 'string' || tier.name === '') return;
+        if (typeof tier.cost !== 'number' || !isFinite(tier.cost) || tier.cost <= 0) return;
+        tiers.push({
+          id: typeof tier.id === 'string' && tier.id !== '' ? tier.id : makeId('reward'),
+          name: tier.name,
+          cost: Math.round(tier.cost),
+          icon: typeof tier.icon === 'string' && tier.icon !== '' ? tier.icon : '🎁'
+        });
+      });
+    } else {
+      tiers = DEFAULT_REWARDS.slice();
+    }
+
+    if (raw && Array.isArray(raw.unlocked)) {
+      raw.unlocked.forEach(function (id) {
+        if (typeof id === 'string' && id !== '') unlocked.push(id);
+      });
+    }
+    return { tiers: tiers, unlocked: unlocked };
+  }
+
+  function saveRewards(rewards) {
+    writeJSON(REWARDS_KEY, {
+      tiers: rewards && Array.isArray(rewards.tiers) ? rewards.tiers : [],
+      unlocked: rewards && Array.isArray(rewards.unlocked) ? rewards.unlocked : []
+    });
+  }
+
+  /* ---------- 照片存储（IndexedDB，键为 日期::习惯id） ---------- */
+  var memoryPhotos = {};
+  var dbPromise = null;
+  var urlCache = {};
+
+  function hasIndexedDB() {
+    return typeof window !== 'undefined' && window.indexedDB && typeof window.indexedDB.open === 'function';
+  }
+
+  function openDb() {
+    if (!hasIndexedDB()) return Promise.reject(new Error('indexeddb-unavailable'));
+    if (dbPromise) return dbPromise;
+
+    dbPromise = new Promise(function (resolve, reject) {
+      var request = window.indexedDB.open(PHOTO_DB, 1);
+      request.onupgradeneeded = function () {
+        var db = request.result;
+        if (!db.objectStoreNames.contains(PHOTO_STORE)) db.createObjectStore(PHOTO_STORE);
       };
-    })();
+      request.onsuccess = function () { resolve(request.result); };
+      request.onerror = function () { reject(request.error); };
+    });
+    return dbPromise;
+  }
 
-    /* ---------- 页面逻辑：习惯管理、拍照打卡、日历统计 ---------- */
-    (function () {
-      var habits = HabitStore.load();
-      var checkins = HabitStore.loadCheckins();
-      var now = new Date();
-      var viewYear = now.getFullYear();
-      var viewMonth = now.getMonth();   // 0 - 11
-      var selectedKey = null;
-      var pendingHabitId = null;
+  function withStore(mode, run) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve) {
+        var tx = db.transaction(PHOTO_STORE, mode);
+        run(tx.objectStore(PHOTO_STORE), resolve);
+      });
+    });
+  }
 
-      var inputEl = document.getElementById('habit-name');
-      var submitBtn = document.getElementById('habit-submit');
-      var photoInput = document.getElementById('habit-photo');
-      var listEl = document.getElementById('habit-list');
-      var emptyEl = document.getElementById('habit-empty');
-      var monthEl = document.getElementById('calendar-month');
-      var prevBtn = document.getElementById('prev-month');
-      var nextBtn = document.getElementById('next-month');
-      var resetBtn = document.getElementById('month-reset');
-      var calendarGrid = document.getElementById('calendar-grid');
-      var detailEl = document.getElementById('day-detail');
-      var overlayEl = document.getElementById('photo-overlay');
-      var overlayImgEl = document.getElementById('photo-overlay-img');
-      var overlayCloseBtn = document.getElementById('photo-overlay-close');
+  function photoGet(key) {
+    if (!hasIndexedDB()) return Promise.resolve(memoryPhotos[key] || null);
+    return withStore('readonly', function (store, resolve) {
+      var request = store.get(key);
+      request.onsuccess = function () { resolve(request.result || null); };
+      request.onerror = function () { resolve(memoryPhotos[key] || null); };
+    }).catch(function () { return memoryPhotos[key] || null; });
+  }
 
-      function pad(number) {
-        return number < 10 ? '0' + number : String(number);
+  function photoPut(key, blob) {
+    if (!hasIndexedDB()) { memoryPhotos[key] = blob; return Promise.resolve(); }
+    return withStore('readwrite', function (store, resolve) {
+      var request = store.put(blob, key);
+      request.onsuccess = function () { resolve(); };
+      request.onerror = function () { memoryPhotos[key] = blob; resolve(); };
+    }).catch(function () { memoryPhotos[key] = blob; });
+  }
+
+  function photoDelete(key) {
+    delete memoryPhotos[key];
+    releasePhotoUrl(key);
+    if (!hasIndexedDB()) return Promise.resolve();
+    return withStore('readwrite', function (store, resolve) {
+      var request = store.delete(key);
+      request.onsuccess = function () { resolve(); };
+      request.onerror = function () { resolve(); };
+    }).catch(function () {});
+  }
+
+  function photoKeys() {
+    if (!hasIndexedDB()) return Promise.resolve(Object.keys(memoryPhotos));
+    return withStore('readonly', function (store, resolve) {
+      var request = store.getAllKeys();
+      request.onsuccess = function () { resolve(request.result || []); };
+      request.onerror = function () { resolve(Object.keys(memoryPhotos)); };
+    }).catch(function () { return Object.keys(memoryPhotos); });
+  }
+
+  function photoClear() {
+    memoryPhotos = {};
+    Object.keys(urlCache).forEach(releasePhotoUrl);
+    if (!hasIndexedDB()) return Promise.resolve();
+    return withStore('readwrite', function (store, resolve) {
+      var request = store.clear();
+      request.onsuccess = function () { resolve(); };
+      request.onerror = function () { resolve(); };
+    }).catch(function () {});
+  }
+
+  function releasePhotoUrl(key) {
+    if (!urlCache[key]) return;
+    try { URL.revokeObjectURL(urlCache[key]); } catch (error) { /* 忽略 */ }
+    delete urlCache[key];
+  }
+
+  function photoUrl(key) {
+    if (urlCache[key]) return Promise.resolve(urlCache[key]);
+    return photoGet(key).then(function (blob) {
+      if (!blob) return '';
+      try {
+        urlCache[key] = URL.createObjectURL(blob);
+      } catch (error) {
+        urlCache[key] = '';
       }
+      return urlCache[key];
+    });
+  }
 
-      function keyOf(year, month, day) {
-        return year + '-' + pad(month + 1) + '-' + pad(day);
-      }
+  /* 压缩后存库；环境不支持压缩时直接存原图 */
+  function preparePhoto(file, done) {
+    try {
+      if (typeof FileReader === 'undefined' || typeof Image === 'undefined') { done(file); return; }
 
-      function localKey(dateObj) {
-        return keyOf(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-      }
-
-      function todayKey() {
-        return localKey(new Date());
-      }
-
-      function formatKeyLabel(key) {
-        var parts = key.split('-');
-        return Number(parts[1]) + '月' + Number(parts[2]) + '日';
-      }
-
-      function createHabitId() {
-        return 'h_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-      }
-
-      function findHabit(habitId) {
-        for (var i = 0; i < habits.length; i++) {
-          if (habits[i].id === habitId) {
-            return habits[i];
-          }
-        }
-        return null;
-      }
-
-      function getRecord(habitId, key) {
-        var byDate = checkins[habitId];
-        return byDate && byDate[key] ? byDate[key] : null;
-      }
-
-      function isDone(habitId, key) {
-        return getRecord(habitId, key) !== null;
-      }
-
-      function getTotal(habitId) {
-        var byDate = checkins[habitId];
-        return byDate ? Object.keys(byDate).length : 0;
-      }
-
-      /* 连续天数：今天已打卡就从今天往前数，今天没打卡就从昨天往前数 */
-      function getStreak(habitId) {
-        var current = new Date();
-        var cursor = new Date(current.getFullYear(), current.getMonth(), current.getDate());
-
-        if (!isDone(habitId, localKey(cursor))) {
-          cursor.setDate(cursor.getDate() - 1);
-        }
-
-        var streak = 0;
-        while (streak < 3660 && isDone(habitId, localKey(cursor))) {
-          streak += 1;
-          cursor.setDate(cursor.getDate() - 1);
-        }
-        return streak;
-      }
-
-      /* 某一天已经存在的习惯（按创建日期判断，避免把还没创建习惯的日子算成"漏打卡"） */
-      function habitsExistingOn(key) {
-        return habits.filter(function (habit) {
-          return habit.createdDate === '' || habit.createdDate <= key;
-        });
-      }
-
-      function dayStatus(key) {
-        if (key > todayKey()) {
-          return 'muted';   // 未来日期：不支持超前打卡
-        }
-        var applicable = habitsExistingOn(key);
-        if (applicable.length === 0) {
-          return 'muted';
-        }
-        for (var i = 0; i < applicable.length; i++) {
-          if (!isDone(applicable[i].id, key)) {
-            return 'missed';
-          }
-        }
-        return 'done';
-      }
-
-      /* ---------- 习惯列表 ---------- */
-      function renderHabitList() {
-        listEl.innerHTML = '';
-        emptyEl.style.display = habits.length === 0 ? 'block' : 'none';
-
-        habits.forEach(function (habit) {
-          var item = document.createElement('li');
-          item.className = 'habit-item';
-
-          var main = document.createElement('div');
-          main.className = 'habit-main';
-
-          var nameEl = document.createElement('span');
-          nameEl.className = 'habit-name-text';
-          nameEl.textContent = habit.name;
-
-          var metaEl = document.createElement('span');
-          metaEl.className = 'habit-meta';
-          metaEl.textContent = '连续 ' + getStreak(habit.id) + ' 天 · 累计 ' + getTotal(habit.id) + ' 天';
-
-          main.appendChild(nameEl);
-          main.appendChild(metaEl);
-
-          var actions = document.createElement('div');
-          actions.className = 'habit-actions';
-
-          var photoBtn = document.createElement('button');
-          photoBtn.type = 'button';
-          photoBtn.className = 'btn-small';
-          photoBtn.textContent = isDone(habit.id, todayKey()) ? '重新拍照' : '拍照打卡';
-          photoBtn.addEventListener('click', function () {
-            requestPhoto(habit.id);
-          });
-
-          var deleteBtn = document.createElement('button');
-          deleteBtn.type = 'button';
-          deleteBtn.className = 'btn-small btn-danger';
-          deleteBtn.textContent = '删除';
-          deleteBtn.addEventListener('click', function () {
-            removeHabit(habit.id);
-          });
-
-          actions.appendChild(photoBtn);
-          actions.appendChild(deleteBtn);
-          item.appendChild(main);
-          item.appendChild(actions);
-          listEl.appendChild(item);
-        });
-      }
-
-      /* ---------- 日历 ---------- */
-      function renderCalendar() {
-        monthEl.textContent = viewYear + '年' + (viewMonth + 1) + '月';
-
-        var firstWeekday = new Date(viewYear, viewMonth, 1).getDay();   // 0 = 周日
-        var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-        var today = todayKey();
-
-        calendarGrid.innerHTML = '';
-
-        ['日', '一', '二', '三', '四', '五', '六'].forEach(function (weekday) {
-          var head = document.createElement('div');
-          head.className = 'weekday';
-          head.textContent = weekday;
-          calendarGrid.appendChild(head);
-        });
-
-        var i;
-        for (i = 0; i < firstWeekday; i++) {
-          var blank = document.createElement('div');
-          blank.className = 'day blank';
-          calendarGrid.appendChild(blank);
-        }
-
-        for (var day = 1; day <= daysInMonth; day++) {
-          (function (dayNumber) {
-            var key = keyOf(viewYear, viewMonth, dayNumber);
-            var cell = document.createElement('div');
-
-            cell.className = 'day ' + dayStatus(key);
-            cell.textContent = dayNumber;
-
-            if (key === today) {
-              cell.classList.add('today');
-            }
-            if (key === selectedKey) {
-              cell.classList.add('selected');
-            }
-
-            cell.addEventListener('click', function () {
-              selectedKey = key;
-              renderCalendar();
-              renderDayDetail();
-            });
-
-            calendarGrid.appendChild(cell);
-          })(day);
-        }
-      }
-
-      /* ---------- 某一天的打卡详情 ---------- */
-      function renderDayDetail() {
-        detailEl.innerHTML = '';
-
-        if (!selectedKey) {
-          detailEl.style.display = 'none';
-          return;
-        }
-        detailEl.style.display = 'block';
-
-        var applicable = habitsExistingOn(selectedKey);
-        var doneCount = applicable.filter(function (habit) {
-          return isDone(habit.id, selectedKey);
-        }).length;
-        var isFuture = selectedKey > todayKey();
-        var isToday = selectedKey === todayKey();
-
-        var title = document.createElement('div');
-        title.className = 'detail-title';
-        title.textContent = formatKeyLabel(selectedKey) + '：已完成 ' + doneCount + ' / ' + applicable.length + ' 条习惯';
-        detailEl.appendChild(title);
-
-        if (isFuture) {
-          var futureNote = document.createElement('p');
-          futureNote.className = 'detail-empty';
-          futureNote.textContent = '未来日期，暂不能打卡。';
-          detailEl.appendChild(futureNote);
-          return;
-        }
-
-        if (applicable.length === 0) {
-          var noneNote = document.createElement('p');
-          noneNote.className = 'detail-empty';
-          noneNote.textContent = '这一天还没有添加任何习惯。';
-          detailEl.appendChild(noneNote);
-          return;
-        }
-
-        applicable.forEach(function (habit) {
-          var record = getRecord(habit.id, selectedKey);
-          var row = document.createElement('div');
-          row.className = 'detail-row';
-
-          var nameEl = document.createElement('span');
-          nameEl.className = 'detail-name';
-          nameEl.textContent = habit.name;
-
-          var badge = document.createElement('span');
-          badge.className = 'badge ' + (record ? 'badge-done' : 'badge-missed');
-          badge.textContent = record ? '已完成' : '未完成';
-
-          row.appendChild(nameEl);
-          row.appendChild(badge);
-
-          if (record && record.photo) {
-            var thumb = document.createElement('img');
-            thumb.className = 'thumb';
-            thumb.src = record.photo;
-            thumb.alt = habit.name + ' 的打卡照片';
-            thumb.addEventListener('click', function () {
-              openPhoto(record.photo);
-            });
-            row.appendChild(thumb);
-          } else if (record) {
-            var legacyNote = document.createElement('span');
-            legacyNote.className = 'detail-note';
-            legacyNote.textContent = '（早期记录，无照片）';
-            row.appendChild(legacyNote);
-          }
-
-          if (isToday && record) {
-            var undoBtn = document.createElement('button');
-            undoBtn.type = 'button';
-            undoBtn.className = 'btn-small btn-danger';
-            undoBtn.textContent = '撤销今日打卡';
-            undoBtn.addEventListener('click', function () {
-              undoTodayCheckin(habit.id);
-            });
-            row.appendChild(undoBtn);
-          }
-
-          detailEl.appendChild(row);
-        });
-      }
-
-      /* ---------- 照片上传即打卡 ---------- */
-      function requestPhoto(habitId) {
-        pendingHabitId = habitId;
-        photoInput.value = '';
-        photoInput.click();
-      }
-
-      function compressImage(file, callback) {
-        var reader = new FileReader();
-
-        reader.onload = function () {
-          var image = new Image();
-
-          image.onload = function () {
-            var maxSize = 720;
-            var scale = Math.min(1, maxSize / Math.max(image.width, image.height));
-            var width = Math.max(1, Math.round(image.width * scale));
-            var height = Math.max(1, Math.round(image.height * scale));
-
+      var reader = new FileReader();
+      reader.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var maxSide = 1080;
+            var width = img.naturalWidth || img.width;
+            var height = img.naturalHeight || img.height;
+            var scale = Math.min(1, maxSide / Math.max(width, height));
             var canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            canvas.getContext('2d').drawImage(image, 0, 0, width, height);
-            callback(canvas.toDataURL('image/jpeg', 0.6));
-          };
-
-          image.onerror = function () {
-            callback(null);
-          };
-          image.src = reader.result;
-        };
-
-        reader.onerror = function () {
-          callback(null);
-        };
-        reader.readAsDataURL(file);
-      }
-
-      function saveTodayCheckin(habitId, photo) {
-        var key = todayKey();
-        var previous = checkins[habitId] ? JSON.parse(JSON.stringify(checkins[habitId])) : null;
-
-        if (!checkins[habitId]) {
-          checkins[habitId] = {};
-        }
-        checkins[habitId][key] = { photo: photo, at: new Date().toISOString() };
-
-        if (!HabitStore.saveCheckins(checkins)) {
-          if (previous === null) {
-            delete checkins[habitId];
-          } else {
-            checkins[habitId] = previous;
+            canvas.width = Math.max(1, Math.round(width * scale));
+            canvas.height = Math.max(1, Math.round(height * scale));
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(function (blob) { done(blob || file); }, 'image/jpeg', 0.82);
+          } catch (error) {
+            done(file);
           }
-          alert('本地存储空间不足，本次打卡没有保存成功。请删除部分旧打卡记录后再试。');
-          return;
-        }
+        };
+        img.onerror = function () { done(file); };
+        img.src = String(reader.result);
+      };
+      reader.onerror = function () { done(file); };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      done(file);
+    }
+  }
 
-        selectedKey = key;
-        renderHabitList();
-        renderCalendar();
-        renderDayDetail();
+  function blobToDataUrl(blob) {
+    return new Promise(function (resolve) {
+      try {
+        var reader = new FileReader();
+        reader.onload = function () { resolve(String(reader.result)); };
+        reader.onerror = function () { resolve(''); };
+        reader.readAsDataURL(blob);
+      } catch (error) {
+        resolve('');
       }
+    });
+  }
 
-      function undoTodayCheckin(habitId) {
-        var habit = findHabit(habitId);
-        if (!habit) {
+  function dataUrlToBlob(dataUrl) {
+    try {
+      var comma = dataUrl.indexOf(',');
+      var meta = dataUrl.slice(5, comma);
+      var mime = (meta.split(';')[0] || 'image/jpeg');
+      var binary = atob(dataUrl.slice(comma + 1));
+      var bytes = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return new Blob([bytes], { type: mime });
+    } catch (error) {
+      return null;
+    }
+  }
+
+  window.HabitStore = {
+    habitsKey: HABITS_KEY,
+    checkinsKey: CHECKINS_KEY,
+    pointsKey: POINTS_KEY,
+    rewardsKey: REWARDS_KEY,
+    load: loadHabits,
+    save: saveHabits,
+    loadCheckins: loadCheckins,
+    saveCheckins: saveCheckins,
+    normalizeDates: normalizeDates,
+    loadPoints: loadPoints,
+    savePoints: savePoints,
+    loadRewards: loadRewards,
+    saveRewards: saveRewards,
+    makeId: makeId,
+    photoGet: photoGet,
+    photoPut: photoPut,
+    photoDelete: photoDelete,
+    photoKeys: photoKeys,
+    photoClear: photoClear,
+    photoUrl: photoUrl,
+    releasePhotoUrl: releasePhotoUrl,
+    preparePhoto: preparePhoto,
+    blobToDataUrl: blobToDataUrl,
+    dataUrlToBlob: dataUrlToBlob
+  };
+})();
+
+/* ============ 打卡页逻辑：拍照打卡 + 当天详情 ============ */
+(function () {
+  var CHECKIN_POINTS = 10;   // 打卡得分 / 取消打卡扣分
+  var STREAK_STEP = 7;       // 连续多少天结算一次额外奖励
+  var STREAK_BONUS = 5;      // 每次结算的额外积分
+  var HABIT_COLORS = ['#4f7cff', '#a855f7', '#f97316', '#10b981', '#0ea5e9', '#f43f5e', '#eab308', '#14b8a6'];
+  var ICONS = ['💧', '🏃', '📚', '🌙', '🍎', '💪', '🧘', '🥗', '✍️', '🎵', '🦷', '☀️', '🧹', '🚶', '📵', '💰', '🎨', '☕', '🚴', '🎯'];
+  var SUGGESTIONS = [
+    { name: '早起', icon: '☀️' },
+    { name: '背单词', icon: '📚' },
+    { name: '跑步', icon: '🏃' },
+    { name: '喝水', icon: '💧' },
+    { name: '早睡', icon: '🌙' }
+  ];
+
+  var habits = HabitStore.load();
+  var checkins = HabitStore.loadCheckins();
+  var points = HabitStore.loadPoints();
+  var selectedHabitId = habits.length > 0 ? habits[0].id : null;
+  var newHabitIcon = ICONS[0];
+
+  var today = new Date();
+  var todayKeyStr = formatKey(today);
+  var viewYear = today.getFullYear();
+  var viewMonth = today.getMonth();
+
+  var dateLineEl = document.getElementById('dateLine');
+  var headerBalanceEl = document.getElementById('headerBalance');
+  var calTitleEl = document.getElementById('calTitle');
+  var calSubEl = document.getElementById('calSub');
+  var calStatEl = document.getElementById('calStat');
+  var calGridEl = document.getElementById('calGrid');
+  var prevBtn = document.getElementById('prevMonth');
+  var nextBtn = document.getElementById('nextMonth');
+  var todayDateEl = document.getElementById('todayDate');
+  var streakNumEl = document.getElementById('streakNum');
+  var doneCountEl = document.getElementById('doneCount');
+  var totalCountEl = document.getElementById('totalCount');
+  var progressFillEl = document.getElementById('progressFill');
+  var successBannerEl = document.getElementById('successBanner');
+  var successTextEl = document.getElementById('successText');
+  var habitListEl = document.getElementById('habitList');
+  var emptyStateEl = document.getElementById('emptyState');
+  var suggestionChipsEl = document.getElementById('suggestionChips');
+  var addFormEl = document.getElementById('addForm');
+  var newHabitNameEl = document.getElementById('newHabitName');
+  var newHabitIconBtn = document.getElementById('newHabitIcon');
+  var toastWrapEl = document.getElementById('toastWrap');
+  var confettiEl = document.getElementById('confetti');
+  var promptOverlay = document.getElementById('promptOverlay');
+  var promptTitleEl = document.getElementById('promptTitle');
+  var promptMsgEl = document.getElementById('promptMsg');
+  var promptInputEl = document.getElementById('promptInput');
+  var promptCancelBtn = document.getElementById('promptCancel');
+  var promptOkBtn = document.getElementById('promptOk');
+  var iconOverlay = document.getElementById('iconOverlay');
+  var iconGridEl = document.getElementById('iconGrid');
+  var iconCancelBtn = document.getElementById('iconCancel');
+  var dayOverlay = document.getElementById('dayOverlay');
+  var dayTitleEl = document.getElementById('dayTitle');
+  var dayStatusEl = document.getElementById('dayStatus');
+  var dayListEl = document.getElementById('dayList');
+  var dayNoteEl = document.getElementById('dayNote');
+  var dayCloseBtn = document.getElementById('dayClose');
+  var imageOverlay = document.getElementById('imageOverlay');
+  var viewerImgEl = document.getElementById('viewerImg');
+  var viewerCaptionEl = document.getElementById('viewerCaption');
+  var viewerCloseBtn = document.getElementById('viewerClose');
+
+  var promptAction = null;
+
+  function pad(number) {
+    return number < 10 ? '0' + number : String(number);
+  }
+
+  function formatKey(date) {
+    return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+  }
+
+  function dateFromKey(key) {
+    var parts = key.split('-');
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+
+  function weekdayCN(date) {
+    return '日一二三四五六'[date.getDay()];
+  }
+
+  function readDatePart(habit) {
+    return habit && habit.createdAt ? habit.createdAt.slice(0, 10) : '';
+  }
+
+  function habitColor(index) {
+    return HABIT_COLORS[index % HABIT_COLORS.length];
+  }
+
+  function habitIndex(habitId) {
+    for (var i = 0; i < habits.length; i++) {
+      if (habits[i].id === habitId) return i;
+    }
+    return 0;
+  }
+
+  function findHabit(habitId) {
+    for (var i = 0; i < habits.length; i++) {
+      if (habits[i].id === habitId) return habits[i];
+    }
+    return null;
+  }
+
+  function getCheckedDates(habitId) {
+    return habitId && Array.isArray(checkins[habitId]) ? checkins[habitId] : [];
+  }
+
+  function isChecked(habitId, key) {
+    return getCheckedDates(habitId).indexOf(key) !== -1;
+  }
+
+  function photoKey(dateKey, habitId) {
+    return dateKey + '::' + habitId;
+  }
+
+  /* 当天有效的习惯（习惯创建当天起生效） */
+  function habitsOn(dateKey) {
+    return habits.filter(function (habit) {
+      var created = readDatePart(habit);
+      return created === '' || created <= dateKey;
+    });
+  }
+
+  /* 某天的完成情况：success 全部完成 / fail 过去未完成 / pending 今天未完成 / none 无习惯 */
+  function dayStatusOf(dateKey) {
+    var dayHabits = habitsOn(dateKey);
+    if (dayHabits.length === 0) return 'none';
+
+    var done = 0;
+    dayHabits.forEach(function (habit) {
+      if (isChecked(habit.id, dateKey)) done++;
+    });
+
+    if (done === dayHabits.length) return 'success';
+    if (dateKey < todayKeyStr) return 'fail';
+    if (dateKey === todayKeyStr) return 'pending';
+    return 'none';
+  }
+
+  /* 当前连续段：{ start, length }，没有连续段时 start 为空 */
+  function getCurrentRun(habitId) {
+    var dates = getCheckedDates(habitId);
+    var set = {};
+    var i;
+    for (i = 0; i < dates.length; i++) set[dates[i]] = true;
+
+    var cursor = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (!set[formatKey(cursor)]) cursor.setDate(cursor.getDate() - 1);
+
+    var length = 0;
+    var start = '';
+    while (set[formatKey(cursor)]) {
+      length++;
+      start = formatKey(cursor);
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return { start: start, length: length };
+  }
+
+  function getCurrentStreak(habitId) {
+    return getCurrentRun(habitId).length;
+  }
+
+  /* 最长连续天数：只从每段连续的第一天往后数，避免重复计算 */
+  function getLongestStreak(habitId) {
+    var dates = getCheckedDates(habitId);
+    var set = {};
+    var best = 0;
+    var i;
+
+    for (i = 0; i < dates.length; i++) set[dates[i]] = true;
+
+    for (i = 0; i < dates.length; i++) {
+      var before = dateFromKey(dates[i]);
+      before.setDate(before.getDate() - 1);
+      if (set[formatKey(before)]) continue;
+
+      var cursor = dateFromKey(dates[i]);
+      var run = 0;
+      while (set[formatKey(cursor)]) {
+        run++;
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      if (run > best) best = run;
+    }
+    return best;
+  }
+
+  function getMonthCount(habitId, year, month) {
+    var prefix = year + '-' + pad(month + 1) + '-';
+    var count = 0;
+    getCheckedDates(habitId).forEach(function (key) {
+      if (key.indexOf(prefix) === 0) count++;
+    });
+    return count;
+  }
+
+  /*
+   * 连续打卡奖励结算：每满 7 天一次性 +5 分。
+   * 只有连续段起点后移（前面被打断）才算中断并重置计数；往前补卡属于同一段，不重复发奖。
+   */
+  function syncStreakBonus(habitId) {
+    var run = getCurrentRun(habitId);
+    var tracked = points.bonus[habitId] || { runStart: '', awarded: 0 };
+    var gained = 0;
+
+    if (tracked.runStart === '' || run.start > tracked.runStart) {
+      tracked = { runStart: run.start, awarded: 0 };
+    } else if (run.start !== '' && run.start < tracked.runStart) {
+      tracked.runStart = run.start;
+    }
+
+    var milestone = Math.floor(run.length / STREAK_STEP) * STREAK_STEP;
+    while (run.length >= STREAK_STEP && tracked.awarded + STREAK_STEP <= milestone) {
+      tracked.awarded += STREAK_STEP;
+      gained += STREAK_BONUS;
+    }
+
+    points.bonus[habitId] = tracked;
+    return gained;
+  }
+
+  function adjustPoints(delta, type, habit, dateKey) {
+    points.total += delta;
+    points.ledger.push({
+      id: HabitStore.makeId('pt'),
+      ts: Date.now(),
+      type: type,
+      points: delta,
+      habitName: habit ? habit.name : '',
+      date: dateKey || ''
+    });
+    if (points.ledger.length > 200) points.ledger = points.ledger.slice(-200);
+  }
+
+  function todayEarnedPoints() {
+    var sum = 0;
+    var start = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    var end = start + 86400000;
+    points.ledger.forEach(function (entry) {
+      if (entry.ts >= start && entry.ts < end) sum += entry.points;
+    });
+    return sum;
+  }
+
+  /* ---------- 反馈 ---------- */
+  function removeNode(container, node) {
+    if (node.parentNode && typeof node.parentNode.removeChild === 'function') {
+      node.parentNode.removeChild(node);
+    } else if (Array.isArray(container.children)) {
+      var index = container.children.indexOf(node);
+      if (index !== -1) container.children.splice(index, 1);
+    }
+  }
+
+  function toast(message) {
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = message;
+    toastWrapEl.appendChild(el);
+    setTimeout(function () { el.classList.add('hide'); }, 1700);
+    setTimeout(function () { removeNode(toastWrapEl, el); }, 2050);
+  }
+
+  function confetti() {
+    var colors = ['#4f7cff', '#a855f7', '#f97316', '#10b981', '#f43f5e', '#eab308'];
+    for (var i = 0; i < 26; i++) {
+      var piece = document.createElement('i');
+      piece.className = 'confetti';
+      piece.style.left = Math.round(Math.random() * 100) + '%';
+      piece.style.background = colors[i % colors.length];
+      piece.style.animationDelay = (Math.random() * 0.35).toFixed(2) + 's';
+      confettiEl.appendChild(piece);
+    }
+    setTimeout(function () { confettiEl.innerHTML = ''; }, 2400);
+  }
+
+  function celebrateCell(dateKey) {
+    var cells = calGridEl.children;
+    for (var i = 0; i < cells.length; i++) {
+      var cell = cells[i];
+      if (!cell.getAttribute || cell.getAttribute('data-key') !== dateKey) continue;
+      cell.classList.add('pop-now');
+      (function (node) {
+        setTimeout(function () { node.classList.remove('pop-now'); }, 700);
+      })(cell);
+      return;
+    }
+  }
+
+  /* ---------- 通用弹窗 ---------- */
+  function openPrompt(options) {
+    promptTitleEl.textContent = options.title;
+    promptMsgEl.textContent = options.message || '';
+    promptMsgEl.hidden = !options.message;
+    promptInputEl.hidden = !options.withInput;
+    promptInputEl.value = options.value || '';
+    promptOkBtn.textContent = options.okText || '确定';
+    promptOkBtn.className = options.danger ? 'btn danger' : 'btn primary';
+    promptAction = options.onOk || null;
+    promptOverlay.hidden = false;
+    if (options.withInput && promptInputEl.focus) promptInputEl.focus();
+  }
+
+  function closePrompt() {
+    promptOverlay.hidden = true;
+    promptAction = null;
+  }
+
+  promptCancelBtn.addEventListener('click', closePrompt);
+  promptOkBtn.addEventListener('click', function () {
+    var handler = promptAction;
+    if (!handler) { closePrompt(); return; }
+    if (handler(promptInputEl.value) !== false) closePrompt();
+  });
+
+  /* ---------- 图标选择 ---------- */
+  function renderIconGrid() {
+    iconGridEl.innerHTML = '';
+    ICONS.forEach(function (icon) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = icon;
+      if (icon === newHabitIcon) btn.classList.add('active');
+      btn.addEventListener('click', function () {
+        newHabitIcon = icon;
+        newHabitIconBtn.textContent = icon;
+        iconOverlay.hidden = true;
+      });
+      iconGridEl.appendChild(btn);
+    });
+  }
+
+  newHabitIconBtn.addEventListener('click', function () {
+    renderIconGrid();
+    iconOverlay.hidden = false;
+  });
+  iconCancelBtn.addEventListener('click', function () {
+    iconOverlay.hidden = true;
+  });
+
+  /* ---------- 照片大图 ---------- */
+  function openViewer(url, caption) {
+    if (!url) return;
+    viewerImgEl.src = url;
+    viewerCaptionEl.textContent = caption || '';
+    imageOverlay.hidden = false;
+  }
+
+  viewerCloseBtn.addEventListener('click', function () {
+    imageOverlay.hidden = true;
+    viewerImgEl.src = '';
+  });
+
+  /* ---------- 拍照打卡 ---------- */
+  function attachPhoto(habit, file) {
+    if (!file || !habit) return;
+    var key = photoKey(todayKeyStr, habit.id);
+    var firstTime = !isChecked(habit.id, todayKeyStr);
+
+    HabitStore.preparePhoto(file, function (blob) {
+      HabitStore.photoPut(key, blob).then(function () {
+        if (firstTime) {
+          var dates = getCheckedDates(habit.id).slice();
+          dates.push(todayKeyStr);
+          checkins[habit.id] = HabitStore.normalizeDates(dates);
+
+          adjustPoints(CHECKIN_POINTS, 'checkin', habit, todayKeyStr);
+          var gained = syncStreakBonus(habit.id);
+          if (gained > 0) adjustPoints(gained, 'bonus', habit, todayKeyStr);
+
+          HabitStore.saveCheckins(checkins);
+          HabitStore.savePoints(points);
+          HabitStore.releasePhotoUrl(key);
+          renderAll();
+          celebrateCell(todayKeyStr);
+
+          toast('+10 积分 · ' + habit.name + ' 拍照打卡成功');
+          if (gained > 0) {
+            toast('🔥 ' + habit.name + ' 连续满 ' + getCurrentStreak(habit.id) + ' 天，额外 +5 积分');
+            confetti();
+          }
+          if (allDoneToday()) {
+            confetti();
+            toast('🎉 今日全部完成，继续保持！');
+          }
           return;
         }
-        if (!window.confirm('确定撤销「' + habit.name + '」今天的打卡吗？（仅能撤销今天，历史记录不能补也不能改）')) {
-          return;
-        }
 
-        delete checkins[habitId][todayKey()];
+        HabitStore.releasePhotoUrl(key);
+        renderAll();
+        toast('已更新 ' + habit.name + ' 今天的打卡照片');
+      });
+    });
+  }
+
+  function clearPhoto(habit) {
+    if (!habit) return;
+    var key = photoKey(todayKeyStr, habit.id);
+
+    HabitStore.photoDelete(key).then(function () {
+      if (isChecked(habit.id, todayKeyStr)) {
+        checkins[habit.id] = HabitStore.normalizeDates(getCheckedDates(habit.id).filter(function (date) {
+          return date !== todayKeyStr;
+        }));
+        adjustPoints(-CHECKIN_POINTS, 'cancel', habit, todayKeyStr);
+        syncStreakBonus(habit.id);
         HabitStore.saveCheckins(checkins);
-        renderHabitList();
-        renderCalendar();
-        renderDayDetail();
+        HabitStore.savePoints(points);
+        toast('-10 积分 · 已取消 ' + habit.name + ' 今天的打卡');
+      } else {
+        toast('已清除照片');
       }
+      HabitStore.releasePhotoUrl(key);
+      renderAll();
+    });
+  }
 
-      function removeHabit(habitId) {
-        var habit = findHabit(habitId);
-        if (!habit) {
-          return;
-        }
-        if (!window.confirm('确定删除习惯「' + habit.name + '」吗？它的打卡记录会一并删除，且无法恢复。')) {
-          return;
-        }
+  function allDoneToday() {
+    return habits.length > 0 && habits.every(function (habit) {
+      return isChecked(habit.id, todayKeyStr);
+    });
+  }
 
-        habits = habits.filter(function (item) {
-          return item.id !== habitId;
+  /* ---------- 当天详情 ---------- */
+  function openDayDetail(dateKey) {
+    var date = dateFromKey(dateKey);
+    var dayHabits = habitsOn(dateKey);
+    var done = 0;
+
+    dayHabits.forEach(function (habit) {
+      if (isChecked(habit.id, dateKey)) done++;
+    });
+
+    dayTitleEl.textContent = date.getFullYear() + '年' + (date.getMonth() + 1) + '月'
+      + date.getDate() + '日 · 星期' + weekdayCN(date);
+
+    if (dayHabits.length === 0) {
+      dayStatusEl.textContent = '这一天还没有习惯';
+    } else if (dateKey > todayKeyStr) {
+      dayStatusEl.textContent = '未来日期 · 还没有记录';
+    } else if (done === dayHabits.length) {
+      dayStatusEl.textContent = '当天已全部完成（' + done + '/' + dayHabits.length + '）';
+    } else if (dateKey === todayKeyStr) {
+      dayStatusEl.textContent = '今天进行中（' + done + '/' + dayHabits.length + '）';
+    } else {
+      dayStatusEl.textContent = '当天未完成（' + done + '/' + dayHabits.length + '）';
+    }
+
+    dayListEl.innerHTML = '';
+    dayHabits.forEach(function (habit) {
+      var index = habitIndex(habit.id);
+      var color = habitColor(index);
+      var ok = isChecked(habit.id, dateKey);
+      var key = photoKey(dateKey, habit.id);
+
+      var item = document.createElement('li');
+      item.className = 'day-item' + (ok ? ' ok' : '');
+
+      var iconEl = document.createElement('span');
+      iconEl.className = 'd-icon';
+      iconEl.textContent = habit.icon || '💧';
+      iconEl.style.background = color + '1f';
+
+      var nameEl = document.createElement('span');
+      nameEl.className = 'd-name';
+      nameEl.textContent = habit.name;
+
+      var stateEl = document.createElement('span');
+      stateEl.className = 'd-state';
+      stateEl.textContent = ok ? '已完成' : (dateKey > todayKeyStr ? '未开始' : '未完成');
+
+      var photoEl = document.createElement('img');
+      photoEl.className = 'day-photo placeholder';
+      photoEl.alt = habit.name + ' 的打卡照片';
+      photoEl.textContent = '无照片';
+
+      item.appendChild(iconEl);
+      item.appendChild(nameEl);
+      item.appendChild(stateEl);
+      item.appendChild(photoEl);
+      dayListEl.appendChild(item);
+
+      if (ok) {
+        HabitStore.photoUrl(key).then(function (url) {
+          if (!url) return;
+          var img = document.createElement('img');
+          img.className = 'day-photo';
+          img.alt = habit.name + ' 的打卡照片';
+          img.src = url;
+          img.addEventListener('click', function () {
+            openViewer(url, habit.name + ' · ' + dateKey);
+          });
+          item.replaceChild(img, photoEl);
         });
-        delete checkins[habitId];
+      }
+    });
 
+    dayNoteEl.textContent = dateKey > todayKeyStr
+      ? '不支持超前打卡，到当天再拍照打卡吧。'
+      : dateKey === todayKeyStr
+        ? '今天还没完成？在下方「今日打卡」里点相机图标拍照即可。'
+        : '不支持补卡，过去的日期只能查看记录。';
+
+    dayOverlay.hidden = false;
+  }
+
+  dayCloseBtn.addEventListener('click', function () {
+    dayOverlay.hidden = true;
+  });
+
+  /* ---------- 渲染 ---------- */
+  function renderHeader() {
+    dateLineEl.textContent = today.getFullYear() + '年' + (today.getMonth() + 1) + '月'
+      + today.getDate() + '日 星期' + weekdayCN(today);
+    headerBalanceEl.textContent = points.total;
+    todayDateEl.textContent = (today.getMonth() + 1) + ' 月 ' + today.getDate() + ' 日 · 星期' + weekdayCN(today);
+  }
+
+  function renderCalendar() {
+    var currentHabit = findHabit(selectedHabitId);
+
+    calTitleEl.textContent = viewYear + '年' + (viewMonth + 1) + '月';
+    calSubEl.textContent = currentHabit
+      ? '统计习惯：' + currentHabit.icon + ' ' + currentHabit.name + '（点日期看当天打卡详情）'
+      : '先在下面添加习惯，点日期可以查看当天打卡详情';
+    calStatEl.textContent = currentHabit
+      ? '本月 ' + getMonthCount(currentHabit.id, viewYear, viewMonth) + ' 天 · 连续 '
+        + getCurrentStreak(currentHabit.id) + ' 天 · 最长 ' + getLongestStreak(currentHabit.id)
+        + ' 天 · 累计 ' + getCheckedDates(currentHabit.id).length + ' 天'
+      : '添加习惯后，这里显示该习惯的打卡统计';
+
+    calGridEl.innerHTML = '';
+
+    var firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
+    var leading = (firstWeekday + 6) % 7;
+    var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    var i;
+
+    for (i = 0; i < leading; i++) {
+      var blank = document.createElement('div');
+      blank.className = 'cal-blank';
+      calGridEl.appendChild(blank);
+    }
+
+    for (var day = 1; day <= daysInMonth; day++) {
+      (function (dayNumber) {
+        var key = viewYear + '-' + pad(viewMonth + 1) + '-' + pad(dayNumber);
+        var cell = document.createElement('div');
+        var status = dayStatusOf(key);
+        cell.className = 'cal-cell';
+        cell.textContent = dayNumber;
+        cell.setAttribute('data-key', key);
+        cell.title = '查看 ' + key + ' 的打卡情况';
+
+        if (status === 'success') cell.classList.add('in-scope', 'success');
+        else if (status === 'fail') cell.classList.add('in-scope', 'fail');
+        else if (status === 'pending') cell.classList.add('in-scope', 'pending');
+
+        if (key === todayKeyStr) cell.classList.add('is-today');
+
+        cell.addEventListener('click', function () {
+          openDayDetail(key);
+        });
+        calGridEl.appendChild(cell);
+      })(day);
+    }
+  }
+
+  function buildPhotoBox(habit, color) {
+    var wrap = document.createElement('div');
+    wrap.className = 'media-wrap';
+
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.className = 'photo-input';
+    input.hidden = true;
+
+    var box = document.createElement('button');
+    box.type = 'button';
+    box.className = 'photo-box';
+    box.title = '拍照或上传今天的打卡照片';
+
+    var photoUrlValue = '';
+
+    var iconEl = document.createElement('span');
+    iconEl.className = 'ph-icon';
+    iconEl.textContent = '📷';
+    var textEl = document.createElement('span');
+    textEl.className = 'ph-text';
+    textEl.textContent = '拍照打卡';
+    box.appendChild(iconEl);
+    box.appendChild(textEl);
+
+    // 没有照片时点一下 = 拍照/上传；已有照片时点一下 = 看大图（换图先点 × 取消）
+    box.addEventListener('click', function () {
+      if (photoUrlValue) {
+        openViewer(photoUrlValue, habit.name + ' · ' + todayKeyStr);
+        return;
+      }
+      input.click();
+    });
+
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (file) attachPhoto(habit, file);
+      input.value = '';
+    });
+
+    if (isChecked(habit.id, todayKeyStr)) {
+      var key = photoKey(todayKeyStr, habit.id);
+      HabitStore.photoUrl(key).then(function (url) {
+        if (!url) return;
+        photoUrlValue = url;
+        box.innerHTML = '';
+        box.classList.add('has-photo');
+        box.style.borderColor = color;
+        var img = document.createElement('img');
+        img.src = url;
+        img.alt = habit.name + ' 今天的打卡照片';
+        box.appendChild(img);
+        var badge = document.createElement('span');
+        badge.className = 'done-badge';
+        badge.textContent = '✓';
+        badge.style.background = color;
+        box.appendChild(badge);
+      });
+    }
+
+    var clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'media-clear';
+    clearBtn.textContent = '×';
+    clearBtn.title = '删除照片并取消今天的打卡';
+    clearBtn.hidden = !isChecked(habit.id, todayKeyStr);
+    clearBtn.addEventListener('click', function (event) {
+      if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+      clearPhoto(habit);
+    });
+
+    wrap.appendChild(input);
+    wrap.appendChild(box);
+    wrap.appendChild(clearBtn);
+    return wrap;
+  }
+
+  function renderToday() {
+    var total = habits.length;
+    var done = 0;
+    var currentHabit = findHabit(selectedHabitId);
+
+    habitListEl.innerHTML = '';
+    emptyStateEl.hidden = total > 0;
+
+    habits.forEach(function (habit, index) {
+      var color = habitColor(index);
+      var soft = color + '1f';
+      var ok = isChecked(habit.id, todayKeyStr);
+      if (ok) done++;
+
+      var row = document.createElement('li');
+      row.className = 'habit-row' + (habit.id === selectedHabitId ? ' selected' : '');
+      row.style.borderLeftColor = color;
+      if (ok) row.style.background = soft;
+
+      var iconBtn = document.createElement('button');
+      iconBtn.type = 'button';
+      iconBtn.className = 'habit-icon-btn';
+      iconBtn.textContent = habit.icon || '💧';
+      iconBtn.style.background = soft;
+      iconBtn.title = '切换统计的习惯';
+      iconBtn.addEventListener('click', function (event) {
+        stopEvent(event);
+        selectHabit(habit.id);
+      });
+
+      var main = document.createElement('div');
+      main.className = 'habit-main';
+
+      var top = document.createElement('div');
+      top.className = 'habit-main-top';
+      top.appendChild(iconBtn);
+      var nameEl = document.createElement('span');
+      nameEl.className = 'habit-name';
+      nameEl.textContent = habit.name;
+      if (ok) nameEl.style.color = color;
+      top.appendChild(nameEl);
+      main.appendChild(top);
+
+      var sub = document.createElement('span');
+      sub.className = 'habit-sub';
+      sub.textContent = (ok ? '今日已打卡' : '今日未打卡')
+        + ' · 连续 ' + getCurrentStreak(habit.id) + ' 天 · 累计 ' + getCheckedDates(habit.id).length + ' 天';
+      main.appendChild(sub);
+
+      var actions = document.createElement('div');
+      actions.className = 'row-actions';
+
+      var editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'icon-btn';
+      editBtn.title = '重命名';
+      editBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+      editBtn.addEventListener('click', function (event) {
+        stopEvent(event);
+        renameHabit(habit);
+      });
+
+      var deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'icon-btn danger';
+      deleteBtn.title = '删除习惯';
+      deleteBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>';
+      deleteBtn.addEventListener('click', function (event) {
+        stopEvent(event);
+        removeHabit(habit);
+      });
+
+      actions.appendChild(editBtn);
+      actions.appendChild(deleteBtn);
+
+      row.appendChild(buildPhotoBox(habit, color));
+      row.appendChild(main);
+      row.appendChild(actions);
+      habitListEl.appendChild(row);
+    });
+
+    totalCountEl.textContent = total;
+    doneCountEl.textContent = done;
+    progressFillEl.style.width = total === 0 ? '0%' : Math.round((done / total) * 100) + '%';
+    streakNumEl.textContent = currentHabit ? getCurrentStreak(currentHabit.id) : 0;
+
+    var allDone = total > 0 && done === total;
+    successBannerEl.hidden = !allDone;
+    if (allDone) {
+      successTextEl.textContent = '共 ' + total + ' 个习惯 · 今日获得 ' + todayEarnedPoints() + ' 积分';
+    }
+  }
+
+  function renderSuggestions() {
+    suggestionChipsEl.innerHTML = '';
+    SUGGESTIONS.forEach(function (item) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.textContent = item.icon + ' ' + item.name;
+      chip.addEventListener('click', function () {
+        addHabit(item.name, item.icon);
+      });
+      suggestionChipsEl.appendChild(chip);
+    });
+  }
+
+  function renderAll() {
+    renderHeader();
+    renderCalendar();
+    renderToday();
+  }
+
+  /* ---------- 习惯增删改 ---------- */
+  function stopEvent(event) {
+    if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+  }
+
+  function selectHabit(habitId) {
+    selectedHabitId = habitId;
+    renderAll();
+  }
+
+  function addHabit(name, icon) {
+    var habit = {
+      id: HabitStore.makeId('h'),
+      name: name,
+      icon: icon || newHabitIcon,
+      createdAt: todayKeyStr
+    };
+    habits.push(habit);
+    HabitStore.save(habits);
+    selectedHabitId = habit.id;
+    renderAll();
+    toast('已添加习惯：' + habit.name + '（今天拍照即可打卡）');
+  }
+
+  function renameHabit(habit) {
+    openPrompt({
+      title: '重命名习惯',
+      withInput: true,
+      value: habit.name,
+      onOk: function (value) {
+        var name = String(value).trim();
+        if (name === '') {
+          toast('习惯名称不能为空');
+          return false;
+        }
+        habit.name = name;
+        HabitStore.save(habits);
+        renderAll();
+        toast('已重命名为：' + name);
+      }
+    });
+  }
+
+  function removeHabit(habit) {
+    openPrompt({
+      title: '删除习惯',
+      message: '删除「' + habit.name + '」后，它的打卡记录与照片也会一起清除，且无法恢复。',
+      okText: '删除',
+      danger: true,
+      onOk: function () {
+        var keysToRemove = [];
+        getCheckedDates(habit.id).forEach(function (dateKey) {
+          keysToRemove.push(photoKey(dateKey, habit.id));
+        });
+
+        habits = habits.filter(function (item) { return item.id !== habit.id; });
+        delete checkins[habit.id];
+        delete points.bonus[habit.id];
         HabitStore.save(habits);
         HabitStore.saveCheckins(checkins);
+        HabitStore.savePoints(points);
 
-        renderHabitList();
-        renderCalendar();
-        renderDayDetail();
-      }
-
-      /* ---------- 照片预览 ---------- */
-      function openPhoto(src) {
-        overlayImgEl.src = src;
-        overlayEl.hidden = false;
-      }
-
-      function closePhoto() {
-        overlayEl.hidden = true;
-        overlayImgEl.src = '';
-      }
-
-      /* ---------- 事件绑定 ---------- */
-      submitBtn.addEventListener('click', function () {
-        var name = inputEl.value.trim();
-
-        if (name === '') {
-          alert('请先输入习惯名称');
-          return;
-        }
-
-        var today = new Date();
-        var habit = {
-          id: createHabitId(),
-          name: name,
-          createdAt: today.toISOString(),
-          createdDate: localKey(today)
-        };
-
-        habits.push(habit);
-        if (!HabitStore.save(habits)) {
-          habits.pop();
-          alert('本地存储空间不足，习惯没有保存成功。请先清理浏览器数据后再试。');
-          return;
-        }
-
-        inputEl.value = '';
-        renderHabitList();
-        renderCalendar();
-        renderDayDetail();
-      });
-
-      photoInput.addEventListener('change', function () {
-        var file = photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
-        var habitId = pendingHabitId;
-        pendingHabitId = null;
-
-        if (!file || !habitId) {
-          return;
-        }
-        if (!/^image\//.test(file.type)) {
-          alert('请选择图片文件（可用相机拍照或从相册选择）。');
-          return;
-        }
-
-        compressImage(file, function (dataUrl) {
-          if (!dataUrl) {
-            alert('照片读取失败，请重新拍照或换一张图片。');
-            return;
-          }
-          saveTodayCheckin(habitId, dataUrl);
+        keysToRemove.forEach(function (key) {
+          HabitStore.photoDelete(key);
         });
-      });
 
-      prevBtn.addEventListener('click', function () {
-        changeMonth(-1);
-      });
-
-      nextBtn.addEventListener('click', function () {
-        changeMonth(1);
-      });
-
-      resetBtn.addEventListener('click', function () {
-        var current = new Date();
-        viewYear = current.getFullYear();
-        viewMonth = current.getMonth();
-        selectedKey = todayKey();
-        renderCalendar();
-        renderDayDetail();
-      });
-
-      overlayEl.addEventListener('click', closePhoto);
-      overlayCloseBtn.addEventListener('click', closePhoto);
-
-      function changeMonth(step) {
-        var target = new Date(viewYear, viewMonth + step, 1);
-        viewYear = target.getFullYear();
-        viewMonth = target.getMonth();
-        selectedKey = null;
-        renderCalendar();
-        renderDayDetail();
+        if (selectedHabitId === habit.id) {
+          selectedHabitId = habits.length > 0 ? habits[0].id : null;
+        }
+        renderAll();
+        toast('已删除习惯：' + habit.name);
       }
+    });
+  }
 
-      /* ---------- 首次渲染 ---------- */
-      selectedKey = todayKey();
-      renderHabitList();
-      renderCalendar();
-      renderDayDetail();
-    })();
-  </script>
+  addFormEl.addEventListener('submit', function (event) {
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    var name = newHabitNameEl.value.trim();
+    if (name === '') {
+      toast('请先输入习惯名称');
+      return;
+    }
+    addHabit(name, newHabitIcon);
+    newHabitNameEl.value = '';
+  });
+
+  prevBtn.addEventListener('click', function () {
+    viewMonth--;
+    if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+    renderCalendar();
+  });
+
+  nextBtn.addEventListener('click', function () {
+    viewMonth++;
+    if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+    renderCalendar();
+  });
+
+  /* 商城页改了数据（例如恢复备份）后，回到本页自动刷新 */
+  window.addEventListener('storage', function () {
+    habits = HabitStore.load();
+    checkins = HabitStore.loadCheckins();
+    points = HabitStore.loadPoints();
+    if (!findHabit(selectedHabitId)) {
+      selectedHabitId = habits.length > 0 ? habits[0].id : null;
+    }
+    renderAll();
+  });
+
+  renderSuggestions();
+  renderAll();
+})();
+</script>
 </body>
 </html>
