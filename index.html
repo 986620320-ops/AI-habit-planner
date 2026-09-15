@@ -125,6 +125,30 @@ body{
 .legend-swatch.today{background:#fff;box-shadow:0 0 0 2px var(--blue-dark)}
 .legend-swatch.off{background:#eef1f6}
 
+/* ---------- AI 习惯规划 ---------- */
+.ai-card{background:linear-gradient(160deg,#f5f3ff 0%,#fdf2f8 100%);border-color:#e9d5ff}
+.card-head h2 .ai-emoji{margin-right:6px}
+.ai-mode{
+  flex:none;font-size:11px;font-weight:800;color:#7c3aed;background:#f3e8ff;
+  border-radius:99px;padding:3px 9px;
+}
+.ai-mode.real{color:#b45309;background:#fef3c7}
+.ai-btn{
+  width:100%;border-radius:14px;padding:14px;font-size:15px;font-weight:800;color:#fff;
+  background:linear-gradient(135deg,#6366f1,#a855f7);box-shadow:0 8px 18px rgba(139,92,246,.28);
+}
+.ai-btn:hover{filter:brightness(1.05)}
+.ai-btn:disabled{background:#e2e8f0;color:#94a3b8;box-shadow:none;cursor:not-allowed}
+.ai-note{margin-top:9px;font-size:11px;line-height:1.55;color:#7c6bb5}
+.ai-result{margin-top:12px}
+.ai-plan{
+  white-space:pre-wrap;word-break:break-word;font-family:inherit;
+  font-size:13px;line-height:1.75;color:var(--text);background:#fff;
+  border:1px solid #ede9fe;border-radius:14px;padding:14px;max-height:46vh;overflow:auto;
+}
+.ai-actions{display:flex;gap:8px;margin-top:10px}
+.ai-actions .btn{flex:1;border-radius:12px;padding:11px;font-weight:800;font-size:13px}
+
 /* ---------- 今日打卡 ---------- */
 .today-card{background:linear-gradient(170deg,#ffffff 0%,#fff6f0 100%);border-color:#ffebdd;padding:14px 15px 16px}
 .today-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -349,6 +373,22 @@ body{
       <span class="legend-item"><i class="legend-swatch pending"></i>进行中</span>
       <span class="legend-item"><i class="legend-swatch today"></i>今天</span>
       <span class="legend-item"><i class="legend-swatch off"></i>无记录 / 未来</span>
+    </div>
+  </section>
+
+  <!-- AI 习惯规划（双模式：Mock / 真实接口） -->
+  <section class="card ai-card" aria-label="AI 习惯规划">
+    <div class="card-head">
+      <h2><span class="ai-emoji">✨</span>AI 个性化习惯规划</h2>
+      <span class="ai-mode" id="aiModeTag">Mock 演示模式</span>
+    </div>
+    <button class="ai-btn" id="aiPlanBtn" type="button">✨ AI生成个性化习惯规划</button>
+    <p class="ai-note" id="aiNote"></p>
+    <div class="ai-result" id="aiResult" hidden>
+      <pre class="ai-plan" id="aiPlanText"></pre>
+      <div class="ai-actions" id="aiImportRow" hidden>
+        <button class="btn primary" id="aiImportBtn" type="button">一键导入这些习惯</button>
+      </div>
     </div>
   </section>
 
@@ -834,6 +874,48 @@ body{
   var CHECKIN_POINTS = 10;   // 打卡得分 / 取消打卡扣分
   var STREAK_STEP = 7;       // 连续多少天结算一次额外奖励
   var STREAK_BONUS = 5;      // 每次结算的额外积分
+
+  /*
+   * ===== AI 规划总开关 =====
+   * IS_REAL_AI = false（默认，线上）：Mock 模式，点击按钮直接输出预设规划文本，
+   *                                  不调用任何接口、不产生任何费用。
+   * IS_REAL_AI = true（仅本地录演示视频时打开）：调用 Netlify 服务端函数，
+   *                                  由服务端用环境变量里的密钥请求 DeepSeek-Flash。
+   * 前端 HTML 里永远不包含 API 密钥。
+   */
+  var IS_REAL_AI = false;
+  var AI_ENDPOINT = '/.netlify/functions/api';   // 本地用 file:// 演示真实模式时，改成部署后的完整地址
+  var MOCK_PLAN_TEXT = [
+    '【AI 习惯规划 · 示例方案（Mock 模式，未调用接口）】',
+    '',
+    '一、作息主线',
+    '· 07:00 起床 + 喝一杯水，07:30 前完成晨读',
+    '· 12:30 午休 20 分钟，午休前不刷短视频',
+    '· 22:30 放下手机，23:00 前上床睡觉',
+    '',
+    '二、学习习惯（每天 3 项以内，别贪多）',
+    '1. 晨读 20 分钟：语文和英语隔天交替',
+    '2. 整理错题 15 分钟：只记当天做错的题，写出错因',
+    '3. 背 20 个单词：睡前用间隔复习过一遍',
+    '',
+    '三、运动与放松',
+    '· 每天跳绳或快走 20 分钟，学习间隙站起来拉伸',
+    '· 每周留半天完全不安排学习任务，用来放松',
+    '',
+    '四、打卡建议',
+    '· 每完成一项就拍一张照片当凭证（书桌、单词本、运动记录都算）',
+    '· 连续打卡满 7 天给自己一个小奖励，坚持 21 天再升级奖励',
+    '· 一次只新增 1-2 个习惯，稳定两周后再加新的',
+    '',
+    '（这是内置的示例文本，用于演示页面效果）'
+  ].join('\n');
+  var MOCK_PLAN_HABITS = [
+    { name: '晨读20分钟', icon: '📖' },
+    { name: '整理错题', icon: '✍️' },
+    { name: '背20个单词', icon: '📚' },
+    { name: '运动20分钟', icon: '🏃' },
+    { name: '23点前睡觉', icon: '🌙' }
+  ];
   var HABIT_COLORS = ['#4f7cff', '#a855f7', '#f97316', '#10b981', '#0ea5e9', '#f43f5e', '#eab308', '#14b8a6'];
   var ICONS = ['💧', '🏃', '📚', '🌙', '🍎', '💪', '🧘', '🥗', '✍️', '🎵', '🦷', '☀️', '🧹', '🚶', '📵', '💰', '🎨', '☕', '🚴', '🎯'];
   var SUGGESTIONS = [
@@ -897,8 +979,17 @@ body{
   var viewerImgEl = document.getElementById('viewerImg');
   var viewerCaptionEl = document.getElementById('viewerCaption');
   var viewerCloseBtn = document.getElementById('viewerClose');
+  var aiModeTagEl = document.getElementById('aiModeTag');
+  var aiPlanBtn = document.getElementById('aiPlanBtn');
+  var aiNoteEl = document.getElementById('aiNote');
+  var aiResultEl = document.getElementById('aiResult');
+  var aiPlanTextEl = document.getElementById('aiPlanText');
+  var aiImportRowEl = document.getElementById('aiImportRow');
+  var aiImportBtn = document.getElementById('aiImportBtn');
 
   var promptAction = null;
+  var aiSuggested = [];
+  var aiBusy = false;
 
   function pad(number) {
     return number < 10 ? '0' + number : String(number);
@@ -1694,6 +1785,127 @@ body{
     if (viewMonth > 11) { viewMonth = 0; viewYear++; }
     renderCalendar();
   });
+
+  /* ---------- AI 习惯规划（Mock / 真实接口） ---------- */
+  function aiHabitsSnapshot() {
+    return habits.map(function (habit) {
+      return {
+        name: habit.name,
+        icon: habit.icon || '',
+        streak: getCurrentStreak(habit.id),
+        totalDays: getCheckedDates(habit.id).length
+      };
+    });
+  }
+
+  function setAiBusy(busy) {
+    aiBusy = busy;
+    aiPlanBtn.disabled = busy;
+    aiPlanBtn.textContent = busy ? '⏳ 正在生成规划…' : '✨ AI生成个性化习惯规划';
+  }
+
+  function showAiPlan(planText, suggested, sourceLabel) {
+    aiPlanTextEl.textContent = planText || '';
+    aiResultEl.hidden = false;
+    aiSuggested = Array.isArray(suggested) ? suggested : [];
+    aiImportRowEl.hidden = aiSuggested.length === 0;
+    aiNoteEl.textContent = sourceLabel || '';
+  }
+
+  function requestAiPlan() {
+    if (typeof fetch !== 'function') {
+      setAiBusy(false);
+      toast('当前浏览器不支持 fetch，无法调用服务端接口');
+      return;
+    }
+
+    fetch(AI_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        today: todayKeyStr,
+        totalPoints: points.total,
+        habits: aiHabitsSnapshot()
+      })
+    })
+      .then(function (response) {
+        return response.json().then(function (data) {
+          return { ok: response.ok, data: data };
+        });
+      })
+      .then(function (result) {
+        if (!result.ok || !result.data || result.data.ok === false) {
+          throw new Error((result.data && result.data.error) || '服务端返回异常');
+        }
+        showAiPlan(
+          result.data.plan || '（服务端没有返回规划文本）',
+          result.data.habits,
+          '真实接口模式：由 Netlify 函数调用 ' + (result.data.model || 'DeepSeek-Flash') + ' 生成。'
+        );
+        toast('AI 规划已生成');
+      })
+      .catch(function (error) {
+        toast('AI 生成失败：' + (error && error.message ? error.message : '未知错误'));
+      })
+      .then(function () {
+        setAiBusy(false);
+      });
+  }
+
+  function importAiHabits() {
+    if (aiSuggested.length === 0) return;
+
+    var added = 0;
+    aiSuggested.forEach(function (item) {
+      var name = String(item && item.name ? item.name : '').trim();
+      if (name === '') return;
+      if (habits.some(function (habit) { return habit.name === name; })) return;
+
+      habits.push({
+        id: HabitStore.makeId('h'),
+        name: name,
+        icon: (item && item.icon) ? item.icon : '✨',
+        createdAt: todayKeyStr
+      });
+      added++;
+    });
+
+    if (added === 0) {
+      toast('这些习惯都已经在列表里了');
+      return;
+    }
+
+    HabitStore.save(habits);
+    if (!findHabit(selectedHabitId)) selectedHabitId = habits[0].id;
+    renderAll();
+    toast('已导入 ' + added + ' 个习惯，今天拍照即可打卡');
+  }
+
+  aiPlanBtn.addEventListener('click', function () {
+    if (aiBusy) return;
+
+    if (!IS_REAL_AI) {
+      // Mock 模式：直接输出预设文本，不联网、不产生费用
+      showAiPlan(
+        MOCK_PLAN_TEXT,
+        MOCK_PLAN_HABITS,
+        'Mock 模式：以上是内置示例规划，没有调用 AI 接口，也不会产生费用。'
+      );
+      toast('已生成规划（Mock 模式，未调用接口）');
+      return;
+    }
+
+    setAiBusy(true);
+    requestAiPlan();
+  });
+
+  aiImportBtn.addEventListener('click', importAiHabits);
+
+  aiModeTagEl.textContent = IS_REAL_AI ? '真实接口模式' : 'Mock 演示模式';
+  aiModeTagEl.className = 'ai-mode' + (IS_REAL_AI ? ' real' : '');
+  aiNoteEl.textContent = IS_REAL_AI
+    ? '真实接口模式：点击后由 Netlify 服务端函数调用 DeepSeek-Flash，密钥只保存在 Netlify 环境变量里。'
+    : '线上默认 Mock 模式：点击后直接输出预设规划文本，不调用接口、不产生费用。';
 
   /* 商城页改了数据（例如恢复备份）后，回到本页自动刷新 */
   window.addEventListener('storage', function () {
