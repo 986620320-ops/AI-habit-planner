@@ -1,20 +1,36 @@
 'use strict';
 
 /**
- * Netlify 服务端函数：DeepSeek-Flash 规划接口
+ * Netlify 服务端函数：AI 规划 + 打卡口令 + 口令识别校验
  *
- * 前端只把「用户已录入的习惯」发到这里，密钥保存在 Netlify 后台环境变量里，
+ * 前端只发「习惯列表 / 口令 / 照片」，所有密钥都保存在 Netlify 后台环境变量里，
  * 永远不会出现在任何前端 HTML / JS 中。
  *
+ * 三个动作（请求体里的 action 字段）：
+ *   action = 'plan'   （默认）：结合用户已录入的习惯生成个性化规划
+ *   action = 'codes'          ：按「设备习惯 id + 日期」下发每日口令（HMAC 派生，客户端无法提前推算）
+ *   action = 'verify'         ：把照片交给视觉模型只做 OCR，读到的字符和口令比对，返回是否通过
+ *
  * 需要在 Netlify 后台 Site settings → Environment variables 配置：
- *   DEEPSEEK_API_KEY   必填：DeepSeek 控制台申请的 API Key
- *   DEEPSEEK_MODEL    选填：默认 deepseek-chat；若账号提供 flash 系列模型，填对应名字
- *   DEEPSEEK_BASE_URL 选填：默认 https://api.deepseek.com（可换成兼容 OpenAI 协议的代理地址）
+ *   DEEPSEEK_API_KEY   规划动作用，必填：DeepSeek 控制台申请的 API Key
+ *   DEEPSEEK_MODEL     选填：默认 deepseek-chat；若账号提供 flash 系列模型，填对应名字
+ *   DEEPSEEK_BASE_URL  选填：默认 https://api.deepseek.com（可换成兼容 OpenAI 协议的代理地址）
+ *
+ *   CODES_SECRET       口令密钥，选填；不填则用 DEEPSEEK_API_KEY 派生。换掉它等于作废所有历史口令
+ *   VISION_API_KEY     视觉识别密钥，做 verify 时必填（任何兼容 OpenAI 协议的服务都可以）
+ *   VISION_MODEL       视觉模型名，做 verify 时必填，例如你的服务商提供的图片理解模型
+ *   VISION_BASE_URL    选填：默认 https://api.openai.com/v1
+ *
+ * 注意：DeepSeek 目前开放的 API 是文本模型（deepseek-chat / deepseek-reasoner），没有图片输入，
+ * 所以 verify 这一路必须配一个能"看图"的模型；只配 DEEPSEEK_API_KEY 时 verify 会返回
+ * "服务端未配置视觉模型"，前端会退化为端侧 OCR 的结果。
  *
  * 可选：在项目根目录加 netlify.toml 把同步函数超时放宽，避免生成较长规划时超时：
  *   [functions]
  *     timeout = 26
  */
+
+const crypto = require('crypto');
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com';
 const DEFAULT_MODEL = 'deepseek-chat';
@@ -22,6 +38,13 @@ const MAX_HABITS = 20;
 const MAX_NAME_LENGTH = 30;
 const MAX_SUGGESTED = 6;
 const REQUEST_TIMEOUT_MS = 25000;
+const MAX_IMAGE_CHARS = 8000000;
+
+/* 口令字符集：去掉容易认错的 0 O 1 I L，共 31 个字符 */
+const CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+const CODE_LENGTH = 5;
+/* 手写体常见误认：比对前两边都归一化到同一个类 */
+const CONFUSABLE = { O: '0', Q: '0', D: '0', I: '1', L: '1', J: '1', S: '5', Z: '2', B: '8', G: '6' };
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -132,6 +155,222 @@ function parseModelContent(content) {
   return { plan: text, habits: [] };
 }
 
+/* ==================== 口令下发（防提前推算） ==================== */
+
+function codeSecret() {
+  const raw = process.env.CODES_SECRET || process.env.DEEPSEEK_API_KEY || '';
+  if (!raw) return null;
+  return crypto.createHash('sha256').update('habit-code:' + raw).digest();
+}
+
+/* 东八区日期，并沿用"凌晨 4 点换日"的规则 */
+function serverDateKey() {
+  const shifted = new Date(Date.now() + 8 * 3600 * 1000 - 4 * 3600 * 1000);
+  return shifted.toISOString().slice(0, 10);
+}
+
+function codeFor(habitId, dateKey) {
+  const secret = codeSecret();
+  if (!secret) return '';
+  const digest = crypto.createHmac('sha256', secret).update(habitId + '|' + dateKey).digest();
+  let code = '';
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    code += CODE_ALPHABET.charAt(digest[i] % CODE_ALPHABET.length);
+  }
+  return code;
+}
+
+function handleCodes(payload) {
+  const secret = codeSecret();
+  if (!secret) {
+    return jsonResponse(501, {
+      ok: false,
+      error: '服务端未配置 CODES_SECRET（或 DEEPSEEK_API_KEY），无法下发口令，前端会退化为本机口令'
+    });
+  }
+
+  const requested = Array.isArray(payload && payload.habitIds) ? payload.habitIds : [];
+  const dateKey = serverDateKey();
+  const codes = {};
+
+  requested.slice(0, MAX_HABITS).forEach(function (rawId) {
+    const habitId = toSafeText(rawId, 64);
+    if (habitId) codes[habitId] = codeFor(habitId, dateKey);
+  });
+
+  return jsonResponse(200, {
+    ok: true,
+    date: dateKey,
+    codes: codes,
+    source: 'server',
+    note: '口令每天 04:00（东八区）更换，由服务端密钥派生，客户端无法提前推算'
+  });
+}
+
+/* ==================== 视觉智能体：只做 OCR 提取 ==================== */
+
+function visionConfig() {
+  const apiKey = process.env.VISION_API_KEY || process.env.OPENAI_API_KEY || '';
+  const baseUrl = (process.env.VISION_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
+  const model = process.env.VISION_MODEL || '';
+  if (!apiKey || !model) return null;
+  return { apiKey: apiKey, baseUrl: baseUrl, model: model };
+}
+
+function canonText(text) {
+  const upper = String(text || '').toUpperCase();
+  let out = '';
+  for (let i = 0; i < upper.length; i++) {
+    out += CONFUSABLE[upper.charAt(i)] || upper.charAt(i);
+  }
+  return out.replace(/[^0-9A-Z]/g, '');
+}
+
+/* 口令命中即通过；允许 1 个字符的手写误差 */
+function codeMatches(seenText, expectedCode) {
+  const haystack = canonText(seenText);
+  const needle = canonText(expectedCode);
+  if (needle === '') return false;
+  if (haystack.indexOf(needle) !== -1) return true;
+
+  for (let i = 0; i + needle.length <= haystack.length; i++) {
+    let diff = 0;
+    for (let j = 0; j < needle.length; j++) {
+      if (haystack.charAt(i + j) !== needle.charAt(j)) diff++;
+    }
+    if (diff <= 1) return true;
+  }
+  return false;
+}
+
+function parseSeenCodes(content) {
+  const text = String(content || '').trim();
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+
+  if (start !== -1 && end > start) {
+    try {
+      const data = JSON.parse(text.slice(start, end + 1));
+      if (Array.isArray(data.codes)) {
+        return {
+          text: data.codes.map(function (item) { return String(item); }).join(' '),
+          legible: data.legible !== false
+        };
+      }
+    } catch (error) {
+      // 落到下面的纯文本兜底
+    }
+  }
+  return { text: text, legible: text !== '' };
+}
+
+async function callVisionOcr(vision, dataUrl) {
+  const instruction = [
+    '你只做一件事：把图片里出现的所有大写英文字母和数字，按画面中的顺序原样读出来。',
+    '拍摄对象通常是手写在纸片、便利贴、本子角落上的短口令，也可能显示在另一台设备的屏幕上。',
+    '不要判断照片内容是否与某个习惯相关，不要评价照片质量或构图，不要补充解释。',
+    '不要猜测或纠正字符，看到什么就写什么；完全看不清就返回空数组。',
+    '只输出 JSON：{"codes":["读到的一串字符"],"legible":true,"reason":"简短说明"}'
+  ].join('\n');
+
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = controller ? setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT_MS) : null;
+
+  try {
+    const response = await fetch(vision.baseUrl + '/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + vision.apiKey
+      },
+      body: JSON.stringify({
+        model: vision.model,
+        messages: [
+          { role: 'system', content: '你是严谨的 OCR 引擎，只负责读出字符，不做任何主观判断。' },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: instruction },
+              { type: 'image_url', image_url: { url: dataUrl } }
+            ]
+          }
+        ],
+        temperature: 0,
+        max_tokens: 300
+      }),
+      signal: controller ? controller.signal : undefined
+    });
+
+    const raw = await response.text();
+    if (!response.ok) {
+      return { ok: false, error: '视觉模型返回 ' + response.status + '：' + String(raw).slice(0, 200) };
+    }
+
+    let data = null;
+    try {
+      data = JSON.parse(raw);
+    } catch (error) {
+      return { ok: false, error: '视觉模型返回内容无法解析' };
+    }
+
+    const content = data && data.choices && data.choices[0] && data.choices[0].message
+      ? data.choices[0].message.content
+      : '';
+    const parsed = parseSeenCodes(content);
+    return { ok: true, text: parsed.text, legible: parsed.legible };
+  } catch (error) {
+    const aborted = error && error.name === 'AbortError';
+    return {
+      ok: false,
+      error: aborted
+        ? '视觉模型响应超时'
+        : '调用视觉模型失败：' + (error && error.message ? error.message : '未知错误')
+    };
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function handleVerify(payload) {
+  const expectedCode = toSafeText(payload && payload.expectedCode, 12).toUpperCase().replace(/[^0-9A-Z]/g, '');
+  if (expectedCode === '') {
+    return jsonResponse(400, { ok: false, error: '缺少该习惯今天的口令' });
+  }
+
+  const image = payload && typeof payload.image === 'string' ? payload.image : '';
+  if (image.indexOf('data:image/') !== 0) {
+    return jsonResponse(400, { ok: false, error: '缺少图片数据（需要 dataURL）' });
+  }
+  if (image.length > MAX_IMAGE_CHARS) {
+    return jsonResponse(413, { ok: false, error: '图片过大，请压缩后再上传' });
+  }
+
+  const vision = visionConfig();
+  if (!vision) {
+    return jsonResponse(501, {
+      ok: false,
+      needVision: true,
+      error: '服务端未配置视觉模型（需要 VISION_API_KEY 与 VISION_MODEL），无法做二次识别'
+    });
+  }
+
+  const extraction = await callVisionOcr(vision, image);
+  if (!extraction.ok) {
+    return jsonResponse(502, { ok: false, error: extraction.error });
+  }
+
+  const matched = codeMatches(extraction.text, expectedCode);
+  return jsonResponse(200, {
+    ok: true,
+    passed: matched,
+    seen: extraction.text.slice(0, 60),
+    legible: extraction.legible !== false,
+    reason: matched ? '照片里读到了今日口令' : '照片里没有读到今日口令',
+    engine: 'agent',
+    model: vision.model
+  });
+}
+
 exports.handler = async function (event) {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: CORS_HEADERS, body: '' };
@@ -145,19 +384,24 @@ exports.handler = async function (event) {
     return jsonResponse(405, { ok: false, error: '只支持 POST 请求' });
   }
 
+  var payload = null;
+  try {
+    payload = JSON.parse(event.body || '{}');
+  } catch (error) {
+    return jsonResponse(400, { ok: false, error: '请求体不是合法的 JSON' });
+  }
+
+  /* 一个接口三个动作：codes 口令下发 / verify 口令识别校验 / plan 习惯规划 */
+  var action = typeof payload.action === 'string' && payload.action !== '' ? payload.action : 'plan';
+  if (action === 'codes') return handleCodes(payload);
+  if (action === 'verify') return handleVerify(payload);
+
   var apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) {
     return jsonResponse(500, {
       ok: false,
       error: '服务端未配置 DEEPSEEK_API_KEY，请在 Netlify 环境变量里添加后再试'
     });
-  }
-
-  var payload = null;
-  try {
-    payload = JSON.parse(event.body || '{}');
-  } catch (error) {
-    return jsonResponse(400, { ok: false, error: '请求体不是合法的 JSON' });
   }
 
   var habits = normalizeHabits(payload && payload.habits);
