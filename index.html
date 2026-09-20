@@ -193,7 +193,37 @@ body{
 
 /* ---------- 今日打卡 ---------- */
 .today-card{background:linear-gradient(170deg,#ffffff 0%,#fff6f0 100%);border-color:#ffebdd;padding:14px 15px 16px}
-.today-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.today-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.cal-pill{
+  flex:none;display:inline-flex;align-items:center;gap:4px;
+  background:#fff;border:1px solid #ffd9bf;color:#c2410c;
+  font-size:11px;font-weight:800;padding:6px 10px;border-radius:99px;
+  box-shadow:0 2px 6px rgba(194,65,12,.08);
+}
+.cal-pill:hover{background:#fff7ed}
+
+/* ---------- 添加到手机日历 ---------- */
+.cal-modal{max-width:400px}
+.cal-tip{font-size:12px;color:var(--muted);margin-bottom:12px}
+.cal-slot-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.cal-slot{
+  border:1px solid #dbe1ea;background:#fff;color:#475569;border-radius:99px;
+  padding:7px 14px;font-size:13px;font-weight:700;
+}
+.cal-slot.active{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.cal-custom-row{display:flex;gap:8px;margin-bottom:12px}
+.cal-custom-row input{flex:1;min-width:0;margin:0}
+.cal-custom-row .btn{flex:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700}
+.cal-picked-label{font-size:12px;color:var(--muted);margin-bottom:6px}
+.cal-picked{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;min-height:30px}
+.cal-picked-chip{
+  background:#eff6ff;color:#1d4ed8;border-radius:99px;padding:6px 12px;
+  font-size:12px;font-weight:700;border:1px solid #dbeafe;
+}
+.cal-picked-empty{font-size:12px;color:#94a3b8}
+.cal-url-label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.cal-note{margin:10px 0 14px;font-size:11px;line-height:1.6;color:#9ca3af}
+.cal-note b{color:#1d4ed8}
 .today-title h2{font-size:17px;font-weight:800}
 .today-title h2::before{
   content:"";display:inline-block;width:9px;height:9px;border-radius:3px;
@@ -456,6 +486,7 @@ body{
         <h2>今日打卡</h2>
         <span class="today-date" id="todayDate"></span>
       </div>
+      <button class="cal-pill" id="calAddBtn" type="button">⏰ 添加到手机日历</button>
       <span class="streak-chip">🔥 连续 <b id="streakNum">0</b> 天</span>
     </div>
     <div class="today-progress">
@@ -522,6 +553,36 @@ body{
     <div class="icon-grid" id="iconGrid"></div>
     <div class="modal-btns">
       <button class="btn ghost" id="iconCancel" type="button">取消</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="calOverlay" hidden>
+  <div class="modal cal-modal" role="dialog" aria-modal="true" aria-label="添加到手机日历">
+    <h3>⏰ 添加到手机日历</h3>
+    <p class="cal-tip">选一个或多个提醒时间，生成的 .ics 会每天重复提醒，点开就是打卡页。</p>
+
+    <div class="cal-slot-row" id="calSlotRow"></div>
+
+    <div class="cal-custom-row">
+      <input type="time" id="calCustomTime" value="20:30" aria-label="自定义提醒时间">
+      <button class="btn ghost" id="calAddCustom" type="button">＋ 添加时间</button>
+    </div>
+
+    <p class="cal-picked-label">已选提醒时间（点一下可取消）：</p>
+    <div class="cal-picked" id="calPicked"></div>
+
+    <label class="cal-url-label" for="calUrl">打卡页链接（可留空，默认用当前页面地址）</label>
+    <input type="text" id="calUrl" placeholder="https://你的站点.netlify.app/">
+
+    <p class="cal-note" id="calNote">
+      下载后请<b>用系统浏览器打开</b>这个 .ics 文件（微信 / QQ 内置浏览器常常打不开），
+      再点「打开」导入到系统日历。
+    </p>
+
+    <div class="modal-btns">
+      <button class="btn ghost" id="calCancel" type="button">取消</button>
+      <button class="btn primary" id="calOk" type="button">生成并下载 .ics</button>
     </div>
   </div>
 </div>
@@ -1165,6 +1226,16 @@ body{
   var codeListEl = document.getElementById('codeList');
   var codeEmptyEl = document.getElementById('codeEmpty');
   var codeFootEl = document.getElementById('codeFoot');
+  var calAddBtn = document.getElementById('calAddBtn');
+  var calOverlay = document.getElementById('calOverlay');
+  var calSlotRowEl = document.getElementById('calSlotRow');
+  var calCustomTimeEl = document.getElementById('calCustomTime');
+  var calAddCustomBtn = document.getElementById('calAddCustom');
+  var calPickedEl = document.getElementById('calPicked');
+  var calUrlEl = document.getElementById('calUrl');
+  var calNoteEl = document.getElementById('calNote');
+  var calCancelBtn = document.getElementById('calCancel');
+  var calOkBtn = document.getElementById('calOk');
 
   var promptAction = null;
   var aiSuggested = [];
@@ -1173,6 +1244,7 @@ body{
   var codesRequested = false;
   var ocrState = 'idle';           // idle | loading | ready | failed
   var ocrWaiters = [];
+  var calTimes = ['21:30'];        // 默认选中的提醒时间
 
   function pad(number) {
     return number < 10 ? '0' + number : String(number);
@@ -2523,6 +2595,220 @@ body{
   aiNoteEl.textContent = IS_REAL_AI
     ? '真实接口模式：点击后由 Netlify 服务端函数调用 DeepSeek-Flash，密钥只保存在 Netlify 环境变量里。'
     : '线上默认 Mock 模式：点击后直接输出预设规划文本，不调用接口、不产生费用。';
+
+  /* ---------- 添加到手机日历（生成 .ics） ---------- */
+  var CAL_PRESETS = ['20:30', '21:30', '22:00'];
+
+  function currentPageUrl() {
+    try {
+      if (typeof location !== 'undefined' && location.href && location.href.indexOf('file:') !== 0) {
+        return location.href;
+      }
+    } catch (error) {
+      // 拿不到地址就返回空，交给用户手填
+    }
+    return '';
+  }
+
+  /* UTC 时间戳（DTSTAMP 要求） */
+  function icsStamp(date) {
+    return date.getUTCFullYear() + pad(date.getUTCMonth() + 1) + pad(date.getUTCDate())
+      + 'T' + pad(date.getUTCHours()) + pad(date.getUTCMinutes()) + pad(date.getUTCSeconds()) + 'Z';
+  }
+
+  /* iCalendar 文本转义：反斜杠、逗号、分号、换行 */
+  function icsEscape(text) {
+    return String(text || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/;/g, '\\;')
+      .replace(/,/g, '\\,')
+      .replace(/\r?\n/g, '\\n');
+  }
+
+  function utf8Length(text) {
+    var length = 0;
+    for (var i = 0; i < text.length; i++) {
+      var code = text.charCodeAt(i);
+      if (code < 0x80) length += 1;
+      else if (code < 0x800) length += 2;
+      else if (code >= 0xD800 && code <= 0xDBFF) { length += 4; i++; }
+      else length += 3;
+    }
+    return length;
+  }
+
+  /* RFC 5545 折行：每行不超过 75 字节，续行以空格开头 */
+  function foldIcsLine(line) {
+    var out = [];
+    var current = '';
+    var bytes = 0;
+
+    for (var i = 0; i < line.length; i++) {
+      var ch = line.charAt(i);
+      var size = utf8Length(ch);
+      if (bytes + size > 73) {
+        out.push(current);
+        current = ' ' + ch;
+        bytes = 1 + size;
+      } else {
+        current += ch;
+        bytes += size;
+      }
+    }
+    out.push(current);
+    return out.join('\r\n');
+  }
+
+  function buildIcs(times, url) {
+    var now = new Date();
+    var stamp = icsStamp(now);
+    var datePart = today.getFullYear() + pad(today.getMonth() + 1) + pad(today.getDate());
+
+    var lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//AI Habit Check-in//CN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'X-WR-CALNAME:习惯打卡提醒',
+      'BEGIN:VTIMEZONE',
+      'TZID:Asia/Shanghai',
+      'BEGIN:STANDARD',
+      'DTSTART:19700101T000000',
+      'TZOFFSETFROM:+0800',
+      'TZOFFSETTO:+0800',
+      'TZNAME:CST',
+      'END:STANDARD',
+      'END:VTIMEZONE'
+    ];
+
+    times.forEach(function (time, index) {
+      var parts = time.split(':');
+      var endMinutes = Number(parts[0]) * 60 + Number(parts[1]) + 15;
+      var endTime = pad(Math.floor(endMinutes / 60) % 24) + pad(endMinutes % 60);
+
+      lines.push('BEGIN:VEVENT');
+      lines.push('UID:habit-checkin-' + index + '-' + now.getTime() + '@ai-habit-checkin');
+      lines.push('DTSTAMP:' + stamp);
+      lines.push('DTSTART;TZID=Asia/Shanghai:' + datePart + 'T' + parts[0] + parts[1] + '00');
+      lines.push('DTEND;TZID=Asia/Shanghai:' + datePart + 'T' + endTime + '00');
+      lines.push('RRULE:FREQ=DAILY');
+      lines.push('SUMMARY:' + icsEscape('习惯打卡 · 拍照 + 今日口令'));
+      lines.push('DESCRIPTION:' + icsEscape(
+        '到点打开打卡页，拍下今天的习惯，记得把页面上的「今日口令」写进照片里。\n打卡页：' + (url || '')
+      ));
+      if (url) lines.push('URL:' + url);
+      lines.push('BEGIN:VALARM');
+      lines.push('TRIGGER:PT0M');
+      lines.push('ACTION:DISPLAY');
+      lines.push('DESCRIPTION:' + icsEscape('该拍照打卡啦'));
+      lines.push('END:VALARM');
+      lines.push('END:VEVENT');
+    });
+
+    lines.push('END:VCALENDAR');
+    return lines.map(foldIcsLine).join('\r\n') + '\r\n';
+  }
+
+  function downloadIcs(times, url) {
+    var content = buildIcs(times, url);
+    try {
+      var blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+      var href = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = href;
+      link.download = '习惯打卡提醒.ics';
+      link.click();
+      (function (target) {
+        setTimeout(function () { URL.revokeObjectURL(target); }, 1000);
+      })(href);
+      toast('已生成 .ics，请用系统浏览器打开导入');
+    } catch (error) {
+      toast('当前浏览器不支持自动下载，请换系统浏览器再试');
+    }
+  }
+
+  function renderCalModal() {
+    calSlotRowEl.innerHTML = '';
+    CAL_PRESETS.forEach(function (time) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'cal-slot' + (calTimes.indexOf(time) !== -1 ? ' active' : '');
+      chip.textContent = time;
+      chip.addEventListener('click', function () {
+        var index = calTimes.indexOf(time);
+        if (index === -1) calTimes.push(time);
+        else calTimes.splice(index, 1);
+        renderCalModal();
+      });
+      calSlotRowEl.appendChild(chip);
+    });
+
+    calPickedEl.innerHTML = '';
+    if (calTimes.length === 0) {
+      var emptyEl = document.createElement('span');
+      emptyEl.className = 'cal-picked-empty';
+      emptyEl.textContent = '还没有选择提醒时间';
+      calPickedEl.appendChild(emptyEl);
+      return;
+    }
+
+    calTimes.slice().sort().forEach(function (time) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'cal-picked-chip';
+      chip.textContent = time + ' ✕';
+      chip.title = '点击移除 ' + time;
+      chip.addEventListener('click', function () {
+        calTimes = calTimes.filter(function (item) { return item !== time; });
+        renderCalModal();
+      });
+      calPickedEl.appendChild(chip);
+    });
+  }
+
+  function openCalModal() {
+    if (calUrlEl && !calUrlEl.value) calUrlEl.value = currentPageUrl();
+    calNoteEl.innerHTML = '下载后请<b>用系统浏览器打开</b>这个 .ics 文件（微信 / QQ 内置浏览器常常打不开），再点「打开」导入到系统日历。';
+
+    if (!currentPageUrl()) {
+      calNoteEl.innerHTML += '<br>当前页面是本地文件打开的，日历里的链接在手机上可能点不开；建议上面填部署后的网址。';
+    }
+
+    renderCalModal();
+    calOverlay.hidden = false;
+  }
+
+  function closeCalModal() {
+    calOverlay.hidden = true;
+  }
+
+  calAddBtn.addEventListener('click', openCalModal);
+  calCancelBtn.addEventListener('click', closeCalModal);
+
+  calAddCustomBtn.addEventListener('click', function () {
+    var value = calCustomTimeEl.value;
+    if (!/^\d{2}:\d{2}$/.test(String(value))) {
+      toast('请输入正确的时间');
+      return;
+    }
+    if (calTimes.indexOf(value) !== -1) {
+      toast('这个时间已经选过了');
+      return;
+    }
+    calTimes.push(value);
+    renderCalModal();
+  });
+
+  calOkBtn.addEventListener('click', function () {
+    if (calTimes.length === 0) {
+      toast('请先选择至少一个提醒时间');
+      return;
+    }
+    var url = (calUrlEl.value || '').trim() || currentPageUrl();
+    downloadIcs(calTimes.slice().sort(), url);
+    closeCalModal();
+  });
 
   /* 商城页改了数据（例如恢复备份）后，回到本页自动刷新 */
   window.addEventListener('storage', function () {
