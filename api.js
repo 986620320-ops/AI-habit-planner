@@ -6,34 +6,41 @@
  * 前端只发「习惯列表 / 口令 / 照片」，所有密钥都保存在 Netlify 后台环境变量里，
  * 永远不会出现在任何前端 HTML / JS 中。
  *
- * 三个动作（请求体里的 action 字段）：
+ * 四个动作（GET 或请求体里的 action 字段）：
+ *   GET / health             ：返回真实 AI / 视觉 / 口令是否可用，以及当前 IP 的剩余额度
  *   action = 'plan'   （默认）：结合用户已录入的习惯生成个性化规划
  *   action = 'codes'          ：按「设备习惯 id + 日期」下发每日口令（HMAC 派生，客户端无法提前推算）
  *   action = 'verify'         ：把照片交给视觉模型只做 OCR，读到的字符和口令比对，返回是否通过
  *
  * 需要在 Netlify 后台 Site settings → Environment variables 配置：
  *   DEEPSEEK_API_KEY   规划动作用，必填：DeepSeek 控制台申请的 API Key
- *   DEEPSEEK_MODEL     选填：默认 deepseek-chat；若账号提供 flash 系列模型，填对应名字
- *   DEEPSEEK_BASE_URL  选填：默认 https://api.deepseek.com（可换成兼容 OpenAI 协议的代理地址）
+ *   DEEPSEEK_MODEL     选填：默认 deepseek-flash
+ *   DEEPSEEK_BASE_URL  选填：默认 https://api.deepseek.com
  *
  *   CODES_SECRET       口令密钥，选填；不填则用 DEEPSEEK_API_KEY 派生。换掉它等于作废所有历史口令
- *   VISION_API_KEY     视觉识别密钥，做 verify 时必填（任何兼容 OpenAI 协议的服务都可以）
- *   VISION_MODEL       视觉模型名，做 verify 时必填，例如你的服务商提供的图片理解模型
- *   VISION_BASE_URL    选填：默认 https://api.openai.com/v1
+ *   VISION_API_KEY     选填：视觉识别密钥，不填时回退到 DEEPSEEK_API_KEY
+ *   VISION_MODEL       选填：默认 deepseek-flash
+ *   VISION_BASE_URL    选填：默认 https://api.deepseek.com
  *
- * 注意：DeepSeek 目前开放的 API 是文本模型（deepseek-chat / deepseek-reasoner），没有图片输入，
- * 所以 verify 这一路必须配一个能"看图"的模型；只配 DEEPSEEK_API_KEY 时 verify 会返回
- * "服务端未配置视觉模型"，前端会退化为端侧 OCR 的结果。
+ *   演示额度（按客户端 IP + 自然日计算）：
+ *   DEMO_PLAN_DAILY_LIMIT     选填：真实 AI 规划每日次数，默认 5，设为 0 可直接停用
+ *   DEMO_VISION_DAILY_LIMIT   选填：视觉校验每日次数，默认 3，设为 0 可直接停用
+ *   ALLOWED_ORIGINS           选填：逗号分隔的允许来源；不填时允许所有来源，便于本地演示
+ *
+ * 注意：额度计数保存在函数实例内存中，适合比赛演示和成本保护；正式生产请换成
+ * Netlify Blobs / Redis / 数据库等持久化计数。
  *
  * 可选：在项目根目录加 netlify.toml 把同步函数超时放宽，避免生成较长规划时超时：
- *   [functions]
+ *   [build]
+ *     functions = "netlify/functions"
+ *   [functions."api"]
  *     timeout = 26
  */
 
 const crypto = require('crypto');
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com';
-const DEFAULT_MODEL = 'deepseek-chat';
+const DEFAULT_MODEL = 'deepseek-flash';
 const MAX_HABITS = 20;
 const MAX_NAME_LENGTH = 30;
 const MAX_SUGGESTED = 6;
@@ -52,6 +59,12 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
+/* 演示额度：按「日期 + 动作 + 客户端 IP」计数，避免真实 AI 被无限调用。
+ * 这是进程内计数，Netlify 冷启动后会重置；正式项目应换成持久化存储。 */
+const QUOTA_BUCKETS = new Map();
+const DEFAULT_PLAN_DAILY_LIMIT = 5;
+const DEFAULT_VISION_DAILY_LIMIT = 3;
+
 const SYSTEM_PROMPT = [
   '你是一名擅长时间管理的中学生学习规划师，服务对象是课业紧张、作息不规律的中学生。',
   '你的任务是：结合用户已经录入的打卡习惯，给出一份切实可行的个性化作息与习惯规划。',
@@ -68,7 +81,10 @@ const SYSTEM_PROMPT = [
 function jsonResponse(statusCode, body) {
   return {
     statusCode,
-    headers: Object.assign({ 'Content-Type': 'application/json; charset=utf-8' }, CORS_HEADERS),
+    headers: Object.assign({
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store'
+    }, CORS_HEADERS),
     body: JSON.stringify(body)
   };
 }
@@ -80,6 +96,73 @@ function toSafeText(value, maxLength) {
 
 function toSafeNumber(value) {
   return typeof value === 'number' && isFinite(value) ? Math.max(0, Math.round(value)) : 0;
+}
+
+function envNonNegativeInt(name, fallback) {
+  const rawText = String(process.env[name] == null ? '' : process.env[name]).trim();
+  if (rawText === '') return fallback;
+  const raw = Number(rawText);
+  return Number.isFinite(raw) && raw >= 0 ? Math.floor(raw) : fallback;
+}
+
+function clientKeyFromEvent(event) {
+  const headers = event && event.headers ? event.headers : {};
+  const raw = headers['x-nf-client-connection-ip']
+    || headers['x-forwarded-for']
+    || headers['client-ip']
+    || 'unknown';
+  return String(raw).split(',')[0].trim() || 'unknown';
+}
+
+function pruneQuotaBuckets(dateKey) {
+  if (QUOTA_BUCKETS.size < 500) return;
+  QUOTA_BUCKETS.forEach(function (_value, key) {
+    if (key.indexOf(dateKey + '|') !== 0) QUOTA_BUCKETS.delete(key);
+  });
+}
+
+function quotaInfo(kind, event) {
+  const dateKey = serverDateKey();
+  pruneQuotaBuckets(dateKey);
+  const limit = envNonNegativeInt(
+    kind === 'vision' ? 'DEMO_VISION_DAILY_LIMIT' : 'DEMO_PLAN_DAILY_LIMIT',
+    kind === 'vision' ? DEFAULT_VISION_DAILY_LIMIT : DEFAULT_PLAN_DAILY_LIMIT
+  );
+  const key = dateKey + '|' + kind + '|' + clientKeyFromEvent(event);
+  const used = QUOTA_BUCKETS.get(key) || 0;
+  return { date: dateKey, limit: limit, used: used, remaining: Math.max(0, limit - used) };
+}
+
+function consumeQuota(kind, event) {
+  const info = quotaInfo(kind, event);
+  if (info.remaining <= 0) return Object.assign({ ok: false }, info);
+  const key = info.date + '|' + kind + '|' + clientKeyFromEvent(event);
+  QUOTA_BUCKETS.set(key, info.used + 1);
+  return Object.assign({ ok: true }, info, { used: info.used + 1, remaining: info.remaining - 1 });
+}
+
+function originAllowed(event) {
+  const allow = String(process.env.ALLOWED_ORIGINS || '').trim();
+  if (allow === '' || allow === '*') return true;
+  const headers = event && event.headers ? event.headers : {};
+  const origin = String(headers.origin || headers.Origin || '').trim();
+  if (origin === '') return true;
+  return allow.split(',').map(function (item) { return item.trim(); }).filter(Boolean).indexOf(origin) !== -1;
+}
+
+function handleHealth(event) {
+  const vision = visionConfig();
+  const planQuota = quotaInfo('plan', event);
+  const visionQuota = quotaInfo('vision', event);
+  return jsonResponse(200, {
+    ok: true,
+    message: 'AI 服务已就绪。',
+    realAI: !!process.env.DEEPSEEK_API_KEY,
+    codes: !!codeSecret(),
+    vision: !!vision,
+    quota: { plan: planQuota, vision: visionQuota },
+    date: planQuota.date
+  });
 }
 
 /* 只保留结构正确的习惯，避免把脏数据带进提示词 */
@@ -210,9 +293,9 @@ function handleCodes(payload) {
 /* ==================== 视觉智能体：只做 OCR 提取 ==================== */
 
 function visionConfig() {
-  const apiKey = process.env.VISION_API_KEY || process.env.OPENAI_API_KEY || '';
-  const baseUrl = (process.env.VISION_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
-  const model = process.env.VISION_MODEL || '';
+  const apiKey = process.env.VISION_API_KEY || process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || '';
+  const baseUrl = (process.env.VISION_BASE_URL || process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com').replace(/\/+$/, '');
+  const model = process.env.VISION_MODEL || 'deepseek-flash';
   if (!apiKey || !model) return null;
   return { apiKey: apiKey, baseUrl: baseUrl, model: model };
 }
@@ -331,10 +414,15 @@ async function callVisionOcr(vision, dataUrl) {
   }
 }
 
-async function handleVerify(payload) {
-  const expectedCode = toSafeText(payload && payload.expectedCode, 12).toUpperCase().replace(/[^0-9A-Z]/g, '');
+async function handleVerify(payload, event) {
+  const habitId = toSafeText(payload && payload.habitId, 64);
+  if (habitId === '') {
+    return jsonResponse(400, { ok: false, error: '缺少习惯 ID' });
+  }
+
+  const expectedCode = codeFor(habitId, serverDateKey());
   if (expectedCode === '') {
-    return jsonResponse(400, { ok: false, error: '缺少该习惯今天的口令' });
+    return jsonResponse(501, { ok: false, error: '服务端未配置口令密钥，无法校验' });
   }
 
   const image = payload && typeof payload.image === 'string' ? payload.image : '';
@@ -354,6 +442,15 @@ async function handleVerify(payload) {
     });
   }
 
+  const quota = consumeQuota('vision', event);
+  if (!quota.ok) {
+    return jsonResponse(429, {
+      ok: false,
+      error: '今日视觉校验额度已用完，请明天再试或切换到 Mock 演示模式',
+      quota: { vision: quota }
+    });
+  }
+
   const extraction = await callVisionOcr(vision, image);
   if (!extraction.ok) {
     return jsonResponse(502, { ok: false, error: extraction.error });
@@ -367,17 +464,22 @@ async function handleVerify(payload) {
     legible: extraction.legible !== false,
     reason: matched ? '照片里读到了今日口令' : '照片里没有读到今日口令',
     engine: 'agent',
-    model: vision.model
+    model: vision.model,
+    quota: { vision: quota }
   });
 }
 
 exports.handler = async function (event) {
+  if (!originAllowed(event)) {
+    return jsonResponse(403, { ok: false, error: '请求来源不在 ALLOWED_ORIGINS 允许列表中' });
+  }
+
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: CORS_HEADERS, body: '' };
   }
 
   if (event.httpMethod === 'GET') {
-    return jsonResponse(200, { ok: true, message: 'DeepSeek 规划接口已就绪，请用 POST 调用。' });
+    return handleHealth(event);
   }
 
   if (event.httpMethod !== 'POST') {
@@ -390,11 +492,13 @@ exports.handler = async function (event) {
   } catch (error) {
     return jsonResponse(400, { ok: false, error: '请求体不是合法的 JSON' });
   }
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) payload = {};
 
-  /* 一个接口三个动作：codes 口令下发 / verify 口令识别校验 / plan 习惯规划 */
+  /* 一个接口四个动作：health 配置检测 / codes 口令下发 / verify 口令识别校验 / plan 习惯规划 */
   var action = typeof payload.action === 'string' && payload.action !== '' ? payload.action : 'plan';
+  if (action === 'health') return handleHealth(event);
   if (action === 'codes') return handleCodes(payload);
-  if (action === 'verify') return handleVerify(payload);
+  if (action === 'verify') return handleVerify(payload, event);
 
   var apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) {
@@ -409,6 +513,16 @@ exports.handler = async function (event) {
     ? payload.today
     : new Date().toISOString().slice(0, 10);
   var totalPoints = toSafeNumber(payload && payload.totalPoints);
+
+  var planQuota = consumeQuota('plan', event);
+  if (!planQuota.ok) {
+    return jsonResponse(429, {
+      ok: false,
+      error: '今日真实 AI 规划额度已用完，请明天再试或继续使用 Mock 演示模式',
+      fallback: 'mock',
+      quota: { plan: planQuota }
+    });
+  }
 
   var model = process.env.DEEPSEEK_MODEL || DEFAULT_MODEL;
   var baseUrl = (process.env.DEEPSEEK_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, '');
@@ -468,6 +582,7 @@ exports.handler = async function (event) {
       habits: parsed.habits,
       model: model,
       usage: (data && data.usage) || null,
+      quota: { plan: planQuota },
       generatedAt: new Date().toISOString()
     });
   } catch (error) {
@@ -482,3 +597,4 @@ exports.handler = async function (event) {
     if (timer) clearTimeout(timer);
   }
 };
+
