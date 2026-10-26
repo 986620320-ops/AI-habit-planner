@@ -662,7 +662,7 @@ body{
       打卡方式：把上方<b>今日口令</b>写进画面再拍照（便利贴 / 本子角落 / 另一台设备显示都行），
       系统读出画面里的口令并比对成功，才记 <b>+10 积分</b>；删除照片即取消打卡，扣回本次 10 分。<br>
       校验走混合通道：先用端侧识别（免费、离线可用），没读清再交给服务端视觉智能体；
-      只支持<b>当天</b>打卡，不支持补卡和超前打卡。
+      只支持<b>当天</b>打卡，不支持补卡和超前打卡；最多支持 20 个习惯。
     </p>
   </section>
 
@@ -1012,6 +1012,7 @@ body{
             ts: typeof entry.ts === 'number' && isFinite(entry.ts) ? entry.ts : Date.now(),
             type: typeof entry.type === 'string' ? entry.type : 'checkin',
             points: Math.round(entry.points),
+            habitId: typeof entry.habitId === 'string' ? entry.habitId : '',
             habitName: typeof entry.habitName === 'string' ? entry.habitName : '',
             rewardId: typeof entry.rewardId === 'string' ? entry.rewardId : '',
             date: typeof entry.date === 'string' ? entry.date : ''
@@ -1103,7 +1104,6 @@ body{
   /* 只保留最近 keepDays 天的数据，避免 localStorage 无限增长 */
   function pruneByDate(map, keepDays) {
     var keys = Object.keys(map);
-    if (keys.length <= keepDays) return map;
 
     var limit = new Date();
     limit.setHours(0, 0, 0, 0);
@@ -1369,6 +1369,7 @@ body{
   var CHECKIN_POINTS = 10;   // 打卡得分 / 取消打卡扣分
   var STREAK_STEP = 7;       // 连续多少天结算一次额外奖励
   var STREAK_BONUS = 5;      // 每次结算的额外积分
+  var MAX_HABITS = 20;       // 必须与服务端 api.js 的 MAX_HABITS 保持一致
 
   /*
    * ===== AI 双模式 =====
@@ -1879,6 +1880,7 @@ body{
       ts: Date.now(),
       type: type,
       points: delta,
+      habitId: habit ? habit.id : '',
       habitName: habit ? habit.name : '',
       date: dateKey || ''
     });
@@ -2868,6 +2870,10 @@ body{
   }
 
   function addHabit(name, icon) {
+    if (habits.length >= MAX_HABITS) {
+      toast('最多只能添加 ' + MAX_HABITS + ' 个习惯');
+      return false;
+    }
     var habit = {
       id: HabitStore.makeId('h'),
       name: name,
@@ -2886,6 +2892,7 @@ body{
     selectedHabitId = habit.id;
     renderAll();
     toast('已添加习惯：' + habit.name + (IS_REAL_AI ? '（正在获取服务端口令）' : '（今天拍照即可打卡）'));
+    return true;
   }
 
   function renameHabit(habit) {
@@ -2907,13 +2914,45 @@ body{
     });
   }
 
+  function assignLegacyHabitId(habit) {
+    if (!habit) return;
+    points.ledger.forEach(function (entry) {
+      if (!entry.habitId && entry.habitName === habit.name) entry.habitId = habit.id;
+    });
+  }
+
+  function getHabitPointContribution(habit) {
+    if (!habit) return 0;
+    var ledgerNet = 0;
+    points.ledger.forEach(function (entry) {
+      if (entry.habitId === habit.id || (!entry.habitId && entry.habitName === habit.name)) {
+        ledgerNet += entry.points;
+      }
+    });
+    var bonus = points.bonus[habit.id];
+    var awardedDays = bonus && typeof bonus.awarded === 'number' ? bonus.awarded : 0;
+    var fallbackNet = getCheckedDates(habit.id).length * CHECKIN_POINTS
+      + Math.floor(awardedDays / STREAK_STEP) * STREAK_BONUS;
+    return Math.max(0, Math.max(ledgerNet, fallbackNet));
+  }
+
   function removeHabit(habit) {
+    var deduction = getHabitPointContribution(habit);
+    var message = '删除「' + habit.name + '」后，它的打卡记录、照片和对应积分会一起清除，且无法恢复。';
+    if (deduction > 0) message += '本次会扣回 ' + deduction + ' 积分。';
+
     openPrompt({
       title: '删除习惯',
-      message: '删除「' + habit.name + '」后，它的打卡记录与照片也会一起清除，且无法恢复。',
+      message: message,
       okText: '删除',
       danger: true,
       onOk: function () {
+        assignLegacyHabitId(habit);
+        deduction = getHabitPointContribution(habit);
+        if (deduction > 0) {
+          adjustPoints(-deduction, 'delete', habit, todayKeyStr);
+        }
+
         var keysToRemove = [];
         getCheckedDates(habit.id).forEach(function (dateKey) {
           keysToRemove.push(photoKey(dateKey, habit.id));
@@ -2944,7 +2983,7 @@ body{
           selectedHabitId = habits.length > 0 ? habits[0].id : null;
         }
         renderAll();
-        toast('已删除习惯：' + habit.name);
+        toast('已删除习惯：' + habit.name + (deduction > 0 ? '，已扣回 ' + deduction + ' 积分' : ''));
       }
     });
   }
@@ -2956,8 +2995,9 @@ body{
       toast('请先输入习惯名称');
       return;
     }
-    addHabit(name, newHabitIcon);
-    newHabitNameEl.value = '';
+    if (addHabit(name, newHabitIcon)) {
+      newHabitNameEl.value = '';
+    }
   });
 
   prevBtn.addEventListener('click', function () {
@@ -3060,11 +3100,19 @@ body{
   function importAiHabits() {
     if (aiSuggested.length === 0) return;
 
+    var remaining = MAX_HABITS - habits.length;
+    if (remaining <= 0) {
+      toast('最多只能有 ' + MAX_HABITS + ' 个习惯');
+      return;
+    }
+
     var added = 0;
+    var skippedForLimit = 0;
     aiSuggested.forEach(function (item) {
       var name = String(item && item.name ? item.name : '').trim();
       if (name === '') return;
       if (habits.some(function (habit) { return habit.name === name; })) return;
+      if (added >= remaining) { skippedForLimit++; return; }
 
       habits.push({
         id: HabitStore.makeId('h'),
@@ -3076,7 +3124,7 @@ body{
     });
 
     if (added === 0) {
-      toast('这些习惯都已经在列表里了');
+      toast(skippedForLimit > 0 ? '最多只能有 ' + MAX_HABITS + ' 个习惯' : '这些习惯都已经在列表里了');
       return;
     }
 
@@ -3092,7 +3140,8 @@ body{
     }
     if (!findHabit(selectedHabitId)) selectedHabitId = habits[0].id;
     renderAll();
-    toast('已导入 ' + added + ' 个习惯' + (IS_REAL_AI ? '，正在获取服务端口令' : '，今天拍照即可打卡'));
+    var suffix = skippedForLimit > 0 ? '，' + skippedForLimit + ' 个因达到上限未导入' : '';
+    toast('已导入 ' + added + ' 个习惯' + suffix + (IS_REAL_AI ? '，正在获取服务端口令' : '，今天拍照即可打卡'));
   }
 
   aiPlanBtn.addEventListener('click', function () {
@@ -3665,6 +3714,7 @@ body{
     if (entry.type === 'bonus') return '连续打卡满 7 天奖励' + (entry.habitName ? ' · ' + entry.habitName : '');
     if (entry.type === 'cancel') return '删除照片取消打卡 · ' + (entry.habitName || '习惯');
     if (entry.type === 'redeem') return '兑换奖励 · ' + (entry.habitName || '奖励');
+    if (entry.type === 'delete') return '删除习惯扣回 · ' + (entry.habitName || '习惯');
     return '拍照打卡成功 · ' + (entry.habitName || '习惯');
   }
 
