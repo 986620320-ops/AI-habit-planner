@@ -185,6 +185,18 @@ body{
 .ai-btn:hover{filter:brightness(1.05)}
 .ai-btn:disabled{background:#e2e8f0;color:#94a3b8;box-shadow:none;cursor:not-allowed}
 .ai-note{margin-top:9px;font-size:11px;line-height:1.55;color:#7c6bb5}
+.ai-process{display:flex;gap:6px;margin-top:10px;padding:10px 12px;background:#fff;border:1px solid #ede9fe;border-radius:13px}
+.ai-step{flex:1;display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:#a8a3bd;min-width:0;transition:color .18s}
+.ai-step-dot{width:8px;height:8px;border-radius:50%;background:#ddd6fe;flex:none;transition:background .18s,box-shadow .18s}
+.ai-step.active{color:#6d28d9}
+.ai-step.active .ai-step-dot{background:#8b5cf6;box-shadow:0 0 0 4px rgba(139,92,246,.14);animation:ai-pulse 1.1s infinite}
+.ai-step.done{color:#059669}
+.ai-step.done .ai-step-dot{background:#10b981}
+.ai-step.failed{color:#dc2626}
+.ai-step.failed .ai-step-dot{background:#ef4444}
+.ai-step-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes ai-pulse{0%,100%{opacity:1}50%{opacity:.45}}
+@media (prefers-reduced-motion: reduce){.ai-step.active .ai-step-dot{animation:none}}
 .ai-result{margin-top:12px}
 .ai-plan{
   white-space:pre-wrap;word-break:break-word;font-family:inherit;
@@ -601,6 +613,11 @@ body{
       <button class="ai-mode" id="aiModeTag" type="button" aria-pressed="false" title="点击切换 Mock / 真实 AI 模式">检测 AI 模式…</button>
     </div>
     <button class="ai-btn" id="aiPlanBtn" type="button">✨ AI生成个性化习惯规划</button>
+    <div class="ai-process" id="aiProcess" hidden aria-live="polite" aria-label="AI 生成进度">
+      <div class="ai-step" id="aiStep1"><span class="ai-step-dot"></span><span class="ai-step-text">整理习惯</span></div>
+      <div class="ai-step" id="aiStep2"><span class="ai-step-dot"></span><span class="ai-step-text">生成方案</span></div>
+      <div class="ai-step" id="aiStep3"><span class="ai-step-dot"></span><span class="ai-step-text">检查内容</span></div>
+    </div>
     <p class="ai-note" id="aiNote"></p>
     <div class="ai-result" id="aiResult" hidden>
       <pre class="ai-plan" id="aiPlanText"></pre>
@@ -661,7 +678,7 @@ body{
     <p class="add-note">
       打卡方式：把上方<b>今日口令</b>写进画面再拍照（便利贴 / 本子角落 / 另一台设备显示都行），
       系统读出画面里的口令并比对成功，才记 <b>+10 积分</b>；删除照片即取消打卡，扣回本次 10 分。<br>
-      校验走混合通道：先用端侧识别（免费、离线可用），没读清再交给服务端视觉智能体；
+      校验走混合通道：先用端侧识别（首次加载需联网下载模型，之后浏览器可缓存），没读清再交给服务端视觉智能体；
       只支持<b>当天</b>打卡，不支持补卡和超前打卡；最多支持 20 个习惯。
     </p>
   </section>
@@ -1399,18 +1416,18 @@ body{
     '【AI 习惯规划 · 示例方案（Mock 模式，未调用接口）】',
     '',
     '一、作息主线',
-    '· 07:00 起床 + 喝一杯水，07:30 前完成晨读',
+    '· 07:00 起床 + 喝一杯水，07:30 前完成晨读或背单词',
     '· 12:30 午休 20 分钟，午休前不刷短视频',
     '· 22:30 放下手机，23:00 前上床睡觉',
     '',
-    '二、学习习惯（每天 3 项以内，别贪多）',
-    '1. 晨读 20 分钟：语文和英语隔天交替',
-    '2. 整理错题 15 分钟：只记当天做错的题，写出错因',
-    '3. 背 20 个单词：睡前用间隔复习过一遍',
+    '二、学习与考试',
+    '1. 背 20 个四六级/考研单词：睡前用间隔复习过一遍',
+    '2. 专业课笔记 20 分钟：只整理当天重点和易错点',
+    '3. 每周做 1 次知识点复盘：把薄弱环节列成下周计划',
     '',
     '三、运动与放松',
-    '· 每天跳绳或快走 20 分钟，学习间隙站起来拉伸',
-    '· 每周留半天完全不安排学习任务，用来放松',
+    '· 每天快走、跑步或跳绳 20 分钟，学习间隙站起来拉伸',
+    '· 每周留半天不安排学习任务，用来放松和社交',
     '',
     '四、打卡建议',
     '· 每完成一项就拍一张照片当凭证（书桌、单词本、运动记录都算）',
@@ -1420,20 +1437,20 @@ body{
     '（这是内置的示例文本，用于演示页面效果）'
   ].join('\n');
   var MOCK_PLAN_HABITS = [
-    { name: '晨读20分钟', icon: '📖' },
-    { name: '整理错题', icon: '✍️' },
-    { name: '背20个单词', icon: '📚' },
+    { name: '四六级单词', icon: '📚' },
+    { name: '专业课笔记', icon: '📖' },
     { name: '运动20分钟', icon: '🏃' },
-    { name: '23点前睡觉', icon: '🌙' }
+    { name: '23点前睡觉', icon: '🌙' },
+    { name: '早起喝水', icon: '💧' }
   ];
   var HABIT_COLORS = ['#4f7cff', '#a855f7', '#f97316', '#10b981', '#0ea5e9', '#f43f5e', '#eab308', '#14b8a6'];
-  var ICONS = ['💧', '🏃', '📚', '🌙', '🍎', '💪', '🧘', '🥗', '✍️', '🎵', '🦷', '☀️', '🧹', '🚶', '📵', '💰', '🎨', '☕', '🚴', '🎯'];
+  var ICONS = ['💧', '🏃', '📚', '📖', '🌙', '🍎', '💪', '🧘', '🥗', '✍️', '🎵', '🦷', '☀️', '🧹', '🚶', '📵', '💰', '🎨', '☕', '🚴', '🎯'];
   var SUGGESTIONS = [
-    { name: '早起', icon: '☀️' },
     { name: '背单词', icon: '📚' },
+    { name: '专业课复习', icon: '📖' },
     { name: '跑步', icon: '🏃' },
-    { name: '喝水', icon: '💧' },
-    { name: '早睡', icon: '🌙' }
+    { name: '早睡', icon: '🌙' },
+    { name: '喝水', icon: '💧' }
   ];
 
   var habits = HabitStore.load();
@@ -1502,6 +1519,7 @@ body{
   var aiNoteEl = document.getElementById('aiNote');
   var aiResultEl = document.getElementById('aiResult');
   var aiPlanTextEl = document.getElementById('aiPlanText');
+  var aiProcessEl = document.getElementById('aiProcess');
   var aiImportRowEl = document.getElementById('aiImportRow');
   var aiImportBtn = document.getElementById('aiImportBtn');
   var codeDateLabelEl = document.getElementById('codeDateLabel');
@@ -1523,6 +1541,9 @@ body{
   var aiSuggested = [];
   var aiBusy = false;
   var aiHealthPromise = null;
+  var aiTypingTimer = null;
+  var aiProcessTimer = null;
+  var aiMockTimer = null;
   var codeSource = 'local';        // local | server | unavailable
   var codesRequested = false;
   var ocrState = 'idle';           // idle | loading | ready | failed
@@ -2236,7 +2257,7 @@ body{
     }
   }
 
-  /* ---------- 通道一：端侧 OCR（免费、离线可用） ---------- */
+  /* ---------- 通道一：端侧 OCR（首次加载需联网） ---------- */
   var OCR_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js';
 
   function flushOcrWaiters(ready) {
@@ -2262,6 +2283,7 @@ body{
     }
 
     ocrState = 'loading';
+    toast('首次使用端侧识别，正在加载 OCR 模型…');
     var script = document.createElement('script');
     script.src = OCR_CDN;
     script.async = true;
@@ -2937,9 +2959,14 @@ body{
   }
 
   function removeHabit(habit) {
-    var deduction = getHabitPointContribution(habit);
+    var contribution = getHabitPointContribution(habit);
+    var actualDeduction = Math.min(contribution, Math.max(0, points.total));
     var message = '删除「' + habit.name + '」后，它的打卡记录、照片和对应积分会一起清除，且无法恢复。';
-    if (deduction > 0) message += '本次会扣回 ' + deduction + ' 积分。';
+    if (actualDeduction < contribution) {
+      message += '该习惯贡献 ' + contribution + ' 积分，当前余额不足，本次最多扣回 ' + actualDeduction + ' 积分。';
+    } else if (actualDeduction > 0) {
+      message += '本次会扣回 ' + actualDeduction + ' 积分。';
+    }
 
     openPrompt({
       title: '删除习惯',
@@ -2948,9 +2975,10 @@ body{
       danger: true,
       onOk: function () {
         assignLegacyHabitId(habit);
-        deduction = getHabitPointContribution(habit);
-        if (deduction > 0) {
-          adjustPoints(-deduction, 'delete', habit, todayKeyStr);
+        contribution = getHabitPointContribution(habit);
+        actualDeduction = Math.min(contribution, Math.max(0, points.total));
+        if (actualDeduction > 0) {
+          adjustPoints(-actualDeduction, 'delete', habit, todayKeyStr);
         }
 
         var keysToRemove = [];
@@ -2983,7 +3011,7 @@ body{
           selectedHabitId = habits.length > 0 ? habits[0].id : null;
         }
         renderAll();
-        toast('已删除习惯：' + habit.name + (deduction > 0 ? '，已扣回 ' + deduction + ' 积分' : ''));
+        toast('已删除习惯：' + habit.name + (actualDeduction > 0 ? '，已扣回 ' + actualDeduction + ' 积分' : ''));
       }
     });
   }
@@ -3030,12 +3058,74 @@ body{
     aiPlanBtn.textContent = busy ? '⏳ 正在生成规划…' : '✨ AI生成个性化习惯规划';
   }
 
-  function showAiPlan(planText, suggested, sourceLabel) {
-    aiPlanTextEl.textContent = planText || '';
-    aiResultEl.hidden = false;
+  function aiStepEl(index) { return document.getElementById('aiStep' + (index + 1)); }
+  function setAiStep(index, status) {
+    var el = aiStepEl(index);
+    if (!el) return;
+    el.classList.remove('active', 'done', 'failed');
+    if (status) el.classList.add(status);
+  }
+  function clearAiTimers() {
+    if (aiTypingTimer) { clearInterval(aiTypingTimer); aiTypingTimer = null; }
+    if (aiProcessTimer) { clearTimeout(aiProcessTimer); aiProcessTimer = null; }
+    if (aiMockTimer) { clearTimeout(aiMockTimer); aiMockTimer = null; }
+  }
+  function startAiProcess(realMode) {
+    clearAiTimers();
+    aiResultEl.hidden = true;
+    aiPlanTextEl.textContent = '';
+    aiProcessEl.hidden = false;
+    [0, 1, 2].forEach(function (index) { setAiStep(index, ''); });
+    var second = aiStepEl(1) && aiStepEl(1).querySelector('.ai-step-text');
+    if (second) second.textContent = realMode ? '调用 DeepSeek 生成' : '生成示例方案';
+    setAiStep(0, 'active');
+    aiProcessTimer = setTimeout(function () {
+      setAiStep(0, 'done');
+      setAiStep(1, 'active');
+      aiProcessTimer = null;
+    }, 250);
+  }
+  function failAiProcess() {
+    if (aiProcessTimer) { clearTimeout(aiProcessTimer); aiProcessTimer = null; }
+    var active = document.querySelector('#aiProcess .ai-step.active');
+    if (!active) active = aiStepEl(2);
+    if (active) { active.classList.remove('active'); active.classList.add('failed'); }
+  }
+  function typeAiPlan(text, done) {
+    var full = String(text || '');
+    aiPlanTextEl.textContent = '';
+    if (!full) { if (done) done(); return; }
+    var reduce = false;
+    try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (error) {}
+    if (reduce) { aiPlanTextEl.textContent = full; if (done) done(); return; }
+    var index = 0;
+    aiTypingTimer = setInterval(function () {
+      index = Math.min(full.length, index + 2);
+      aiPlanTextEl.textContent = full.slice(0, index);
+      if (index >= full.length) {
+        clearInterval(aiTypingTimer);
+        aiTypingTimer = null;
+        if (done) done();
+      }
+    }, 16);
+  }
+  function showAiPlan(planText, suggested, sourceLabel, done) {
     aiSuggested = Array.isArray(suggested) ? suggested : [];
     aiImportRowEl.hidden = aiSuggested.length === 0;
     aiNoteEl.textContent = sourceLabel || '';
+    aiResultEl.hidden = false;
+    typeAiPlan(planText, done);
+  }
+  function revealAiPlan(planText, suggested, sourceLabel, done) {
+    if (aiProcessTimer) { clearTimeout(aiProcessTimer); aiProcessTimer = null; }
+    setAiStep(0, 'done');
+    setAiStep(1, 'done');
+    setAiStep(2, 'active');
+    aiProcessTimer = setTimeout(function () {
+      setAiStep(2, 'done');
+      aiProcessTimer = null;
+      showAiPlan(planText, suggested, sourceLabel, done);
+    }, 220);
   }
 
   function requestAiPlan() {
@@ -3067,11 +3157,12 @@ body{
         }
         applyAiQuota(result.data.quota);
         setAiModeUi();
-        showAiPlan(
+        revealAiPlan(
           result.data.plan || '（服务端没有返回规划文本）',
           result.data.habits,
           '真实接口模式：由 Netlify 函数调用 ' + (result.data.model || 'deepseek-flash') + ' 生成。'
-            + aiQuotaText()
+            + aiQuotaText(),
+          function () { setAiBusy(false); }
         );
         toast('AI 规划已生成');
       })
@@ -3082,18 +3173,18 @@ body{
           aiModePref = 'mock';
           saveAiModePref();
           setRealMode(false);
-          showAiPlan(
+          revealAiPlan(
             MOCK_PLAN_TEXT,
             MOCK_PLAN_HABITS,
-            '今日真实 AI 额度已用完，已自动降级为 Mock 演示模式。' + aiQuotaText()
+            '今日真实 AI 额度已用完，已自动降级为 Mock 演示模式。' + aiQuotaText(),
+            function () { setAiBusy(false); }
           );
           toast('真实 AI 额度已用完，已降级为 Mock');
           return;
         }
-        toast('AI 生成失败：' + (error && error.message ? error.message : '未知错误'));
-      })
-      .then(function () {
+        failAiProcess();
         setAiBusy(false);
+        toast('AI 生成失败：' + (error && error.message ? error.message : '未知错误'));
       });
   }
 
@@ -3148,17 +3239,23 @@ body{
     if (aiBusy) return;
 
     if (!IS_REAL_AI) {
-      // Mock 模式：直接输出预设文本，不联网、不产生费用
-      showAiPlan(
-        MOCK_PLAN_TEXT,
-        MOCK_PLAN_HABITS,
-        'Mock 模式：以上是内置示例规划，没有调用 AI 接口，也不会产生费用。'
-      );
+      setAiBusy(true);
+      startAiProcess(false);
+      aiMockTimer = setTimeout(function () {
+        aiMockTimer = null;
+        revealAiPlan(
+          MOCK_PLAN_TEXT,
+          MOCK_PLAN_HABITS,
+          'Mock 模式：以上是内置示例规划，没有调用 AI 接口，也不会产生费用。',
+          function () { setAiBusy(false); }
+        );
+      }, 500);
       toast('已生成规划（Mock 模式，未调用接口）');
       return;
     }
 
     setAiBusy(true);
+    startAiProcess(true);
     requestAiPlan();
   });
 
