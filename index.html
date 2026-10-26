@@ -185,6 +185,18 @@ body{
 .ai-btn:hover{filter:brightness(1.05)}
 .ai-btn:disabled{background:#e2e8f0;color:#94a3b8;box-shadow:none;cursor:not-allowed}
 .ai-note{margin-top:9px;font-size:11px;line-height:1.55;color:#7c6bb5}
+.ai-context{margin-bottom:10px;padding:10px 12px;border:1px solid #ede9fe;border-radius:13px;background:#fff}
+.ai-context-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.ai-context-head label{font-size:11px;font-weight:800;color:#7c6bb5}
+.ai-context-head span{font-size:10px;color:#a8a3bd;white-space:nowrap}
+.ai-context textarea{width:100%;min-height:52px;max-height:120px;resize:vertical;border:1.5px solid #e9e2ff;border-radius:11px;padding:9px 11px;font:inherit;font-size:13px;line-height:1.5;color:var(--text);background:#fcfbff;outline:none}
+.ai-context textarea:focus{border-color:#a78bfa;box-shadow:0 0 0 3px rgba(139,92,246,.12)}
+.ai-context-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:5px}
+.ai-context-hint{font-size:10px;line-height:1.45;color:#a8a3bd}
+.ai-context-foot button{flex:none;font-size:10px;font-weight:800;color:#7c3aed;padding:3px 6px;border-radius:6px}
+.ai-context-foot button:hover{background:#f3e8ff}
+.ai-audience{display:inline-flex;align-items:center;gap:4px;margin-bottom:8px;padding:4px 9px;border-radius:99px;background:#f3e8ff;color:#6d28d9;font-size:10.5px;font-weight:800}
+.ai-audience.mock{background:#f1f5f9;color:#64748b}
 .ai-process{display:flex;gap:6px;margin-top:10px;padding:10px 12px;background:#fff;border:1px solid #ede9fe;border-radius:13px}
 .ai-step{flex:1;display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:#a8a3bd;min-width:0;transition:color .18s}
 .ai-step-dot{width:8px;height:8px;border-radius:50%;background:#ddd6fe;flex:none;transition:background .18s,box-shadow .18s}
@@ -612,6 +624,17 @@ body{
       <h2><span class="ai-emoji">✨</span>AI 个性化习惯规划</h2>
       <button class="ai-mode" id="aiModeTag" type="button" aria-pressed="false" title="点击切换 Mock / 真实 AI 模式">检测 AI 模式…</button>
     </div>
+    <div class="ai-context">
+      <div class="ai-context-head">
+        <label for="aiContext">补充信息（可选）</label>
+        <span id="aiContextCount">0/200</span>
+      </div>
+      <textarea id="aiContext" maxlength="200" rows="2" placeholder="例如：我是备考学生 / 职场人 / 想减脂；最近总是熬夜，想先改善睡眠"></textarea>
+      <div class="ai-context-foot">
+        <span class="ai-context-hint" id="aiContextHint">可不填；真实 AI 会据此判断场景。</span>
+        <button type="button" id="aiContextClear">清空</button>
+      </div>
+    </div>
     <button class="ai-btn" id="aiPlanBtn" type="button">✨ AI生成个性化习惯规划</button>
     <div class="ai-process" id="aiProcess" hidden aria-live="polite" aria-label="AI 生成进度">
       <div class="ai-step" id="aiStep1"><span class="ai-step-dot"></span><span class="ai-step-text">整理习惯</span></div>
@@ -620,6 +643,7 @@ body{
     </div>
     <p class="ai-note" id="aiNote"></p>
     <div class="ai-result" id="aiResult" hidden>
+      <div class="ai-audience" id="aiAudience" hidden></div>
       <pre class="ai-plan" id="aiPlanText"></pre>
       <div class="ai-actions" id="aiImportRow" hidden>
         <button class="btn primary" id="aiImportBtn" type="button">一键导入这些习惯</button>
@@ -1397,6 +1421,7 @@ body{
    */
   var AI_ENDPOINT = '/.netlify/functions/api';
   var AI_MODE_PREF_KEY = 'ai-habit-checkin:ai-mode-pref';
+  var AI_CONTEXT_KEY = 'ai-habit-checkin:ai-context';
   var FORCE_VISION = false;
   try { FORCE_VISION = new URLSearchParams(location.search).get('forceVision') === '1'; } catch (error) {}
   var IS_REAL_AI = false;
@@ -1413,44 +1438,44 @@ body{
     visionRemaining: null
   };
   var MOCK_PLAN_TEXT = [
-    '【AI 习惯规划 · 示例方案（Mock 模式，未调用接口）】',
+    '【AI 习惯规划 · 通用示例（Mock 模式，未调用接口）】',
     '',
     '一、作息主线',
-    '· 07:00 起床 + 喝一杯水，07:30 前完成晨读或背单词',
+    '· 07:00 起床 + 喝一杯水',
     '· 12:30 午休 20 分钟，午休前不刷短视频',
     '· 22:30 放下手机，23:00 前上床睡觉',
     '',
-    '二、学习与考试',
-    '1. 背 20 个四六级/考研单词：睡前用间隔复习过一遍',
-    '2. 专业课笔记 20 分钟：只整理当天重点和易错点',
-    '3. 每周做 1 次知识点复盘：把薄弱环节列成下周计划',
+    '二、学习 / 工作节奏',
+    '1. 每天安排 1 个 25 分钟专注块，只做最重要的一件事',
+    '2. 每晚用 5 分钟记录今天完成了什么、明天先做什么',
+    '3. 每周复盘一次，删掉一个不必要的任务',
     '',
     '三、运动与放松',
-    '· 每天快走、跑步或跳绳 20 分钟，学习间隙站起来拉伸',
-    '· 每周留半天不安排学习任务，用来放松和社交',
+    '· 每天快走、跑步或拉伸 20 分钟',
+    '· 每周留半天不安排任务，用来放松和社交',
     '',
     '四、打卡建议',
-    '· 每完成一项就拍一张照片当凭证（书桌、单词本、运动记录都算）',
+    '· 每完成一项就拍一张照片当凭证',
     '· 连续打卡满 7 天给自己一个小奖励，坚持 21 天再升级奖励',
     '· 一次只新增 1-2 个习惯，稳定两周后再加新的',
     '',
-    '（这是内置的示例文本，用于演示页面效果）'
+    '（这是内置的通用示例文本，用于演示页面效果）'
   ].join('\n');
   var MOCK_PLAN_HABITS = [
-    { name: '四六级单词', icon: '📚' },
-    { name: '专业课笔记', icon: '📖' },
+    { name: '早起喝水', icon: '💧' },
+    { name: '专注25分钟', icon: '🎯' },
     { name: '运动20分钟', icon: '🏃' },
     { name: '23点前睡觉', icon: '🌙' },
-    { name: '早起喝水', icon: '💧' }
+    { name: '每日复盘', icon: '✍️' }
   ];
   var HABIT_COLORS = ['#4f7cff', '#a855f7', '#f97316', '#10b981', '#0ea5e9', '#f43f5e', '#eab308', '#14b8a6'];
   var ICONS = ['💧', '🏃', '📚', '📖', '🌙', '🍎', '💪', '🧘', '🥗', '✍️', '🎵', '🦷', '☀️', '🧹', '🚶', '📵', '💰', '🎨', '☕', '🚴', '🎯'];
   var SUGGESTIONS = [
-    { name: '背单词', icon: '📚' },
-    { name: '专业课复习', icon: '📖' },
-    { name: '跑步', icon: '🏃' },
-    { name: '早睡', icon: '🌙' },
-    { name: '喝水', icon: '💧' }
+    { name: '早起', icon: '☀️' },
+    { name: '喝水', icon: '💧' },
+    { name: '运动', icon: '🏃' },
+    { name: '阅读', icon: '📖' },
+    { name: '早睡', icon: '🌙' }
   ];
 
   var habits = HabitStore.load();
@@ -1520,6 +1545,11 @@ body{
   var aiResultEl = document.getElementById('aiResult');
   var aiPlanTextEl = document.getElementById('aiPlanText');
   var aiProcessEl = document.getElementById('aiProcess');
+  var aiContextEl = document.getElementById('aiContext');
+  var aiContextCountEl = document.getElementById('aiContextCount');
+  var aiContextHintEl = document.getElementById('aiContextHint');
+  var aiContextClearEl = document.getElementById('aiContextClear');
+  var aiAudienceEl = document.getElementById('aiAudience');
   var aiImportRowEl = document.getElementById('aiImportRow');
   var aiImportBtn = document.getElementById('aiImportBtn');
   var codeDateLabelEl = document.getElementById('codeDateLabel');
@@ -1574,6 +1604,41 @@ body{
     }
   }
 
+  function loadAiContext() {
+    try {
+      return localStorage.getItem(AI_CONTEXT_KEY) || '';
+    } catch (error) {
+      return '';
+    }
+  }
+
+  function saveAiContext(value) {
+    try {
+      localStorage.setItem(AI_CONTEXT_KEY, String(value || ''));
+    } catch (error) {
+      // 本地存储不可用时只保留当前页面状态
+    }
+  }
+
+  function updateAiContextUi() {
+    if (aiContextCountEl) aiContextCountEl.textContent = aiContextEl.value.length + '/200';
+  }
+
+  function setAiAudience(audience, isMock) {
+    if (!aiAudienceEl) return;
+    var value = String(audience || '').trim();
+    if (value === '') {
+      aiAudienceEl.hidden = true;
+      aiAudienceEl.textContent = '';
+      aiAudienceEl.classList.remove('mock');
+      return;
+    }
+    aiAudienceEl.hidden = false;
+    aiAudienceEl.textContent = (isMock ? '' : 'AI 判断场景：') + value;
+    if (isMock) aiAudienceEl.classList.add('mock');
+    else aiAudienceEl.classList.remove('mock');
+  }
+
   function applyAiQuota(quota) {
     if (!quota || typeof quota !== 'object') return;
     if (quota.plan) {
@@ -1600,6 +1665,13 @@ body{
   function setAiModeUi() {
     if (!aiModeTagEl) return;
     var real = !!IS_REAL_AI;
+    if (aiContextHintEl) {
+      aiContextHintEl.textContent = aiStatus.checking
+        ? '正在检测 AI 模式…'
+        : real
+          ? '真实 AI 会据此判断场景；信息不足时使用通用方案。'
+          : 'Mock 模式不会使用补充信息；切换真实 AI 后才会判断场景。';
+    }
     aiModeTagEl.className = 'ai-mode' + (real ? ' real' : '') + (aiStatus.checking ? ' loading' : '');
     aiModeTagEl.setAttribute('aria-pressed', real ? 'true' : 'false');
 
@@ -1640,6 +1712,7 @@ body{
   function setRealMode(enable) {
     IS_REAL_AI = !!enable;
     codesRequested = false;
+    setAiAudience('');
 
     if (IS_REAL_AI) {
       if (!codes[todayKeyStr]) codes[todayKeyStr] = {};
@@ -3074,6 +3147,7 @@ body{
     clearAiTimers();
     aiResultEl.hidden = true;
     aiPlanTextEl.textContent = '';
+    setAiAudience('');
     aiProcessEl.hidden = false;
     [0, 1, 2].forEach(function (index) { setAiStep(index, ''); });
     var second = aiStepEl(1) && aiStepEl(1).querySelector('.ai-step-text');
@@ -3141,7 +3215,8 @@ body{
       body: JSON.stringify({
         today: todayKeyStr,
         totalPoints: points.total,
-        habits: aiHabitsSnapshot()
+        habits: aiHabitsSnapshot(),
+        context: aiContextEl.value.trim()
       })
     })
       .then(function (response) {
@@ -3157,6 +3232,7 @@ body{
         }
         applyAiQuota(result.data.quota);
         setAiModeUi();
+        setAiAudience(result.data.audience, false);
         revealAiPlan(
           result.data.plan || '（服务端没有返回规划文本）',
           result.data.habits,
@@ -3173,6 +3249,7 @@ body{
           aiModePref = 'mock';
           saveAiModePref();
           setRealMode(false);
+          setAiAudience('Mock 示例（通用）', true);
           revealAiPlan(
             MOCK_PLAN_TEXT,
             MOCK_PLAN_HABITS,
@@ -3184,6 +3261,7 @@ body{
         }
         failAiProcess();
         setAiBusy(false);
+        setAiAudience('');
         toast('AI 生成失败：' + (error && error.message ? error.message : '未知错误'));
       });
   }
@@ -3241,12 +3319,13 @@ body{
     if (!IS_REAL_AI) {
       setAiBusy(true);
       startAiProcess(false);
+      setAiAudience('Mock 示例（通用）', true);
       aiMockTimer = setTimeout(function () {
         aiMockTimer = null;
         revealAiPlan(
           MOCK_PLAN_TEXT,
           MOCK_PLAN_HABITS,
-          'Mock 模式：以上是内置示例规划，没有调用 AI 接口，也不会产生费用。',
+          'Mock 模式使用通用示例，不会根据补充信息判断人群；切换到真实 AI 后会自行判断场景。',
           function () { setAiBusy(false); }
         );
       }, 500);
@@ -3261,6 +3340,18 @@ body{
 
   aiImportBtn.addEventListener('click', importAiHabits);
   aiModeTagEl.addEventListener('click', toggleAiMode);
+  aiContextEl.value = loadAiContext().slice(0, 200);
+  updateAiContextUi();
+  aiContextEl.addEventListener('input', function () {
+    saveAiContext(aiContextEl.value);
+    updateAiContextUi();
+  });
+  aiContextClearEl.addEventListener('click', function () {
+    aiContextEl.value = '';
+    saveAiContext('');
+    updateAiContextUi();
+    aiContextEl.focus();
+  });
   setAiModeUi();
 
   /* ---------- 添加到手机日历（生成 .ics） ---------- */
