@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>习惯打卡 · AI学生习惯打卡系统</title>
-<meta name="theme-color" content="#4f7cff">
+<title>习惯打卡 · AI 证据教练</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%234f46e5'/%3E%3Cpath d='M18 32l10 10 18-20' stroke='white' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#4f46e5">
 <style>
 
 :root{
@@ -127,35 +128,18 @@ body{
 .legend-swatch.off{background:#eef1f6}
 
 /* ---------- AI 习惯规划 ---------- */
-/* ---------- 今日口令 ---------- */
-.code-card{background:linear-gradient(160deg,#eff6ff 0%,#ecfeff 100%);border-color:#bfdbfe}
-.code-intro{margin:-2px 0 12px;font-size:11px;line-height:1.6;color:#3b6ea5}
-.code-list{list-style:none;display:flex;flex-direction:column;gap:8px}
-.code-item{
-  display:flex;align-items:center;gap:10px;background:#fff;
-  border:1px solid #dbeafe;border-radius:13px;padding:9px 11px;
-}
-.code-item .c-icon{
-  flex:none;width:30px;height:30px;border-radius:9px;background:#eff6ff;
-  display:flex;align-items:center;justify-content:center;font-size:17px;
-}
-.code-item .c-main{flex:1;min-width:0}
-.code-item .c-name{font-size:13px;font-weight:700;word-break:break-all}
-.code-item .c-hint{display:block;font-size:10px;color:#94a3b8;margin-top:2px}
-.code-item .c-code{
-  flex:none;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  font-size:19px;font-weight:900;letter-spacing:3px;color:#1d4ed8;
-}
-.code-item .c-copy{
-  flex:none;font-size:11px;font-weight:700;color:#475569;background:#f1f5f9;
-  border-radius:8px;padding:5px 8px;
-}
-.code-item .c-copy:hover{background:#e2e8f0;color:#1d4ed8}
-.code-empty{margin:0;font-size:12px;color:#7c93b5}
-.code-foot{margin-top:10px;font-size:11px;line-height:1.6;color:#3b6ea5}
-.code-foot b{color:#1d4ed8}
+/* ---------- AI 证据打卡 ---------- */
+.evidence-card{background:linear-gradient(160deg,#eff6ff 0%,#f5f3ff 100%);border-color:#c7d2fe}
+.evidence-intro{margin:-2px 0 12px;font-size:12px;line-height:1.65;color:#475569}
+.evidence-methods{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.evidence-method{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:10px;border:1px solid #dbeafe;border-radius:13px;background:rgba(255,255,255,.78)}
+.evidence-method .em-icon{font-size:20px;line-height:1.1}
+.evidence-method b{font-size:12px;color:#1f2937}
+.evidence-method small{font-size:9.5px;line-height:1.45;color:#64748b}
+.evidence-foot{margin-top:10px;font-size:10.5px;line-height:1.65;color:#475569}
+.evidence-foot b{color:#4338ca}
 
-/* ---------- 口令校验状态 ---------- */
+/* ---------- 证据校验状态 ---------- */
 .photo-box.verify-pending{border-style:solid;border-color:#fcd34d;background:#fffbeb}
 .photo-box.verify-failed{border-style:solid;border-color:#fca5a5;background:#fff5f5}
 .photo-box .status-badge{
@@ -284,7 +268,7 @@ body{
 .success-banner .txt b{display:block;font-size:14px;font-weight:800;margin-bottom:2px}
 @keyframes pop{0%{transform:scale(.86);opacity:0}100%{transform:scale(1);opacity:1}}
 
-/* ---------- 习惯列表（拍照打卡） ---------- */
+/* ---------- 习惯列表（多模态证据打卡） ---------- */
 .habit-list{list-style:none;display:flex;flex-direction:column;gap:8px}
 .habit-row{
   display:flex;align-items:center;gap:9px;background:#fff;
@@ -350,6 +334,50 @@ body{
 .add-btn:hover{background:#1d4ed8}
 .add-note{margin-top:7px;font-size:11px;line-height:1.55;color:#a1846f}
 .add-note b{color:var(--blue-dark)}
+
+/* ---------- AI 证据打卡弹窗 ---------- */
+.evidence-modal{max-width:520px;max-height:min(90vh,780px);overflow:auto}
+.evidence-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.evidence-modal-head h3{margin:5px 0 3px;font-size:20px;color:#1f2937}
+.evidence-habit-name{margin:0;font-size:12px;color:#64748b}
+.evidence-mode-chip{display:inline-flex;align-items:center;min-height:26px;padding:3px 9px;border-radius:999px;background:#eef2ff;color:#4338ca;font-size:10px;font-weight:800}
+.evidence-close{flex:none;width:44px;height:44px;border-radius:12px;background:#f1f5f9;color:#64748b;font-size:22px;line-height:1}
+.evidence-close:hover{background:#e2e8f0;color:#0f172a}
+.evidence-section{margin-top:12px}
+.evidence-section-label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:12px;font-weight:800;color:#334155}
+.evidence-section-label span{font-size:10px;font-weight:600;color:#94a3b8}
+.evidence-photo-zone{display:flex;align-items:center;gap:10px;padding:10px;border:1.5px dashed #c7d2fe;border-radius:14px;background:#f8faff}
+.evidence-photo-btn{flex:none;width:76px;height:76px;border-radius:14px;border:1.5px dashed #a5b4fc;background:#fff;color:#4f46e5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:800;overflow:hidden}
+.evidence-photo-btn img{width:100%;height:100%;object-fit:cover}
+.evidence-photo-help{font-size:10.5px;line-height:1.55;color:#64748b}
+.evidence-photo-help b{display:block;color:#334155;font-size:12px;margin-bottom:2px}
+.evidence-textarea{width:100%;min-height:86px;max-height:190px;resize:vertical;border:1.5px solid #dbe3f0;border-radius:13px;padding:10px 12px;font:inherit;font-size:13px;line-height:1.55;color:#1f2937;background:#fff;outline:none}
+.evidence-textarea:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+.evidence-text-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:5px;font-size:10px;color:#94a3b8}
+.evidence-voice-btn{min-height:44px;padding:6px 10px;border-radius:10px;background:#eef2ff;color:#4338ca;font-size:11px;font-weight:800}
+.evidence-voice-btn.listening{background:#fee2e2;color:#b91c1c}
+.evidence-result{margin-top:12px;padding:12px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0}
+.evidence-result.passed{background:#ecfdf5;border-color:#a7f3d0}
+.evidence-result.followup{background:#fffbeb;border-color:#fde68a}
+.evidence-result.manual{background:#f8fafc;border-color:#cbd5e1}
+.evidence-result-title{font-size:12px;font-weight:900;color:#334155;margin-bottom:6px}
+.evidence-result-reason{font-size:12px;line-height:1.6;color:#475569;white-space:pre-wrap}
+.evidence-result-feedback{margin-top:6px;font-size:11px;line-height:1.55;color:#64748b}
+.evidence-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px}
+.evidence-chip{padding:4px 7px;border-radius:999px;background:#fff;color:#047857;border:1px solid #a7f3d0;font-size:9.5px;font-weight:800}
+.evidence-question{margin:0 0 7px;font-size:13px;font-weight:800;color:#92400e;line-height:1.55}
+.evidence-followup{margin-top:12px;padding:12px;border-radius:14px;background:#fffbeb;border:1px solid #fde68a}
+.evidence-followup .btn{margin-top:8px;width:100%}
+.evidence-manual{margin-top:12px;padding:12px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa}
+.evidence-manual h4{margin:0 0 5px;font-size:13px;color:#9a3412}
+.evidence-manual p{margin:0 0 8px;font-size:10.5px;line-height:1.55;color:#78716c}
+.evidence-manual .btn{width:100%;margin-top:8px}
+.evidence-actions{display:flex;gap:8px;margin-top:14px}
+.evidence-actions .btn{flex:1}
+.evidence-manual-toggle{margin-top:9px;width:100%;min-height:44px;border-radius:11px;background:transparent;color:#92400e;font-size:11px;font-weight:800}
+.evidence-manual-toggle:hover{background:#fff7ed}
+.evidence-hint{margin:9px 0 0;font-size:10px;line-height:1.55;color:#94a3b8}
+@media(max-width:430px){.evidence-methods{grid-template-columns:1fr}.evidence-method{flex-direction:row;align-items:center}.evidence-method small{margin-left:auto;text-align:right;max-width:48%}.evidence-photo-zone{align-items:flex-start}.evidence-photo-btn{width:68px;height:68px}}
 
 /* ---------- 底部导航 ---------- */
 .tabbar{
@@ -651,19 +679,19 @@ body{
     </div>
   </section>
 
-  <!-- 今日口令：拍照打卡必须把口令拍进画面 -->
-  <section class="card code-card" aria-label="今日打卡口令">
+  <!-- AI 证据打卡说明 -->
+  <section class="card evidence-card" aria-label="AI 证据打卡说明">
     <div class="card-head">
-      <h2>🔑 今日口令</h2>
-      <span class="sub" id="codeDateLabel"></span>
+      <h2>🧠 AI 证据教练</h2>
+      <span class="sub">照片 · 文字 · 语音</span>
     </div>
-    <p class="code-intro">
-      拍照打卡时，请把口令写进画面里——写在便利贴上、写在本子角落，或显示在另一台设备上。
-      AI 只做一件事：读出画面里的口令，对得上才算打卡成功。
-    </p>
-    <ul class="code-list" id="codeList"></ul>
-    <p class="code-empty" id="codeEmpty" hidden>先在上方添加习惯，这里会显示每个习惯今天的口令。</p>
-    <p class="code-foot" id="codeFoot"></p>
+    <p class="evidence-intro">不用手写口令，也不用为了打卡摆拍。拍下你正在做的事，或者用一句话描述完成情况；AI 会根据当前场景理解证据，不确定时只追问一次。</p>
+    <div class="evidence-methods">
+      <div class="evidence-method"><span class="em-icon">📷</span><b>自由照片</b><small>床铺、书桌、运动场景都可以</small></div>
+      <div class="evidence-method"><span class="em-icon">✍️</span><b>文字说明</b><small>完成数量、时间或当前状态</small></div>
+      <div class="evidence-method"><span class="em-icon">🎙️</span><b>语音输入</b><small>浏览器转文字后可编辑</small></div>
+    </div>
+    <p class="evidence-foot" id="evidenceGuideFoot">AI 验证和手动确认都 +10 分；手动完成需填写 10～50 字复盘。<b>真实 AI 每日最多 5 次证据判断。</b></p>
   </section>
 
   <!-- 今日打卡 -->
@@ -690,7 +718,7 @@ body{
 
     <ul class="habit-list" id="habitList"></ul>
     <div class="empty" id="emptyState" hidden>
-      <p>还没有习惯，添加一个开始拍照打卡吧～</p>
+      <p>还没有习惯，添加一个开始证据打卡吧～</p>
       <div class="chips" id="suggestionChips"></div>
     </div>
 
@@ -700,10 +728,7 @@ body{
       <button class="add-btn" type="submit">＋ 添加</button>
     </form>
     <p class="add-note">
-      打卡方式：把上方<b>今日口令</b>写进画面再拍照（便利贴 / 本子角落 / 另一台设备显示都行），
-      系统读出画面里的口令并比对成功，才记 <b>+10 积分</b>；删除照片即取消打卡，扣回本次 10 分。<br>
-      校验走混合通道：先用端侧识别（首次加载需联网下载模型，之后浏览器可缓存），没读清再交给服务端视觉智能体；
-      只支持<b>当天</b>打卡，不支持补卡和超前打卡；最多支持 20 个习惯。
+      打卡方式：点习惯左侧的 AI 证据按钮，拍照、输入文字或使用语音转文字；AI 只判断证据与习惯是否相关，不会要求固定物品。AI 无法判断时可填写 10～50 字复盘手动完成。<br>两种方式都记 <b>+10 积分</b>；取消打卡扣回本次 10 分。只支持<b>当天</b>打卡，不支持补卡和超前打卡；最多支持 20 个习惯。
     </p>
   </section>
 
@@ -728,7 +753,7 @@ body{
   <div class="points-hero">
     <div class="lbl">当前可用积分</div>
     <div class="num"><b id="shop-ptBalance">0</b><span>积分</span></div>
-    <div class="rule">拍照打卡 +10 分，删除照片取消打卡扣回本次 10 分；单条习惯连续满 7 天一次性额外 +5 分。奖励兑换会扣除对应积分，可重复兑换，兑换记录会保留在积分明细中。</div>
+    <div class="rule">照片、文字或语音证据完成打卡 +10 分；取消打卡扣回本次 10 分；连续满 7 天额外 +5 分。奖励兑换会扣除对应积分，可重复兑换，兑换记录会保留在积分明细中。</div>
   </div>
 
   <div class="mini-grid">
@@ -758,7 +783,7 @@ body{
   <div class="card">
     <div class="card-head">
       <h2>积分明细</h2>
-      <span class="sub">拍照打卡 +10 · 取消 -10 · 连续奖励 +5 · 兑换扣分</span>
+      <span class="sub">AI / 手动打卡 +10 · 取消 -10 · 连续奖励 +5 · 兑换扣分</span>
     </div>
     <ul class="points-list" id="shop-pointsList"></ul>
     <div class="points-empty" id="shop-pointsEmpty" hidden>
@@ -901,6 +926,62 @@ body{
     <div class="modal-btns">
       <button class="btn primary" id="dayClose" type="button">关闭</button>
     </div>
+  </div>
+</div>
+
+<div class="overlay" id="evidenceOverlay" hidden>
+  <div class="modal evidence-modal" role="dialog" aria-modal="true" aria-labelledby="evidenceTitle">
+    <div class="evidence-modal-head">
+      <div>
+        <span class="evidence-mode-chip" id="evidenceModeLabel">Mock 演示</span>
+        <h3 id="evidenceTitle">AI 证据打卡</h3>
+        <p class="evidence-habit-name" id="evidenceHabitName"></p>
+      </div>
+      <button class="evidence-close" id="evidenceClose" type="button" aria-label="关闭">×</button>
+    </div>
+
+    <div class="evidence-section">
+      <div class="evidence-section-label">照片证据 <span>可选</span></div>
+      <div class="evidence-photo-zone">
+        <button class="evidence-photo-btn" id="evidencePhotoBtn" type="button"><span>📷</span><span>拍照 / 选择</span></button>
+        <input id="evidencePhotoInput" type="file" accept="image/*" capture="environment" hidden>
+        <div class="evidence-photo-help"><b>拍下真实场景即可</b>不用写字，不用找指定物品。照片只保存在本机，真实模式下会发送给 AI 判断。</div>
+      </div>
+    </div>
+
+    <div class="evidence-section">
+      <div class="evidence-section-label"><label for="evidenceText">文字 / 语音证据</label><span id="evidenceCount">0/500</span></div>
+      <textarea class="evidence-textarea" id="evidenceText" maxlength="500" placeholder="例如：今天读了 20 页，已经完成；或者：已经关灯，准备睡觉"></textarea>
+      <div class="evidence-text-foot"><span>照片和文字可以任选，也可以一起提交</span><button class="evidence-voice-btn" id="evidenceVoiceBtn" type="button">🎙️ 语音输入</button></div>
+    </div>
+
+    <div class="evidence-result" id="evidenceResult" hidden>
+      <div class="evidence-result-title" id="evidenceResultTitle"></div>
+      <div class="evidence-chips" id="evidenceChips"></div>
+      <div class="evidence-result-reason" id="evidenceReason"></div>
+      <div class="evidence-result-feedback" id="evidenceFeedback"></div>
+    </div>
+
+    <div class="evidence-followup" id="evidenceFollowUpBox" hidden>
+      <p class="evidence-question" id="evidenceQuestion"></p>
+      <label class="evidence-section-label" for="evidenceFollowUpInput">补充一句回答</label>
+      <textarea class="evidence-textarea" id="evidenceFollowUpInput" maxlength="300" rows="2"></textarea>
+      <button class="btn primary" id="evidenceFollowUpBtn" type="button">回答并再次判断</button>
+    </div>
+
+    <div class="evidence-manual" id="evidenceManualBox" hidden>
+      <h4>手动完成</h4>
+      <p>AI 无法判断也没关系。写下 10～50 字复盘后完成，同样获得 10 分，并保留连续天数。</p>
+      <textarea class="evidence-textarea" id="evidenceManualText" maxlength="50" rows="2" placeholder="例如：今天完成后手机没电了，照片没拍成功；实际已完成 20 页阅读"></textarea>
+      <button class="btn primary" id="evidenceManualBtn" type="button">手动完成 +10</button>
+    </div>
+
+    <div class="evidence-actions">
+      <button class="btn ghost" id="evidenceCancel" type="button">取消</button>
+      <button class="btn primary" id="evidenceSubmit" type="button">交给 AI 判断</button>
+    </div>
+    <button class="evidence-manual-toggle" id="evidenceManualToggle" type="button">AI 无法判断？改为手动完成</button>
+    <p class="evidence-hint" id="evidenceHint">Mock 模式只模拟流程，不会真正判断证据；真实模式会调用服务端 AI。</p>
   </div>
 </div>
 
@@ -1056,6 +1137,7 @@ body{
             habitId: typeof entry.habitId === 'string' ? entry.habitId : '',
             habitName: typeof entry.habitName === 'string' ? entry.habitName : '',
             rewardId: typeof entry.rewardId === 'string' ? entry.rewardId : '',
+            source: typeof entry.source === 'string' ? entry.source : '',
             date: typeof entry.date === 'string' ? entry.date : ''
           });
         });
@@ -1108,49 +1190,20 @@ body{
     });
   }
 
-  /* ---------- 今日口令 & 校验记录 ---------- */
-  var CODES_KEY = 'ai-habit-checkin:codes';
+  /* ---------- 证据校验记录 ---------- */
   var VERIFY_KEY = 'ai-habit-checkin:verify';
-
-  /* 口令字符集：去掉容易认错的 0 O 1 I L，共 31 个字符 */
-  var CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
-  var CODE_LENGTH = 5;
 
   function pad2(number) {
     return number < 10 ? '0' + number : String(number);
   }
 
-  function randomIndex(max) {
-    try {
-      if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
-        var buffer = new Uint32Array(1);
-        window.crypto.getRandomValues(buffer);
-        return buffer[0] % max;
-      }
-    } catch (error) {
-      // 环境不支持时退化为 Math.random
-    }
-    return Math.floor(Math.random() * max);
-  }
-
-  function makeCode(length) {
-    var size = length || CODE_LENGTH;
-    var code = '';
-    for (var i = 0; i < size; i++) {
-      code += CODE_ALPHABET.charAt(randomIndex(CODE_ALPHABET.length));
-    }
-    return code;
-  }
-
   /* 只保留最近 keepDays 天的数据，避免 localStorage 无限增长 */
   function pruneByDate(map, keepDays) {
-    var keys = Object.keys(map);
-
+    var keys = Object.keys(map || {});
     var limit = new Date();
     limit.setHours(0, 0, 0, 0);
     limit.setDate(limit.getDate() - keepDays + 1);
     var limitKey = limit.getFullYear() + '-' + pad2(limit.getMonth() + 1) + '-' + pad2(limit.getDate());
-
     var result = {};
     keys.forEach(function (key) {
       if (key.slice(0, 10) >= limitKey) result[key] = map[key];
@@ -1158,32 +1211,7 @@ body{
     return result;
   }
 
-  /* 口令：{ '2026-09-21': { habitId: 'K7M2Q' } } */
-  function loadCodes() {
-    var raw = readJSON(CODES_KEY, {});
-    var result = {};
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return result;
-
-    Object.keys(raw).forEach(function (dateKey) {
-      if (!isValidDateKey(dateKey)) return;
-      var day = raw[dateKey];
-      if (!day || typeof day !== 'object' || Array.isArray(day)) return;
-
-      var clean = {};
-      Object.keys(day).forEach(function (habitId) {
-        var code = typeof day[habitId] === 'string' ? day[habitId].toUpperCase().replace(/[^0-9A-Z]/g, '') : '';
-        if (code !== '') clean[habitId] = code;
-      });
-      if (Object.keys(clean).length > 0) result[dateKey] = clean;
-    });
-    return pruneByDate(result, 7);
-  }
-
-  function saveCodes(codes) {
-    writeJSON(CODES_KEY, pruneByDate(codes && typeof codes === 'object' ? codes : {}, 7));
-  }
-
-  /* 校验记录：{ '2026-09-21::habitId': { status, seen, reason, engine, at } } */
+  /* 证据记录：{ 'YYYY-MM-DD::habitId': { status, evidenceType, confidence, matched, reason, feedback, engine, at } } */
   function loadVerify() {
     var raw = readJSON(VERIFY_KEY, {});
     var result = {};
@@ -1192,11 +1220,16 @@ body{
     Object.keys(raw).forEach(function (key) {
       var item = raw[key];
       if (!item || typeof item !== 'object') return;
+      var status = item.status === 'passed' || item.status === 'manual' || item.status === 'failed' || item.status === 'pending'
+        ? item.status : 'failed';
       result[key] = {
-        status: item.status === 'passed' || item.status === 'failed' ? item.status : 'pending',
-        seen: typeof item.seen === 'string' ? item.seen.slice(0, 40) : '',
-        reason: typeof item.reason === 'string' ? item.reason.slice(0, 80) : '',
-        engine: typeof item.engine === 'string' ? item.engine : '',
+        status: status,
+        evidenceType: typeof item.evidenceType === 'string' ? item.evidenceType.slice(0, 20) : '',
+        confidence: typeof item.confidence === 'number' && isFinite(item.confidence) ? Math.max(0, Math.min(1, item.confidence)) : 0,
+        matched: Array.isArray(item.matched) ? item.matched.filter(function (x) { return typeof x === 'string'; }).slice(0, 6).map(function (x) { return x.slice(0, 40); }) : [],
+        reason: typeof item.reason === 'string' ? item.reason.slice(0, 220) : '',
+        feedback: typeof item.feedback === 'string' ? item.feedback.slice(0, 120) : '',
+        engine: typeof item.engine === 'string' ? item.engine.slice(0, 20) : '',
         at: typeof item.at === 'number' && isFinite(item.at) ? item.at : 0
       };
     });
@@ -1374,12 +1407,7 @@ body{
     checkinsKey: CHECKINS_KEY,
     pointsKey: POINTS_KEY,
     rewardsKey: REWARDS_KEY,
-    codesKey: CODES_KEY,
     verifyKey: VERIFY_KEY,
-    codeAlphabet: CODE_ALPHABET,
-    makeCode: makeCode,
-    loadCodes: loadCodes,
-    saveCodes: saveCodes,
     loadVerify: loadVerify,
     saveVerify: saveVerify,
     load: loadHabits,
@@ -1405,7 +1433,7 @@ body{
   };
 })();
 
-/* ============ 打卡页逻辑：拍照打卡 + 当天详情 ============ */
+/* ============ 打卡页逻辑：多模态证据打卡 + 当天详情 ============ */
 (function () {
   var CHECKIN_POINTS = 10;   // 打卡得分 / 取消打卡扣分
   var STREAK_STEP = 7;       // 连续多少天结算一次额外奖励
@@ -1414,28 +1442,25 @@ body{
 
   /*
    * ===== AI 双模式 =====
-   * 默认 Mock：零成本、可离线演示。
+   * 默认 Mock：零成本演示，不调用模型。
    * 服务端配置 DEEPSEEK_API_KEY 后，页面会自动检测真实 AI 是否可用，
    * 点击右上角模式标签即可切换；选择保存在本机。
-   * 真实模式受服务端每日额度保护，额度用完会自动降级到 Mock。
+   * 真实证据判断受每日额度保护，额度用完后仍可手动复盘完成。
    */
   var AI_ENDPOINT = '/.netlify/functions/api';
   var AI_MODE_PREF_KEY = 'ai-habit-checkin:ai-mode-pref';
   var AI_CONTEXT_KEY = 'ai-habit-checkin:ai-context';
-  var FORCE_VISION = false;
-  try { FORCE_VISION = new URLSearchParams(location.search).get('forceVision') === '1'; } catch (error) {}
   var IS_REAL_AI = false;
   var aiModePref = loadAiModePref();
   var aiStatus = {
     checking: true,
     online: false,
     realAI: false,
-    codes: false,
     vision: false,
     planLimit: 5,
     planRemaining: null,
-    visionLimit: 3,
-    visionRemaining: null
+    evidenceLimit: 5,
+    evidenceRemaining: null
   };
   var MOCK_PLAN_TEXT = [
     '【AI 习惯规划 · 通用示例（Mock 模式，未调用接口）】',
@@ -1455,7 +1480,7 @@ body{
     '· 每周留半天不安排任务，用来放松和社交',
     '',
     '四、打卡建议',
-    '· 每完成一项就拍一张照片当凭证',
+    '· 每完成一项就留下照片、文字或语音证据',
     '· 连续打卡满 7 天给自己一个小奖励，坚持 21 天再升级奖励',
     '· 一次只新增 1-2 个习惯，稳定两周后再加新的',
     '',
@@ -1481,14 +1506,13 @@ body{
   var habits = HabitStore.load();
   var checkins = HabitStore.loadCheckins();
   var points = HabitStore.loadPoints();
-  var codes = HabitStore.loadCodes();
   var verify = HabitStore.loadVerify();
   var selectedHabitId = habits.length > 0 ? habits[0].id : null;
   var newHabitIcon = ICONS[0];
 
   /*
    * 打卡日在凌晨 4 点切换：00:00-03:59 拍的打卡算前一天，
-   * 既避免"刚好过零点"被误判，也让口令有效期更好解释。
+   * 既避免"刚好过零点"被误判，也让当日打卡判断更稳定。
    */
   var OCT_DAY_START_HOUR = 4;
   var realNow = new Date();
@@ -1552,10 +1576,33 @@ body{
   var aiAudienceEl = document.getElementById('aiAudience');
   var aiImportRowEl = document.getElementById('aiImportRow');
   var aiImportBtn = document.getElementById('aiImportBtn');
-  var codeDateLabelEl = document.getElementById('codeDateLabel');
-  var codeListEl = document.getElementById('codeList');
-  var codeEmptyEl = document.getElementById('codeEmpty');
-  var codeFootEl = document.getElementById('codeFoot');
+  var evidenceGuideFootEl = document.getElementById('evidenceGuideFoot');
+  var evidenceOverlay = document.getElementById('evidenceOverlay');
+  var evidenceModeLabelEl = document.getElementById('evidenceModeLabel');
+  var evidenceTitleEl = document.getElementById('evidenceTitle');
+  var evidenceHabitNameEl = document.getElementById('evidenceHabitName');
+  var evidenceCloseBtn = document.getElementById('evidenceClose');
+  var evidenceCancelBtn = document.getElementById('evidenceCancel');
+  var evidencePhotoBtn = document.getElementById('evidencePhotoBtn');
+  var evidencePhotoInput = document.getElementById('evidencePhotoInput');
+  var evidenceTextEl = document.getElementById('evidenceText');
+  var evidenceCountEl = document.getElementById('evidenceCount');
+  var evidenceVoiceBtn = document.getElementById('evidenceVoiceBtn');
+  var evidenceResultEl = document.getElementById('evidenceResult');
+  var evidenceResultTitleEl = document.getElementById('evidenceResultTitle');
+  var evidenceChipsEl = document.getElementById('evidenceChips');
+  var evidenceReasonEl = document.getElementById('evidenceReason');
+  var evidenceFeedbackEl = document.getElementById('evidenceFeedback');
+  var evidenceFollowUpBox = document.getElementById('evidenceFollowUpBox');
+  var evidenceQuestionEl = document.getElementById('evidenceQuestion');
+  var evidenceFollowUpInput = document.getElementById('evidenceFollowUpInput');
+  var evidenceFollowUpBtn = document.getElementById('evidenceFollowUpBtn');
+  var evidenceManualBox = document.getElementById('evidenceManualBox');
+  var evidenceManualText = document.getElementById('evidenceManualText');
+  var evidenceManualBtn = document.getElementById('evidenceManualBtn');
+  var evidenceManualToggle = document.getElementById('evidenceManualToggle');
+  var evidenceSubmitBtn = document.getElementById('evidenceSubmit');
+  var evidenceHintEl = document.getElementById('evidenceHint');
   var calAddBtn = document.getElementById('calAddBtn');
   var calOverlay = document.getElementById('calOverlay');
   var calSlotRowEl = document.getElementById('calSlotRow');
@@ -1574,10 +1621,13 @@ body{
   var aiTypingTimer = null;
   var aiProcessTimer = null;
   var aiMockTimer = null;
-  var codeSource = 'local';        // local | server | unavailable
-  var codesRequested = false;
-  var ocrState = 'idle';           // idle | loading | ready | failed
-  var ocrWaiters = [];
+  var evidenceHabit = null;
+  var evidencePhotoBlob = null;
+  var evidencePreviewUrl = '';
+  var evidenceBusy = false;
+  var evidenceFollowUpUsed = false;
+  var evidenceVoiceActive = false;
+  var evidenceRecognition = null;
   var calTimes = ['21:30'];        // 默认选中的提醒时间
 
   function pad(number) {
@@ -1645,9 +1695,10 @@ body{
       if (typeof quota.plan.limit === 'number') aiStatus.planLimit = quota.plan.limit;
       if (typeof quota.plan.remaining === 'number') aiStatus.planRemaining = quota.plan.remaining;
     }
-    if (quota.vision) {
-      if (typeof quota.vision.limit === 'number') aiStatus.visionLimit = quota.vision.limit;
-      if (typeof quota.vision.remaining === 'number') aiStatus.visionRemaining = quota.vision.remaining;
+    var evidence = quota.evidence || quota.vision;
+    if (evidence) {
+      if (typeof evidence.limit === 'number') aiStatus.evidenceLimit = evidence.limit;
+      if (typeof evidence.remaining === 'number') aiStatus.evidenceRemaining = evidence.remaining;
     }
   }
 
@@ -1656,10 +1707,18 @@ body{
     if (typeof aiStatus.planRemaining === 'number') {
       parts.push('真实规划剩余 ' + aiStatus.planRemaining + '/' + aiStatus.planLimit + ' 次');
     }
-    if (aiStatus.vision && typeof aiStatus.visionRemaining === 'number') {
-      parts.push('视觉校验剩余 ' + aiStatus.visionRemaining + '/' + aiStatus.visionLimit + ' 次');
+    if (typeof aiStatus.evidenceRemaining === 'number') {
+      parts.push('证据判断剩余 ' + aiStatus.evidenceRemaining + '/' + aiStatus.evidenceLimit + ' 次');
     }
     return parts.length > 0 ? '今日额度：' + parts.join('，') + '。' : '';
+  }
+
+  function renderEvidenceGuide() {
+    if (!evidenceGuideFootEl) return;
+    var mode = IS_REAL_AI ? '真实 AI 模式' : 'Mock 演示模式';
+    var visionNote = IS_REAL_AI && !aiStatus.vision ? ' 视觉模型未配置时，照片会转为手动完成。' : '';
+    evidenceGuideFootEl.textContent = mode + '：AI 验证和手动确认都 +10 分；手动完成需填写 10～50 字复盘。'
+      + visionNote + ' ' + aiQuotaText();
   }
 
   function setAiModeUi() {
@@ -1679,56 +1738,40 @@ body{
       aiModeTagEl.textContent = '检测 AI 模式…';
       aiModeTagEl.title = '正在检测服务端配置';
       aiNoteEl.textContent = '正在检测服务端是否配置真实 AI…';
+      renderEvidenceGuide();
       return;
     }
 
     if (real) {
       aiModeTagEl.textContent = '真实 AI 模式';
       aiModeTagEl.title = '点击切换为 Mock 模式';
-      aiNoteEl.textContent = '真实 AI 模式：由 Netlify 服务端调用 DeepSeek，密钥只保存在环境变量里。'
-        + (aiStatus.vision ? '' : ' 视觉模型未配置，拍照校验只走端侧 OCR。')
+      aiNoteEl.textContent = '真实 AI 模式：由 Netlify 服务端理解照片、文字或语音转文字证据。'
+        + (aiStatus.vision ? '' : ' 照片识别未配置，文字证据仍可用。')
         + aiQuotaText() + ' 点击右上角标签可切回 Mock，避免持续消耗额度。';
+      renderEvidenceGuide();
       return;
     }
 
     aiModeTagEl.textContent = 'Mock 演示模式';
-    if (aiStatus.realAI && aiStatus.codes && aiStatus.planRemaining === 0) {
-      aiModeTagEl.title = '今日真实 AI 额度已用完';
-      aiNoteEl.textContent = 'Mock 演示模式：今日真实 AI 规划额度已用完，明天再试或继续使用内置示例。'
-        + aiQuotaText();
-    } else if (aiStatus.realAI && aiStatus.codes) {
+    if (aiStatus.realAI) {
       aiModeTagEl.title = '点击切换为真实 AI 模式';
-      aiNoteEl.textContent = 'Mock 演示模式：当前不调用接口、不产生费用。服务端已配置真实 AI，'
-        + '点击右上角标签即可切换。' + aiQuotaText();
+      aiNoteEl.textContent = 'Mock 演示模式：证据判断只模拟结果，不调用接口、不产生费用。'
+        + ' 服务端已配置真实 AI，点击右上角标签即可切换。' + aiQuotaText();
     } else if (aiStatus.online) {
-      aiModeTagEl.title = '服务端未配置真实 AI 或口令密钥';
-      aiNoteEl.textContent = 'Mock 演示模式：服务端未配置真实 AI 或口令密钥，当前只使用内置示例。';
+      aiModeTagEl.title = '服务端未配置真实 AI';
+      aiNoteEl.textContent = 'Mock 演示模式：服务端未配置真实 AI，当前只使用模拟证据结果。';
     } else {
       aiModeTagEl.title = '未连接到服务端';
-      aiNoteEl.textContent = 'Mock 演示模式：未连接到服务端，当前只使用内置示例，不产生费用。';
+      aiNoteEl.textContent = 'Mock 演示模式：未连接到服务端，当前只使用模拟证据结果，不产生费用。';
     }
+    renderEvidenceGuide();
   }
 
   function setRealMode(enable) {
     IS_REAL_AI = !!enable;
-    codesRequested = false;
     setAiAudience('');
-
-    if (IS_REAL_AI) {
-      if (!codes[todayKeyStr]) codes[todayKeyStr] = {};
-      codes[todayKeyStr] = {};
-      codeSource = 'local';
-      HabitStore.saveCodes(codes);
-    } else {
-      var day = todayCodes();
-      var allCovered = habits.length > 0 && habits.every(function (habit) { return !!day[habit.id]; });
-      fillLocalCodes();
-      codeSource = allCovered ? 'server' : 'local';
-    }
-
     setAiModeUi();
-    ensureCodes();
-    renderAll();
+    renderEvidenceGuide();
   }
 
   function refreshAiMode() {
@@ -1736,7 +1779,6 @@ body{
       aiStatus.checking = false;
       aiStatus.online = false;
       aiStatus.realAI = false;
-      aiStatus.codes = false;
       aiStatus.vision = false;
       setAiModeUi();
       return Promise.resolve();
@@ -1755,12 +1797,11 @@ body{
         }
         aiStatus.online = true;
         aiStatus.realAI = !!result.data.realAI;
-        aiStatus.codes = !!result.data.codes;
         aiStatus.vision = !!result.data.vision;
         applyAiQuota(result.data.quota);
         aiStatus.checking = false;
 
-        if (aiModePref === 'real' && aiStatus.realAI && aiStatus.codes) {
+        if (aiModePref === 'real' && aiStatus.realAI) {
           if (!IS_REAL_AI) setRealMode(true);
           else setAiModeUi();
         } else if (IS_REAL_AI) {
@@ -1772,7 +1813,6 @@ body{
       .catch(function () {
         aiStatus.online = false;
         aiStatus.realAI = false;
-        aiStatus.codes = false;
         aiStatus.vision = false;
         aiStatus.checking = false;
         if (IS_REAL_AI) setRealMode(false);
@@ -1790,17 +1830,13 @@ body{
       toast('正在检测 AI 模式，请稍候');
       return;
     }
-    if (!aiStatus.realAI || !aiStatus.codes) {
+    if (!aiStatus.realAI) {
       if (aiStatus.online) {
-        toast('服务端未配置真实 AI 或口令密钥，当前只能使用 Mock 演示模式');
+        toast('服务端未配置真实 AI，当前只能使用 Mock 演示模式');
       } else {
         toast('未连接到服务端，正在重新检测…');
         refreshAiMode();
       }
-      return;
-    }
-    if (!IS_REAL_AI && aiStatus.planRemaining === 0) {
-      toast('今日真实 AI 额度已用完，明天再试');
       return;
     }
 
@@ -1813,11 +1849,12 @@ body{
       aiModePref = 'real';
       saveAiModePref();
       setRealMode(true);
-      toast('已切换为真实 AI 模式，本次会消耗服务端额度');
+      toast('已切换为真实 AI 模式，证据判断会消耗服务端额度');
     }
+    renderAll();
   }
 
-  function dateFromKey(key) {
+    function dateFromKey(key) {
     var parts = key.split('-');
     return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
   }
@@ -1967,7 +2004,7 @@ body{
     return gained;
   }
 
-  function adjustPoints(delta, type, habit, dateKey) {
+  function adjustPoints(delta, type, habit, dateKey, source) {
     points.total += delta;
     points.ledger.push({
       id: HabitStore.makeId('pt'),
@@ -1976,6 +2013,7 @@ body{
       points: delta,
       habitId: habit ? habit.id : '',
       habitName: habit ? habit.name : '',
+      source: source || '',
       date: dateKey || ''
     });
     if (points.ledger.length > 200) points.ledger = points.ledger.slice(-200);
@@ -2100,8 +2138,7 @@ body{
     viewerImgEl.src = '';
   });
 
-  /* ---------- 拍照打卡 ---------- */
-  /* ---------- 口令 ---------- */
+  /* ---------- 拍照 / 文字 / 语音证据打卡 ---------- */
   function verifyKeyOf(dateKey, habitId) {
     return dateKey + '::' + habitId;
   }
@@ -2112,7 +2149,12 @@ body{
 
   function verifyOn(dateKey, habitId) {
     var record = verify[verifyKeyOf(dateKey, habitId)];
-    if (!record) return { status: 'none', seen: '', reason: '', engine: '', at: 0 };
+    if (!record) {
+      return {
+        status: 'none', evidenceType: '', confidence: 0, matched: [],
+        reason: '', feedback: '', engine: '', at: 0
+      };
+    }
     return record;
   }
 
@@ -2126,328 +2168,121 @@ body{
     HabitStore.saveVerify(verify);
   }
 
-  function todayCodes() {
-    if (!codes[todayKeyStr]) codes[todayKeyStr] = {};
-    return codes[todayKeyStr];
-  }
-
-  function codeOf(habitId) {
-    return todayCodes()[habitId] || '';
-  }
-
   function clip(text, max) {
-    var value = String(text || '').replace(/\s+/g, ' ').trim();
+    var value = String(text || '').replace(/s+/g, ' ').trim();
     var limit = max || 20;
     return value.length > limit ? value.slice(0, limit) + '…' : value;
   }
 
-  /* 手写体常见误认：比对前把两边都归一化到同一个类 */
-  var CONFUSABLE = { 'O': '0', 'Q': '0', 'D': '0', 'I': '1', 'L': '1', 'J': '1', 'S': '5', 'Z': '2', 'B': '8', 'G': '6' };
-
-  function canon(text) {
-    var upper = String(text || '').toUpperCase();
-    var out = '';
-    for (var i = 0; i < upper.length; i++) {
-      var ch = upper.charAt(i);
-      out += CONFUSABLE[ch] || ch;
-    }
-    return out.replace(/[^0-9A-Z]/g, '');
+  function evidenceTypeNow() {
+    var hasPhoto = !!evidencePhotoBlob;
+    var hasText = evidenceTextEl.value.trim() !== '';
+    if (hasPhoto && hasText) return 'mixed';
+    if (hasPhoto) return 'photo';
+    return hasText ? 'text' : '';
   }
 
-  /* 命中即通过；允许 1 个字符的手写误差，其余情况一律不通过 */
-  function codeMatches(seenText, expected) {
-    var haystack = canon(seenText);
-    var needle = canon(expected);
-    if (needle === '') return false;
-    if (haystack.indexOf(needle) !== -1) return true;
-
-    for (var i = 0; i + needle.length <= haystack.length; i++) {
-      var window = haystack.slice(i, i + needle.length);
-      var diff = 0;
-      for (var j = 0; j < needle.length; j++) {
-        if (window.charAt(j) !== needle.charAt(j)) diff++;
-      }
-      if (diff <= 1) return true;
-    }
-    return false;
+  function setEvidenceBusy(busy) {
+    evidenceBusy = !!busy;
+    evidenceSubmitBtn.disabled = !!busy;
+    evidenceFollowUpBtn.disabled = !!busy;
+    evidenceManualBtn.disabled = !!busy;
+    evidencePhotoBtn.disabled = !!busy;
+    evidenceTextEl.disabled = !!busy;
+    evidencePhotoInput.disabled = !!busy;
+    evidenceSubmitBtn.textContent = busy ? 'AI 正在理解证据…' : (IS_REAL_AI ? '交给 AI 判断' : 'Mock 模拟判断');
   }
 
-  function fillLocalCodes() {
-    var day = todayCodes();
-    var changed = false;
-    habits.forEach(function (habit) {
-      if (!day[habit.id]) {
-        day[habit.id] = HabitStore.makeCode();
-        changed = true;
-      }
+  function resetEvidencePhoto() {
+    if (evidencePreviewUrl) {
+      try { URL.revokeObjectURL(evidencePreviewUrl); } catch (error) {}
+      evidencePreviewUrl = '';
+    }
+    evidencePhotoBlob = null;
+    evidencePhotoInput.value = '';
+    evidencePhotoBtn.innerHTML = '<span>📷</span><span>拍照 / 选择</span>';
+  }
+
+  function resetEvidenceModal(habit) {
+    evidenceHabit = habit || null;
+    evidenceBusy = false;
+    evidenceFollowUpUsed = false;
+    resetEvidencePhoto();
+    evidenceTextEl.value = '';
+    evidenceTextEl.disabled = false;
+    evidenceTextEl.readOnly = false;
+    evidenceCountEl.textContent = '0/500';
+    evidenceFollowUpInput.value = '';
+    evidenceFollowUpBox.hidden = true;
+    evidenceManualBox.hidden = true;
+    evidenceManualText.value = '';
+    evidenceManualText.disabled = false;
+    evidenceResultEl.hidden = true;
+    evidenceResultEl.className = 'evidence-result';
+    evidenceResultTitleEl.textContent = '';
+    evidenceChipsEl.innerHTML = '';
+    evidenceReasonEl.textContent = '';
+    evidenceFeedbackEl.textContent = '';
+    evidenceSubmitBtn.hidden = false;
+    evidenceManualToggle.hidden = false;
+    evidenceManualToggle.textContent = 'AI 无法判断？改为手动完成';
+    evidenceCancelBtn.textContent = '取消';
+    evidencePhotoBtn.disabled = false;
+    evidenceSubmitBtn.disabled = false;
+    evidenceFollowUpBtn.disabled = false;
+    evidenceManualBtn.disabled = false;
+    evidenceModeLabelEl.textContent = IS_REAL_AI ? '真实 AI 证据判断' : 'Mock 演示结果';
+    evidenceHintEl.textContent = IS_REAL_AI
+      ? 'AI 只依据你提供的证据判断；照片会发送到服务端模型。手动完成同样 +10 分。'
+      : 'Mock 模式只模拟打卡流程，不会真正判断证据；切到真实 AI 后才会调用模型。';
+    evidenceSubmitBtn.textContent = IS_REAL_AI ? '交给 AI 判断' : 'Mock 模拟判断';
+    if (habit) {
+      evidenceTitleEl.textContent = 'AI 证据打卡';
+      evidenceHabitNameEl.textContent = habit.name;
+    }
+  }
+
+  function showEvidenceResult(data) {
+    var verdict = data && data.verdict ? data.verdict : 'manual_only';
+    evidenceResultEl.hidden = false;
+    evidenceResultEl.className = 'evidence-result ' + (verdict === 'followup' ? 'followup' : verdict === 'passed' ? 'passed' : 'manual');
+    evidenceResultTitleEl.textContent = verdict === 'passed'
+      ? '证据已确认'
+      : verdict === 'followup' ? '还需要补充一个信息' : 'AI 暂时无法确认';
+    evidenceChipsEl.innerHTML = '';
+    var matched = data && Array.isArray(data.matched) ? data.matched : [];
+    matched.forEach(function (text) {
+      var chip = document.createElement('span');
+      chip.className = 'evidence-chip';
+      chip.textContent = text;
+      evidenceChipsEl.appendChild(chip);
     });
-    if (changed) HabitStore.saveCodes(codes);
-    return day;
+    evidenceReasonEl.textContent = (data && data.reason) || '';
+    evidenceFeedbackEl.textContent = (data && data.feedback) || '';
   }
 
-  /* 真实模式：口令由服务端下发，学生无法提前算出来 */
-  function requestServerCodes() {
-    if (habits.length === 0) {
-      if (!IS_REAL_AI) fillLocalCodes();
-      renderCodes();
-      return;
-    }
-
-    renderCodes();
-    fetch(AI_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'codes', habitIds: habits.map(function (habit) { return habit.id; }) })
-    })
-      .then(function (response) {
-        return response.json().then(function (data) { return { ok: response.ok, data: data }; });
-      })
-      .then(function (result) {
-        if (!result.ok || !result.data || result.data.ok === false) {
-          throw new Error((result.data && result.data.error) || '口令接口异常');
-        }
-        var serverCodes = result.data.codes || {};
-        var day = todayCodes();
-
-        Object.keys(serverCodes).forEach(function (habitId) {
-          var code = typeof serverCodes[habitId] === 'string'
-            ? serverCodes[habitId].toUpperCase().replace(/[^0-9A-Z]/g, '')
-            : '';
-          if (code !== '') day[habitId] = code;
-        });
-
-        codeSource = Object.keys(serverCodes).length > 0 ? 'server' : 'unavailable';
-        HabitStore.saveCodes(codes);
-        renderCodes();
-        if (codeSource === 'server') toast('已获取今日口令（服务端下发）');
-      })
-      .catch(function () {
-        var cached = todayCodes();
-        var allCovered = habits.length > 0 && habits.every(function (habit) { return !!cached[habit.id]; });
-        if (allCovered) {
-          codeSource = 'server';
-          renderCodes();
-          toast('口令服务暂时不可用，继续使用今天已缓存的服务端口令');
-          return;
-        }
-        codeSource = 'unavailable';
-        renderCodes();
-        toast('真实 AI 已开启，但服务端口令暂时不可用；可稍后刷新或切换 Mock 模式');
-      });
+  function markEvidenceSessionComplete(status) {
+    if (status === 'manual') evidenceResultTitleEl.textContent = '手动完成';
+    evidenceSubmitBtn.hidden = true;
+    evidenceFollowUpBox.hidden = true;
+    evidenceManualBox.hidden = true;
+    evidenceManualToggle.hidden = true;
+    evidencePhotoBtn.disabled = true;
+    evidenceTextEl.readOnly = true;
+    evidenceCancelBtn.textContent = '关闭';
+    evidenceHintEl.textContent = status === 'manual'
+      ? '已记录为手动完成，本次同样获得 10 分。'
+      : '本次证据已记录，可以在日历和今日列表中查看结果。';
   }
 
-  function ensureCodes() {
-    if (!codes[todayKeyStr]) codes[todayKeyStr] = {};
-
-    if (IS_REAL_AI && typeof fetch === 'function') {
-      if (codeSource !== 'server' && !codesRequested) {
-        codesRequested = true;
-        requestServerCodes();
-        return;
-      }
-      renderCodes();
-      return;
-    }
-
-    fillLocalCodes();
-    renderCodes();
-  }
-
-  function copyText(text) {
-    if (!text) return;
-    try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text);
-        toast('口令已复制：' + text);
-        return;
-      }
-    } catch (error) {
-      // 走下面的兜底提示
-    }
-    toast('今日口令：' + text + '（长按可复制）');
-  }
-
-  function renderCodes() {
-    var day = todayCodes();
-    var waitingServer = IS_REAL_AI && codesRequested && codeSource === 'local';
-
-    codeDateLabelEl.textContent = todayKeyStr + ' · 有效至次日 04:00';
-    codeListEl.innerHTML = '';
-    codeEmptyEl.hidden = habits.length > 0;
-
-    habits.forEach(function (habit, index) {
-      var color = habitColor(index);
-      var state = verifyOf(habit.id);
-      var item = document.createElement('li');
-      item.className = 'code-item';
-
-      var iconEl = document.createElement('span');
-      iconEl.className = 'c-icon';
-      iconEl.textContent = habit.icon || '💧';
-      iconEl.style.background = color + '1f';
-
-      var main = document.createElement('div');
-      main.className = 'c-main';
-      var nameEl = document.createElement('div');
-      nameEl.className = 'c-name';
-      nameEl.textContent = habit.name;
-      var hintEl = document.createElement('span');
-      hintEl.className = 'c-hint';
-      hintEl.textContent = state.status === 'passed' ? '口令已识别 · 打卡有效'
-        : state.status === 'pending' ? '正在校验…'
-          : state.status === 'failed' ? '口令未识别 · 重拍试试'
-            : '把口令写进照片里再拍';
-      main.appendChild(nameEl);
-      main.appendChild(hintEl);
-
-      var codeEl = document.createElement('span');
-      codeEl.className = 'c-code';
-      codeEl.textContent = day[habit.id] || '-----';
-
-      var copyBtn = document.createElement('button');
-      copyBtn.type = 'button';
-      copyBtn.className = 'c-copy';
-      copyBtn.textContent = '复制';
-      copyBtn.addEventListener('click', function () {
-        copyText(day[habit.id] || '');
-      });
-
-      item.appendChild(iconEl);
-      item.appendChild(main);
-      item.appendChild(codeEl);
-      item.appendChild(copyBtn);
-      codeListEl.appendChild(item);
-    });
-
-    if (waitingServer) {
-      codeFootEl.textContent = '正在向服务端获取今日口令…';
-    } else if (codeSource === 'unavailable') {
-      codeFootEl.textContent = '真实模式已开启，但服务端口令暂时不可用。请稍后刷新，或点击右上角切换回 Mock 演示模式。';
-    } else if (codeSource === 'server') {
-      codeFootEl.textContent = '口令由服务端下发，每天 04:00 更换；口令只和你的习惯绑定，同学的照片对不上你的口令。';
-    } else {
-      codeFootEl.textContent = '口令在本设备生成，每天 04:00 更换；切换到真实模式后会由服务端下发，避免被提前推算。';
-    }
-  }
-
-  /* ---------- 通道一：端侧 OCR（首次加载需联网） ---------- */
-  var OCR_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js';
-
-  function flushOcrWaiters(ready) {
-    var waiters = ocrWaiters;
-    ocrWaiters = [];
-    waiters.forEach(function (fn) { fn(ready); });
-  }
-
-  function ensureOcrEngine(callback) {
-    if (typeof window.Tesseract !== 'undefined' && window.Tesseract) {
-      callback(true);
-      return;
-    }
-
-    ocrWaiters.push(callback);
-    if (ocrState === 'loading' || ocrState === 'failed') return;
-
-    var host = document.body || document.documentElement;
-    if (!host || typeof document.createElement !== 'function') {
-      ocrState = 'failed';
-      flushOcrWaiters(false);
-      return;
-    }
-
-    ocrState = 'loading';
-    toast('首次使用端侧识别，正在加载 OCR 模型…');
-    var script = document.createElement('script');
-    script.src = OCR_CDN;
-    script.async = true;
-    script.onload = function () { ocrState = 'ready'; flushOcrWaiters(true); };
-    script.onerror = function () { ocrState = 'failed'; flushOcrWaiters(false); };
-    host.appendChild(script);
-  }
-
-  function runLocalOcr(blob, done) {
-    ensureOcrEngine(function (ready) {
-      if (!ready || typeof window.Tesseract === 'undefined' || !window.Tesseract
-        || typeof window.Tesseract.recognize !== 'function') {
-        done({ ok: false, text: '', reason: '端侧识别引擎不可用' });
-        return;
-      }
-
-      try {
-        window.Tesseract.recognize(blob, 'eng', { tessedit_char_whitelist: HabitStore.codeAlphabet })
-          .then(function (result) {
-            var text = result && result.data ? String(result.data.text || '') : '';
-            done({ ok: true, text: text });
-          })
-          .catch(function (error) {
-            done({ ok: false, text: '', reason: '端侧识别失败：' + (error && error.message ? error.message : '未知错误') });
-          });
-      } catch (error) {
-        done({ ok: false, text: '', reason: '端侧识别异常' });
-      }
-    });
-  }
-
-  /* ---------- 通道二：视觉智能体（真实模式，服务端调用） ---------- */
-  function requestAgentVerify(habit, blob, done) {
-    if (!IS_REAL_AI || typeof fetch !== 'function') {
-      done({ ok: false, reason: '演示模式：端侧没读到口令，不做二次识别' });
-      return;
-    }
-
-    HabitStore.blobToDataUrl(blob).then(function (dataUrl) {
-      if (!dataUrl) {
-        done({ ok: false, reason: '照片读取失败' });
-        return;
-      }
-
-      fetch(AI_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'verify',
-          habitId: habit.id,
-          image: dataUrl
-        })
-      })
-        .then(function (response) {
-          return response.json().then(function (data) { return { ok: response.ok, data: data }; });
-        })
-        .then(function (result) {
-          if (!result.ok || !result.data || result.data.ok === false) {
-            var data = result.data || null;
-            if (data && data.quota) {
-              applyAiQuota(data.quota);
-              setAiModeUi();
-            }
-            done({ ok: false, reason: (data && data.error) || '视觉智能体返回异常' });
-            return;
-          }
-          applyAiQuota(result.data.quota);
-          setAiModeUi();
-          done({
-            ok: true,
-            passed: !!result.data.passed,
-            seen: result.data.seen || '',
-            reason: result.data.reason || '',
-            model: result.data.model || ''
-          });
-        })
-        .catch(function (error) {
-          done({ ok: false, reason: '调用视觉智能体失败：' + (error && error.message ? error.message : '未知错误') });
-        });
-    });
-  }
-
-  /* ---------- 校验流程编排 ---------- */
-  function awardCheckinIfNeeded(habit) {
+  function awardCheckinIfNeeded(habit, source) {
     if (isChecked(habit.id, todayKeyStr)) return;
 
     var dates = getCheckedDates(habit.id).slice();
     dates.push(todayKeyStr);
     checkins[habit.id] = HabitStore.normalizeDates(dates);
 
-    adjustPoints(CHECKIN_POINTS, 'checkin', habit, todayKeyStr);
+    adjustPoints(CHECKIN_POINTS, 'checkin', habit, todayKeyStr, source || '');
     var gained = syncStreakBonus(habit.id);
     if (gained > 0) {
       adjustPoints(gained, 'bonus', habit, todayKeyStr);
@@ -2459,110 +2294,235 @@ body{
     HabitStore.savePoints(points);
   }
 
-  function finishVerify(habit, passed, seenText, reason, engine) {
-    setVerify(habit.id, {
-      status: passed ? 'passed' : 'failed',
-      seen: clip(seenText || ''),
-      reason: reason || (passed ? '口令匹配成功' : '照片里没有该习惯今天的口令'),
-      engine: engine || '',
+  function completeEvidence(habit, data, status, engine) {
+    var record = {
+      status: status === 'manual' ? 'manual' : 'passed',
+      evidenceType: data.evidenceType || evidenceTypeNow() || 'text',
+      confidence: typeof data.confidence === 'number' ? data.confidence : 0,
+      matched: Array.isArray(data.matched) ? data.matched.slice(0, 6) : [],
+      reason: clip(data.reason || '', 220),
+      feedback: clip(data.feedback || '', 120),
+      engine: engine || 'agent',
       at: Date.now()
-    });
-
-    if (passed) {
-      awardCheckinIfNeeded(habit);
-      celebrateCell(todayKeyStr);
-      toast('✅ ' + habit.name + ' 口令识别通过，+10 积分');
-      if (allDoneToday()) {
-        confetti();
-        toast('🎉 今日全部完成，继续保持！');
-      }
-    } else {
-      toast('❌ ' + habit.name + ' 校验未通过：' + clip(reason, 30));
-    }
-
+    };
+    setVerify(habit.id, record);
+    awardCheckinIfNeeded(habit, record.status === 'manual' ? 'manual' : (engine || 'agent'));
     renderAll();
+    showEvidenceResult(Object.assign({ verdict: record.status === 'manual' ? 'manual_only' : 'passed' }, record));
+    markEvidenceSessionComplete(record.status);
+    toast(record.status === 'manual'
+      ? '已手动完成：' + habit.name + '，+10 积分'
+      : 'AI 证据通过：' + habit.name + '，+10 积分');
+    if (allDoneToday()) {
+      confetti();
+      toast('🎉 今日全部完成，继续保持！');
+    }
   }
 
-  function runVerification(habit, blob, expectedCode) {
-    if (!expectedCode) {
-      finishVerify(habit, false, '', '今天还没有该习惯的口令，请刷新页面', 'local');
-      return;
+  function saveEvidencePhoto(habit) {
+    if (!evidencePhotoBlob) return Promise.resolve();
+    var key = photoKey(todayKeyStr, habit.id);
+    return HabitStore.photoPut(key, evidencePhotoBlob).then(function () {
+      HabitStore.releasePhotoUrl(key);
+    });
+  }
+
+  function mockEvidenceResult() {
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        resolve({
+          ok: true,
+          verdict: 'passed',
+          confidence: 0.92,
+          matched: ['Mock 演示结果'],
+          reason: 'Mock 模式模拟为证据与习惯相关。',
+          feedback: '这是演示结果；切换到真实 AI 后会根据照片或文字实际判断。',
+          model: 'mock',
+          engine: 'mock',
+          quota: null
+        });
+      }, 450);
+    });
+  }
+
+  function requestEvidence(habit, followUpAnswer) {
+    var text = evidenceTextEl.value.trim();
+    if (!evidencePhotoBlob && text === '') {
+      return Promise.reject(new Error('请拍照，或输入文字 / 使用语音输入'));
     }
 
-    if (IS_REAL_AI && FORCE_VISION) {
-      requestAgentVerify(habit, blob, function (agent) {
-        if (agent.ok && agent.passed) {
-          finishVerify(habit, true, agent.seen, '真实 AI 视觉识别到今日口令', 'agent');
-          return;
-        }
-        var reason = agent.ok ? (agent.reason || '视觉智能体没在照片里找到今日口令') : agent.reason;
-        finishVerify(habit, false, agent.seen || '', '演示强制视觉校验：' + reason, agent.ok ? 'agent' : 'local');
+    if (!IS_REAL_AI) {
+      return saveEvidencePhoto(habit).then(mockEvidenceResult);
+    }
+    if (typeof fetch !== 'function') {
+      return Promise.reject(new Error('当前浏览器不支持连接服务端'));
+    }
+
+    var imagePromise = evidencePhotoBlob ? HabitStore.blobToDataUrl(evidencePhotoBlob) : Promise.resolve('');
+    return imagePromise.then(function (image) {
+      var type = image && text ? 'mixed' : image ? 'photo' : 'text';
+      if (image && !image) throw new Error('照片读取失败');
+      return fetch(AI_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'evidence',
+          habitId: habit.id,
+          habitName: habit.name,
+          context: aiContextEl.value.trim(),
+          evidence: { type: type, image: image || '', text: text },
+          followUpAnswer: followUpAnswer || ''
+        })
       });
+    }).then(function (response) {
+      return response.json().then(function (data) {
+        return { ok: response.ok, data: data };
+      });
+    }).then(function (result) {
+      if (result.data && result.data.quota) {
+        applyAiQuota(result.data.quota);
+        setAiModeUi();
+      }
+      if (!result.ok || !result.data || result.data.ok === false) {
+        var error = new Error((result.data && result.data.error) || 'AI 证据判断失败');
+        error.data = result.data || null;
+        throw error;
+      }
+      return result.data;
+    });
+  }
+
+  function openManualEvidence(message) {
+    evidenceManualBox.hidden = false;
+    evidenceFollowUpBox.hidden = true;
+    evidenceSubmitBtn.hidden = true;
+    evidenceManualToggle.hidden = true;
+    showEvidenceResult({
+      verdict: 'manual_only',
+      matched: [],
+      reason: message || 'AI 暂时无法判断这份证据。',
+      feedback: '写下 10～50 字复盘后手动完成，同样获得 10 分。'
+    });
+    setTimeout(function () { evidenceManualText.focus(); }, 50);
+  }
+
+  function openEvidenceModal(habit) {
+    if (!habit) return;
+    resetEvidenceModal(habit);
+    var state = verifyOf(habit.id);
+    var checked = isChecked(habit.id, todayKeyStr);
+    if (checked && (state.status === 'passed' || state.status === 'manual')) {
+      var viewData = {
+        verdict: state.status === 'manual' ? 'manual_only' : 'passed',
+        matched: state.matched || [],
+        reason: state.reason || (state.status === 'manual' ? '本次为手动完成。' : '本次证据已通过。'),
+        feedback: state.feedback || ''
+      };
+      showEvidenceResult(viewData);
+      markEvidenceSessionComplete(state.status);
+      evidenceHintEl.textContent = state.status === 'manual' ? '本次为手动完成，已获得 10 分。' : '本次由 AI 理解证据后完成。';
+    }
+    evidenceOverlay.hidden = false;
+    setTimeout(function () {
+      if (!checked) evidenceTextEl.focus();
+    }, 80);
+  }
+
+  function closeEvidenceModal() {
+    if (evidenceBusy) return;
+    if (evidenceRecognition && evidenceVoiceActive) {
+      try { evidenceRecognition.stop(); } catch (error) {}
+    }
+    evidenceOverlay.hidden = true;
+    resetEvidencePhoto();
+    evidenceHabit = null;
+  }
+
+  function submitEvidence() {
+    if (!evidenceHabit || evidenceBusy) return;
+    if (!evidencePhotoBlob && evidenceTextEl.value.trim() === '') {
+      toast('请拍照，或输入文字 / 使用语音输入');
       return;
     }
-
-    runLocalOcr(blob, function (local) {
-      if (local.ok && codeMatches(local.text, expectedCode)) {
-        finishVerify(habit, true, local.text, '端侧识别到今日口令', 'local');
+    var habit = evidenceHabit;
+    setEvidenceBusy(true);
+    saveEvidencePhoto(habit).then(function () {
+      return requestEvidence(habit, '');
+    }).then(function (data) {
+      setEvidenceBusy(false);
+      if (data.verdict === 'passed') {
+        completeEvidence(habit, data, 'passed', data.engine || 'agent');
         return;
       }
-
-      var localReason = local.ok
-        ? '端侧没读到口令' + (local.text ? '（读到：' + clip(local.text) + '）' : '')
-        : local.reason;
-
-      requestAgentVerify(habit, blob, function (agent) {
-        if (agent.ok && agent.passed) {
-          finishVerify(habit, true, agent.seen, '视觉智能体识别到今日口令', 'agent');
-          return;
-        }
-
-        var agentReason = agent.ok ? (agent.reason || '视觉智能体没在照片里找到今日口令') : agent.reason;
-        finishVerify(
-          habit,
-          false,
-          agent.seen || (local.ok ? local.text : ''),
-          localReason + '；' + agentReason,
-          agent.ok ? 'agent' : 'local'
-        );
-      });
+      if (data.verdict === 'followup' && data.question && !evidenceFollowUpUsed) {
+        showEvidenceResult(data);
+        evidenceQuestionEl.textContent = data.question;
+        evidenceFollowUpBox.hidden = false;
+        evidenceSubmitBtn.hidden = true;
+        evidenceManualToggle.hidden = false;
+        evidenceFollowUpInput.value = '';
+        setTimeout(function () { evidenceFollowUpInput.focus(); }, 50);
+        return;
+      }
+      openManualEvidence(data.reason || 'AI 暂时无法确认这份证据。');
+    }).catch(function (error) {
+      setEvidenceBusy(false);
+      var data = error && error.data ? error.data : null;
+      if (data && data.quota) {
+        applyAiQuota(data.quota);
+        setAiModeUi();
+      }
+      openManualEvidence(error && error.message ? error.message : 'AI 判断失败，可以写复盘后手动完成。');
+      toast('AI 判断暂不可用，已提供手动完成入口');
     });
   }
 
-  function attachPhoto(habit, file) {
-    if (!file || !habit) return;
-
-    var key = photoKey(todayKeyStr, habit.id);
-    var previous = verifyOf(habit.id);
-    var alreadyPassed = previous.status === 'passed';
-
-    setVerify(habit.id, {
-      status: alreadyPassed ? 'passed' : 'pending',
-      seen: previous.seen || '',
-      reason: alreadyPassed ? '已通过校验' : '正在校验…',
-      engine: alreadyPassed ? previous.engine : '',
-      at: Date.now()
-    });
-    renderAll();
-
-    HabitStore.preparePhoto(file, function (blob) {
-      HabitStore.photoPut(key, blob).then(function () {
-        HabitStore.releasePhotoUrl(key);
-        renderAll();
-
-        if (alreadyPassed) {
-          toast('已更新 ' + habit.name + ' 今天的照片');
-          return;
-        }
-        runVerification(habit, blob, codeOf(habit.id));
-      });
+  function submitFollowUp() {
+    if (!evidenceHabit || evidenceBusy) return;
+    var answer = evidenceFollowUpInput.value.trim();
+    if (answer.length < 2) {
+      toast('请补充一句回答');
+      return;
+    }
+    var habit = evidenceHabit;
+    evidenceFollowUpUsed = true;
+    setEvidenceBusy(true);
+    requestEvidence(habit, answer).then(function (data) {
+      setEvidenceBusy(false);
+      if (data.verdict === 'passed') {
+        completeEvidence(habit, data, 'passed', data.engine || 'agent');
+        return;
+      }
+      openManualEvidence(data.reason || '补充回答后仍无法确认，可以写复盘手动完成。');
+    }).catch(function (error) {
+      setEvidenceBusy(false);
+      var data = error && error.data ? error.data : null;
+      if (data && data.quota) applyAiQuota(data.quota);
+      openManualEvidence(error && error.message ? error.message : '补充回答后仍无法判断。');
     });
   }
 
-  function clearPhoto(habit) {
+  function submitManualEvidence() {
+    if (!evidenceHabit || evidenceBusy) return;
+    var reflection = evidenceManualText.value.trim();
+    if (reflection.length < 10) {
+      toast('复盘至少写 10 个字');
+      return;
+    }
+    var type = evidenceTypeNow() || 'text';
+    if (evidencePhotoBlob) saveEvidencePhoto(evidenceHabit);
+    completeEvidence(evidenceHabit, {
+      evidenceType: type,
+      confidence: 0,
+      matched: ['手动复盘确认'],
+      reason: '用户填写复盘后手动完成',
+      feedback: '已记录你的复盘；本次手动完成同样获得 10 分。'
+    }, 'manual', 'manual');
+  }
+
+  function cancelCheckin(habit) {
     if (!habit) return;
     var key = photoKey(todayKeyStr, habit.id);
-
     HabitStore.photoDelete(key).then(function () {
       if (isChecked(habit.id, todayKeyStr)) {
         checkins[habit.id] = HabitStore.normalizeDates(getCheckedDates(habit.id).filter(function (date) {
@@ -2574,12 +2534,92 @@ body{
         HabitStore.savePoints(points);
         toast('-10 积分 · 已取消 ' + habit.name + ' 今天的打卡');
       } else {
-        toast('已清除照片，可以重新拍一张');
+        toast('已清除证据，可以重新打卡');
       }
-
       clearVerify(habit.id);
       HabitStore.releasePhotoUrl(key);
+      if (evidenceHabit && evidenceHabit.id === habit.id) closeEvidenceModal();
       renderAll();
+    });
+  }
+
+  evidencePhotoBtn.addEventListener('click', function () {
+    if (!evidenceBusy) evidencePhotoInput.click();
+  });
+  evidencePhotoInput.addEventListener('change', function () {
+    var file = evidencePhotoInput.files && evidencePhotoInput.files[0];
+    if (!file) return;
+    HabitStore.preparePhoto(file, function (blob) {
+      evidencePhotoBlob = blob;
+      if (evidencePreviewUrl) {
+        try { URL.revokeObjectURL(evidencePreviewUrl); } catch (error) {}
+      }
+      evidencePreviewUrl = URL.createObjectURL(blob);
+      evidencePhotoBtn.innerHTML = '';
+      var img = document.createElement('img');
+      img.src = evidencePreviewUrl;
+      img.alt = '证据照片预览';
+      evidencePhotoBtn.appendChild(img);
+    });
+    evidencePhotoInput.value = '';
+  });
+  evidenceTextEl.addEventListener('input', function () {
+    evidenceCountEl.textContent = evidenceTextEl.value.length + '/500';
+  });
+  evidenceSubmitBtn.addEventListener('click', submitEvidence);
+  evidenceFollowUpBtn.addEventListener('click', submitFollowUp);
+  evidenceManualBtn.addEventListener('click', submitManualEvidence);
+  evidenceManualToggle.addEventListener('click', function () {
+    openManualEvidence('已切换为手动完成，请写下今天的复盘。');
+  });
+  evidenceCloseBtn.addEventListener('click', closeEvidenceModal);
+  evidenceCancelBtn.addEventListener('click', closeEvidenceModal);
+
+  var SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognitionCtor) {
+    evidenceVoiceBtn.hidden = true;
+  } else {
+    evidenceVoiceBtn.addEventListener('click', function () {
+      if (evidenceBusy) return;
+      if (evidenceVoiceActive && evidenceRecognition) {
+        try { evidenceRecognition.stop(); } catch (error) {}
+        return;
+      }
+      try {
+        evidenceRecognition = new SpeechRecognitionCtor();
+      } catch (error) {
+        toast('当前浏览器无法启动语音输入');
+        return;
+      }
+      evidenceRecognition.lang = 'zh-CN';
+      evidenceRecognition.interimResults = false;
+      evidenceRecognition.continuous = false;
+      evidenceRecognition.onstart = function () {
+        evidenceVoiceActive = true;
+        evidenceVoiceBtn.classList.add('listening');
+        evidenceVoiceBtn.textContent = '正在听，再点一次结束';
+      };
+      evidenceRecognition.onresult = function (event) {
+        var transcript = '';
+        for (var i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (transcript) {
+          evidenceTextEl.value = (evidenceTextEl.value ? evidenceTextEl.value + ' ' : '') + transcript;
+          evidenceCountEl.textContent = evidenceTextEl.value.length + '/500';
+        }
+      };
+      evidenceRecognition.onerror = function () {
+        toast('语音识别失败，可以直接输入文字');
+      };
+      evidenceRecognition.onend = function () {
+        evidenceVoiceActive = false;
+        evidenceVoiceBtn.classList.remove('listening');
+        evidenceVoiceBtn.textContent = '🎙️ 语音输入';
+      };
+      try { evidenceRecognition.start(); } catch (error) {
+        toast('无法启动语音输入，请检查麦克风权限');
+      }
     });
   }
 
@@ -2636,10 +2676,10 @@ body{
       var stateEl = document.createElement('span');
       stateEl.className = 'd-state';
       var record = verifyOn(dateKey, habit.id);
-      stateEl.textContent = ok ? '已完成'
+      stateEl.textContent = ok ? (record.status === 'manual' ? '手动完成' : 'AI 已验证')
         : dateKey > todayKeyStr ? '未开始'
-          : record.status === 'pending' ? '校验中'
-            : record.status === 'failed' ? '未通过'
+          : record.status === 'pending' ? '判断中'
+            : record.status === 'failed' ? '待补充证据'
               : '未完成';
       if (!ok && record.reason) stateEl.title = record.reason;
 
@@ -2670,9 +2710,9 @@ body{
     });
 
     dayNoteEl.textContent = dateKey > todayKeyStr
-      ? '不支持超前打卡，到当天再拍照打卡吧。'
+      ? '不支持超前打卡，到当天再添加证据吧。'
       : dateKey === todayKeyStr
-        ? '今天还没完成？在下方「今日打卡」里点相机图标拍照即可。'
+        ? '今天还没完成？在下方「今日打卡」里点 AI 证据按钮即可。'
         : '不支持补卡，过去的日期只能查看记录。';
 
     dayOverlay.hidden = false;
@@ -2740,28 +2780,19 @@ body{
     }
   }
 
-  function buildPhotoBox(habit, color) {
+  function buildEvidenceTile(habit, color) {
     var wrap = document.createElement('div');
     wrap.className = 'media-wrap';
 
-    var input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';
-    input.className = 'photo-input';
-    input.hidden = true;
-
     var state = verifyOf(habit.id);
-    var hasAttempt = state.status === 'pending' || state.status === 'passed' || state.status === 'failed';
+    var checked = isChecked(habit.id, todayKeyStr);
+    var hasRecord = checked || state.status === 'pending' || state.status === 'passed' || state.status === 'manual' || state.status === 'failed';
 
     var box = document.createElement('button');
     box.type = 'button';
-    box.className = 'photo-box';
-    box.title = hasAttempt
-      ? '点一下看大图；要换照片先点右上角 ×'
-      : '拍照或上传今天的打卡照片（记得把口令拍进画面）';
-
-    var photoUrlValue = '';
+    box.className = 'photo-box evidence-tile';
+    box.title = checked ? '查看今天的证据记录' : '添加照片、文字或语音证据';
+    box.setAttribute('aria-label', (checked ? '查看 ' : '添加 ') + habit.name + ' 今天的打卡证据');
 
     var iconEl = document.createElement('span');
     iconEl.className = 'ph-icon';
@@ -2771,49 +2802,43 @@ body{
     if (state.status === 'pending') {
       box.classList.add('verify-pending');
       iconEl.textContent = '⏳';
-      textEl.textContent = '校验中…';
+      textEl.textContent = '判断中…';
+    } else if (state.status === 'manual') {
+      iconEl.textContent = '✍️';
+      textEl.textContent = '手动完成';
     } else if (state.status === 'failed') {
       box.classList.add('verify-failed');
-      iconEl.textContent = '⚠️';
-      textEl.textContent = '口令没识别到';
+      iconEl.textContent = '＋';
+      textEl.textContent = '补充证据';
+    } else if (checked) {
+      iconEl.textContent = '✓';
+      textEl.textContent = '已验证';
     } else {
       iconEl.textContent = '📷';
-      textEl.textContent = '拍照打卡';
+      textEl.textContent = 'AI 证据';
     }
     box.appendChild(iconEl);
     box.appendChild(textEl);
 
-    // 没有照片时点一下 = 拍照/上传；已有照片时点一下 = 看大图（换图先点 × 取消）
     box.addEventListener('click', function () {
-      if (photoUrlValue) {
-        openViewer(photoUrlValue, habit.name + ' · ' + todayKeyStr);
-        return;
-      }
-      input.click();
+      openEvidenceModal(habit);
     });
 
-    input.addEventListener('change', function () {
-      var file = input.files && input.files[0];
-      if (file) attachPhoto(habit, file);
-      input.value = '';
-    });
-
-    if (hasAttempt) {
+    if (checked || state.status === 'passed' || state.status === 'manual' || state.status === 'failed') {
       var key = photoKey(todayKeyStr, habit.id);
       HabitStore.photoUrl(key).then(function (url) {
         if (!url) return;
-        photoUrlValue = url;
         box.innerHTML = '';
         box.classList.add('has-photo');
-        if (state.status === 'passed') box.style.borderColor = color;
+        box.style.borderColor = checked ? color : '';
         var img = document.createElement('img');
         img.src = url;
-        img.alt = habit.name + ' 今天的打卡照片';
+        img.alt = habit.name + ' 今天的打卡证据';
         box.appendChild(img);
         var badge = document.createElement('span');
-        badge.className = 'status-badge ' + (state.status === 'passed' ? 'passed' : state.status === 'failed' ? 'failed' : 'pending');
-        badge.textContent = state.status === 'passed' ? '✓' : state.status === 'failed' ? '!' : '…';
-        if (state.status === 'passed') badge.style.background = color;
+        badge.className = 'status-badge ' + (state.status === 'manual' ? 'passed' : state.status === 'failed' ? 'failed' : 'passed');
+        badge.textContent = state.status === 'manual' ? '✍' : state.status === 'failed' ? '!' : '✓';
+        badge.style.background = state.status === 'manual' ? '#7c3aed' : color;
         box.appendChild(badge);
       });
     }
@@ -2822,14 +2847,13 @@ body{
     clearBtn.type = 'button';
     clearBtn.className = 'media-clear';
     clearBtn.textContent = '×';
-    clearBtn.title = '删除照片；已通过校验的会一并取消今天的打卡';
-    clearBtn.hidden = !hasAttempt;
+    clearBtn.title = checked ? '取消今天的打卡并扣回 10 分' : '清除本次证据';
+    clearBtn.hidden = !hasRecord;
     clearBtn.addEventListener('click', function (event) {
       if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
-      clearPhoto(habit);
+      cancelCheckin(habit);
     });
 
-    wrap.appendChild(input);
     wrap.appendChild(box);
     wrap.appendChild(clearBtn);
     return wrap;
@@ -2881,9 +2905,10 @@ body{
       var sub = document.createElement('span');
       sub.className = 'habit-sub';
       var vState = verifyOf(habit.id);
-      var statusText = ok ? '今日已打卡'
-        : vState.status === 'pending' ? '口令校验中'
-          : vState.status === 'failed' ? '口令未通过'
+      var statusText = ok
+        ? (vState.status === 'manual' ? '今日手动完成' : 'AI 证据已通过')
+        : vState.status === 'pending' ? 'AI 正在判断证据'
+          : vState.status === 'failed' ? '证据待补充'
             : '今日未打卡';
       sub.textContent = statusText
         + ' · 连续 ' + getCurrentStreak(habit.id) + ' 天 · 累计 ' + getCheckedDates(habit.id).length + ' 天';
@@ -2915,7 +2940,7 @@ body{
       actions.appendChild(editBtn);
       actions.appendChild(deleteBtn);
 
-      row.appendChild(buildPhotoBox(habit, color));
+      row.appendChild(buildEvidenceTile(habit, color));
       row.appendChild(main);
       row.appendChild(actions);
       habitListEl.appendChild(row);
@@ -2949,7 +2974,7 @@ body{
 
   function renderAll() {
     renderHeader();
-    renderCodes();
+    renderEvidenceGuide();
     renderCalendar();
     renderToday();
   }
@@ -2977,16 +3002,9 @@ body{
     };
     habits.push(habit);
     HabitStore.save(habits);
-    if (IS_REAL_AI) {
-      codesRequested = true;
-      requestServerCodes();
-    } else {
-      todayCodes()[habit.id] = HabitStore.makeCode();
-      HabitStore.saveCodes(codes);
-    }
     selectedHabitId = habit.id;
     renderAll();
-    toast('已添加习惯：' + habit.name + (IS_REAL_AI ? '（正在获取服务端口令）' : '（今天拍照即可打卡）'));
+    toast('已添加习惯：' + habit.name + '，可以开始证据打卡');
     return true;
   }
 
@@ -3063,9 +3081,6 @@ body{
         delete checkins[habit.id];
         delete points.bonus[habit.id];
 
-        Object.keys(codes).forEach(function (dateKey) {
-          if (codes[dateKey] && codes[dateKey][habit.id]) delete codes[dateKey][habit.id];
-        });
         Object.keys(verify).forEach(function (key) {
           if (key.slice(12) === habit.id) delete verify[key];
         });
@@ -3073,7 +3088,6 @@ body{
         HabitStore.save(habits);
         HabitStore.saveCheckins(checkins);
         HabitStore.savePoints(points);
-        HabitStore.saveCodes(codes);
         HabitStore.saveVerify(verify);
 
         keysToRemove.forEach(function (key) {
@@ -3213,6 +3227,7 @@ body{
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        action: 'plan',
         today: todayKeyStr,
         totalPoints: points.total,
         habits: aiHabitsSnapshot(),
@@ -3298,19 +3313,10 @@ body{
     }
 
     HabitStore.save(habits);
-    if (IS_REAL_AI) {
-      codesRequested = true;
-      requestServerCodes();
-    } else {
-      habits.forEach(function (habit) {
-        if (!todayCodes()[habit.id]) todayCodes()[habit.id] = HabitStore.makeCode();
-      });
-      HabitStore.saveCodes(codes);
-    }
     if (!findHabit(selectedHabitId)) selectedHabitId = habits[0].id;
     renderAll();
     var suffix = skippedForLimit > 0 ? '，' + skippedForLimit + ' 个因达到上限未导入' : '';
-    toast('已导入 ' + added + ' 个习惯' + suffix + (IS_REAL_AI ? '，正在获取服务端口令' : '，今天拍照即可打卡'));
+    toast('已导入 ' + added + ' 个习惯' + suffix);
   }
 
   aiPlanBtn.addEventListener('click', function () {
@@ -3451,15 +3457,15 @@ body{
       lines.push('DTSTART;TZID=Asia/Shanghai:' + datePart + 'T' + parts[0] + parts[1] + '00');
       lines.push('DTEND;TZID=Asia/Shanghai:' + datePart + 'T' + endTime + '00');
       lines.push('RRULE:FREQ=DAILY');
-      lines.push('SUMMARY:' + icsEscape('习惯打卡 · 拍照 + 今日口令'));
+      lines.push('SUMMARY:' + icsEscape('习惯打卡 · AI 证据教练'));
       lines.push('DESCRIPTION:' + icsEscape(
-        '到点打开打卡页，拍下今天的习惯，记得把页面上的「今日口令」写进照片里。\n打卡页：' + (url || '')
+        '到点打开打卡页，用照片、文字或语音记录今天的习惯。\n打卡页：' + (url || '')
       ));
       if (url) lines.push('URL:' + url);
       lines.push('BEGIN:VALARM');
       lines.push('TRIGGER:PT0M');
       lines.push('ACTION:DISPLAY');
-      lines.push('DESCRIPTION:' + icsEscape('该拍照打卡啦'));
+      lines.push('DESCRIPTION:' + icsEscape('该记录今天的习惯证据啦'));
       lines.push('END:VALARM');
       lines.push('END:VEVENT');
     });
@@ -3573,7 +3579,6 @@ body{
     habits = HabitStore.load();
     checkins = HabitStore.loadCheckins();
     points = HabitStore.loadPoints();
-    codes = HabitStore.loadCodes();
     verify = HabitStore.loadVerify();
     if (!findHabit(selectedHabitId)) {
       selectedHabitId = habits.length > 0 ? habits[0].id : null;
@@ -3582,7 +3587,6 @@ body{
   });
 
   renderSuggestions();
-  ensureCodes();
   renderAll();
   refreshAiMode();
 })();
@@ -3900,10 +3904,10 @@ body{
 
   function ledgerTitle(entry) {
     if (entry.type === 'bonus') return '连续打卡满 7 天奖励' + (entry.habitName ? ' · ' + entry.habitName : '');
-    if (entry.type === 'cancel') return '删除照片取消打卡 · ' + (entry.habitName || '习惯');
+    if (entry.type === 'cancel') return '取消打卡 · ' + (entry.habitName || '习惯');
     if (entry.type === 'redeem') return '兑换奖励 · ' + (entry.habitName || '奖励');
     if (entry.type === 'delete') return '删除习惯扣回 · ' + (entry.habitName || '习惯');
-    return '拍照打卡成功 · ' + (entry.habitName || '习惯');
+    return (entry.source === 'manual' ? '手动完成 · ' : 'AI 证据打卡 · ') + (entry.habitName || '习惯');
   }
 
   function ledgerTime(ts) {
@@ -4189,6 +4193,7 @@ body{
           checkins: HabitStore.loadCheckins(),
           points: HabitStore.loadPoints(),
           rewards: HabitStore.loadRewards(),
+          evidence: HabitStore.loadVerify(),
           photos: photos || {}
         });
         var count = Object.keys(photos || {}).length;
@@ -4231,6 +4236,7 @@ body{
       HabitStore.saveCheckins(data.checkins && typeof data.checkins === 'object' ? data.checkins : {});
       HabitStore.savePoints(data.points && typeof data.points === 'object' ? data.points : { total: 0, bonus: {}, ledger: [] });
       HabitStore.saveRewards(data.rewards && typeof data.rewards === 'object' ? data.rewards : { tiers: [], unlocked: [] });
+      HabitStore.saveVerify(data.evidence && typeof data.evidence === 'object' ? data.evidence : {});
 
       // 照片单独存在 IndexedDB 里，这里一并恢复
       if (data.photos && typeof data.photos === 'object') {
