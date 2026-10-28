@@ -1,6 +1,6 @@
-# AI 学生习惯打卡系统
+# AI 习惯证据教练
 
-一个面向希望养成习惯的通用人群（备考、职场、健身、生活规律等）的习惯打卡 Web 应用：拍照 + 每日口令完成打卡，累计积分，并在积分商城中兑换奖励。当前前端是一个单文件页面，打卡和积分商城通过底部导航切换。
+一个通用习惯打卡 Web 应用：用户可以用照片、文字或语音转文字记录当天完成情况，AI 理解证据并给出反馈；无法判断时也可以填写复盘手动完成。应用包含连续打卡、积分兑换、AI 个性化规划和数据备份。
 
 ## 当前结构
 
@@ -11,29 +11,25 @@
 ├─ .env.example                # 环境变量模板
 └─ netlify/
    └─ functions/
-      └─ api.js                # AI 规划 / 口令 / 视觉识别接口
+      └─ api.js                # AI 规划 / 证据判断接口
 ```
 
-> `shop.html` 已合并进 `index.html`，不再需要单独页面。
+## 核心功能
 
-## 功能
-
-- 习惯录入、删除、重命名
-- 月历打卡统计、连续天数、最长连续
-- 每日服务端口令 + 拍照打卡
-- 端侧 Tesseract OCR（首次加载需联网，之后浏览器可缓存）+ 真实 AI 视觉识别兜底
-- 打卡积分、连续 7 天奖励
-- 积分商城：积分足够即可兑换，兑换扣分，可重复兑换
-- 最多支持 20 个习惯，与服务端限制一致
-- 积分明细、兑换记录、奖励自定义
-- 数据备份 / 恢复（含照片）
-- AI 个性化习惯规划：Mock / 真实 AI 双模式
-- 可选补充信息：真实 AI 会根据习惯和补充信息自行判断场景
-- AI 生成过程显示三阶段进度，并以打字机效果输出结果
+- 照片、文字、语音三种证据入口，不再要求手写口令
+- 照片不限定固定物品；睡眠、学习、运动、整理等场景可自由表达
+- AI 返回匹配证据、置信度、判断原因和一句反馈
+- AI 不确定时最多追问一次
+- AI 失败、额度用完或网络异常时，可填写 10～50 字复盘手动完成
+- AI 验证和手动完成均获得 10 分，并计入连续记录
+- 连续满 7 天额外奖励 5 分
+- 积分商城、奖励兑换、月历统计、备份恢复
+- Mock / 真实 AI 双模式；默认 Mock，不产生费用
+- 最多支持 20 个习惯
 
 ## 本地运行
 
-推荐使用 Netlify CLI，保证 `/.netlify/functions/api` 可用：
+推荐使用 Netlify CLI，确保 `/.netlify/functions/api` 可用：
 
 ```bash
 npx netlify-cli dev
@@ -41,87 +37,86 @@ npx netlify-cli dev
 
 然后打开 CLI 输出的本地地址。
 
-> 不建议直接双击 `index.html` 测真实 AI：`file://` 下没有 Netlify 函数，也可能导致 localStorage 在页面间隔离。
+不建议直接双击 `index.html` 测真实 AI：`file://` 下没有 Netlify 函数。
 
 ## 环境变量
 
-复制 `.env.example` 并在 Netlify 后台配置：
-
 | 变量 | 说明 | 默认 |
 |---|---|---|
-| `DEEPSEEK_API_KEY` | DeepSeek API Key，真实规划必填 | 无 |
-| `DEEPSEEK_MODEL` | 规划模型 | `deepseek-flash` |
-| `DEEPSEEK_BASE_URL` | DeepSeek API 地址 | `https://api.deepseek.com` |
-| `CODES_SECRET` | 服务端口令密钥，不填回退到 DeepSeek Key | 无 |
-| `VISION_API_KEY` | 视觉识别 Key，不填回退到 DeepSeek Key | 无 |
-| `VISION_MODEL` | 视觉模型 | `deepseek-flash` |
-| `VISION_BASE_URL` | 视觉 API 地址 | `https://api.deepseek.com` |
-| `DEMO_PLAN_DAILY_LIMIT` | 每日真实规划次数 | `5` |
-| `DEMO_VISION_DAILY_LIMIT` | 每日视觉校验次数 | `3` |
+| `DEEPSEEK_API_KEY` | 文本规划与证据判断 Key | 必填 |
+| `VISION_API_KEY` | 照片判断 Key，可复用 DeepSeek Key | 必填 |
+| `DEEPSEEK_MODEL` | 文本模型，通常不需要设置 | `deepseek-flash` |
+| `DEEPSEEK_BASE_URL` | 文本 API 地址，通常不需要设置 | `https://api.deepseek.com` |
+| `VISION_MODEL` | 视觉模型，通常不需要设置 | `deepseek-flash` |
+| `VISION_BASE_URL` | 视觉 API 地址，通常不需要设置 | `https://api.deepseek.com` |
+| `DEMO_PLAN_DAILY_LIMIT` | 每日真实规划额度 | `5` |
+| `DEMO_VISION_DAILY_LIMIT` | 每日证据判断额度，照片/文字/语音共用 | `5` |
 | `ALLOWED_ORIGINS` | 允许的来源，逗号分隔；不填允许所有来源 | 空 |
 
-视觉识别请求使用：
+> 为避免 Netlify 密钥扫描把公开的模型名称和 API 地址误判为密钥，通常只配置两个 API Key 和额度变量。
 
-```json
-{
-  "model": "deepseek-flash",
-  "messages": [
-    {
-      "role": "user",
-      "content": [
-        { "type": "text", "text": "..." },
-        { "type": "image_url", "image_url": { "url": "data:image/jpeg;base64,..." } }
-      ]
-    }
-  ]
-}
-```
+## 使用真实 AI
 
-## 使用真实 AI 演示
-
-1. 配置好环境变量并部署。
-2. 打开页面，右上角默认显示 `Mock 演示模式`。
+1. 配置环境变量并部署。
+2. 打开页面，默认处于 `Mock 演示模式`。
 3. 点击模式标签切换到 `真实 AI 模式`。
-4. 在「补充信息（可选）」中填写身份、目标或当前困扰，AI 会据此判断场景。
-4. 点击「AI 生成个性化习惯规划」，展示真实模型返回和剩余额度。
-5. 添加一个习惯，复制今日口令，拍照打卡。
-6. 如需稳定展示真实视觉模型，在真实模式下使用 `?forceVision=1`，它会跳过端侧 OCR 直接调用服务端视觉识别。
-8. 演示结束后点击模式标签切回 Mock，避免继续消耗额度。
+4. 添加习惯，点击习惯左侧的 AI 证据按钮。
+5. 选择照片、输入文字，或使用浏览器语音转文字。
+6. 点击“交给 AI 判断”。
+7. 若 AI 追问，补充一句回答；仍无法判断时可填写复盘手动完成。
+8. 演示结束后切回 Mock，避免继续消耗额度。
 
-> Mock 模式使用内置通用示例，不会根据补充信息判断人群；真实 AI 模式才会执行场景判断。
+## 积分规则
 
-## 积分兑换规则
-
-- 打卡 +10 分
-- 连续满 7 天额外 +5 分
-- 删除照片取消当天打卡，扣回本次 10 分
-- 删除习惯会扣回该习惯产生的积分，避免删除后重新添加刷分
-- 删除习惯时最多扣到 0，不产生负余额
-- 兑换奖励扣除对应积分
-- 同一奖励可重复兑换，积分明细保留历史
-- 积分不足时兑换按钮禁用，并显示还差多少分
+- AI 证据通过：+10 分
+- 手动复盘完成：+10 分
+- 取消打卡：-10 分
+- 连续满 7 天：额外 +5 分
+- 删除习惯会扣回该习惯产生的积分，最多扣到 0
+- 兑换奖励会扣除积分，可重复兑换
 
 ## 数据与限制
 
-- 习惯、打卡、积分、奖励、口令、校验记录保存在 localStorage。
-- 照片保存在 IndexedDB。
-- 当前每日 AI 额度使用函数实例内存计数，Netlify 冷启动后会重置；比赛演示足够，生产环境建议换成 Netlify Blobs / Redis / 数据库。
-- 当前奖励兑换是本地数据操作，没有服务端账户体系；正式产品应把积分和兑换记录迁移到服务端。
+- 习惯、打卡、积分、奖励和证据判断摘要保存在 localStorage。
+- 原始照片保存在 IndexedDB；真实模式下照片会发送给模型服务。
+- 原始文字、语音和音频不会额外持久化；语音只在浏览器中转换为可编辑文字。
+- 每日 AI 额度使用函数实例内存计数，Netlify 冷启动或函数实例变化后可能重置；比赛演示足够，生产环境应使用 Netlify Blobs、Redis 或数据库。
+- 当前没有账号体系，不同设备之间不会自动同步，请使用备份/恢复迁移数据。
 
 ## 部署到 Netlify
 
-1. 把项目推送到 GitHub/Gitee。
-2. Netlify 连接仓库，构建命令留空，发布目录设为 `.`。
-3. 配置环境变量。
-4. 部署后访问首页，检查 `/.netlify/functions/api?action=health` 是否返回正常。
+1. 推送项目到 GitHub。
+2. Netlify 连接仓库，分支选择 `main`。
+3. Build command 留空，Publish directory 设置为 `.`。
+4. 添加环境变量。
+5. 使用 `Deploy project without cache` 部署。
+6. 检查健康接口：
+
+```text
+https://你的站点.netlify.app/.netlify/functions/api?action=health
+```
+
+正常返回：
+
+```json
+{
+  "ok": true,
+  "realAI": true,
+  "vision": true,
+  "quota": {
+    "plan": { "limit": 5, "remaining": 5 },
+    "evidence": { "limit": 5, "remaining": 5 }
+  }
+}
+```
 
 ## 验收检查
 
-- 打卡页和积分商城可通过底部导航切换。
-- 积分足够时兑换扣分成功，可重复兑换。
-- 积分不足时按钮禁用。
-- 刷新页面后积分和兑换记录保留。
-- 默认 Mock；真实模式可切换。
-- `?forceVision=1` 能触发服务端视觉识别。
-- 规划额度 5 次、视觉额度 3 次后返回 429。
-- 控制台无 JS 报错。
+- 照片、文字和语音转文字均可完成打卡
+- 模糊证据最多追问一次
+- AI 和手动完成都 +10 分
+- 取消打卡扣回 10 分
+- 第 6 次真实 AI 判断进入手动完成入口
+- 刷新、备份、恢复后数据正确
+- 手机和桌面无横向溢出
+- `index.html` 与 `netlify/functions/api.js` 语法检查通过
