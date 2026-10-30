@@ -10,7 +10,6 @@
 | 材料 | 位置 |
 |---|---|
 | 产品介绍与复现指南 | [README.md](../README.md) |
-| 技术报告 PDF | [AI_Habit_Coach_Technical_Report.pdf](AI_Habit_Coach_Technical_Report.pdf) |
 | AI 协同开发记录 | [prompt-history/README.md](prompt-history/README.md) |
 | 产品截图 | [assets/README.md](assets/README.md) |
 | 技术报告源文件 | [technical-report/README.md](technical-report/README.md) |
@@ -60,4 +59,5 @@
 | 多模态证据 | `87ca801` | 替代手写口令失败方案 |
 | 连续对话 | `269d715` | AI 习惯教练 |
 | 作品简介 | `6efa050` | 产品定位说明 |
+
 

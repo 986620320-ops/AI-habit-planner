@@ -1,6 +1,6 @@
 # 技术报告源文件
 
-最终 PDF：[`AI_Habit_Coach_Technical_Report.pdf`](../AI_Habit_Coach_Technical_Report.pdf)
+生成的 PDF 不进入 Git 仓库，作为独立提交材料保存在本机。
 
 本目录保留可编辑源文件：
 
@@ -25,7 +25,7 @@ python build_report.py
 ```powershell
 $chrome='C:\Program Files\Google\Chrome\Application\chrome.exe'
 $html=(Resolve-Path '.\report.html').Path.Replace('\','/')
-& $chrome --headless=new --no-sandbox --disable-gpu --print-to-pdf='..\AI_Habit_Coach_Technical_Report.pdf' --no-pdf-header-footer ('file:///' + $html)
+& $chrome --headless=new --no-sandbox --disable-gpu --print-to-pdf='..\..\..\提交材料\AI习惯教练_技术报告_20261031.pdf' --no-pdf-header-footer ('file:///' + $html)
 ```
 
 ## 验收
@@ -35,4 +35,5 @@ $html=(Resolve-Path '.\report.html').Path.Replace('\','/')
 - 检查项：每页 `.page` 的 `scrollHeight` 不超过 `clientHeight`
 - 截图：使用当前连续对话版真实产品界面
 - PDF 中不包含 API Key 或 `.env` 内容
+
 
