@@ -11,7 +11,6 @@
 - **完整版本记录**：[CHANGELOG.md](CHANGELOG.md)
 - **在线演示**：https://ai-habit-demo.netlify.app/
 - **代码仓库**：https://github.com/986620320-ops/AI-habit-planner
-- **技术文档**：[docs/AI_Habit_Coach_Technical_Report.pdf](docs/AI_Habit_Coach_Technical_Report.pdf)
 - **Prompt 历史**：[docs/prompt-history/README.md](docs/prompt-history/README.md)
 - **评审导航**：[docs/SUBMISSION_INDEX.md](docs/SUBMISSION_INDEX.md)
 - **文档导航**：[docs/README.md](docs/README.md)
@@ -336,7 +335,6 @@ git ls-files .env
 ## 评审材料
 
 - [Prompt 历史](docs/prompt-history/README.md)
-- [技术报告 PDF](docs/AI_Habit_Coach_Technical_Report.pdf)
 - [评审导航](docs/SUBMISSION_INDEX.md)
 - [产品截图](docs/assets/README.md)
 
@@ -347,6 +345,7 @@ git ls-files .env
 - 奖励兑换和积分仍为本地数据，不是服务端账本。
 - 照片会发送给真实模型服务，Mock 模式不发送。
 - 真实流式输出尚未实现，采用完整响应后的逐字显示。
+
 
 
 
