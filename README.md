@@ -1,14 +1,21 @@
 # AI 习惯教练与多模态打卡
 
-面向希望建立可持续习惯的通用人群。用户可以与 AI 连续对话制定计划，通过照片、文字或语音转文字提交每日证据，并获得 AI 反馈、连续记录和积分奖励。
+## 作品简介
 
+一个面向通用人群的习惯养成 Web 应用。用户可以和 AI 连续对话制定计划，也可以通过照片、文字或语音转文字完成每日证据打卡。应用包含连续记录、积分兑换、AI 追问、手动复盘和数据备份。
+
+## 版本与入口
+
+- **当前版本**：v1.0.0-rc1 · 比赛材料补充版
+- **上一线上版本**：v0.13.0 · 连续对话产品版 `b5b1778`
+- **完整版本记录**：[CHANGELOG.md](CHANGELOG.md)
 - **在线演示**：https://ai-habit-demo.netlify.app/
 - **代码仓库**：https://github.com/986620320-ops/AI-habit-planner
-- **提交截止**：2026-11-18
 - **技术文档**：[docs/AI_Habit_Coach_Technical_Report.pdf](docs/AI_Habit_Coach_Technical_Report.pdf)
 - **Prompt 历史**：[docs/prompt-history/README.md](docs/prompt-history/README.md)
 - **视频拍摄脚本**：[docs/video/demo-video-script.md](docs/video/demo-video-script.md)
-- **材料总索引**：[docs/SUBMISSION_INDEX.md](docs/SUBMISSION_INDEX.md)
+- **提交材料索引**：[docs/SUBMISSION_INDEX.md](docs/SUBMISSION_INDEX.md)
+- **文档导航**：[docs/README.md](docs/README.md)
 
 ## 作品定位
 
@@ -343,4 +350,5 @@ git ls-files .env
 - 奖励兑换和积分仍为本地数据，不是服务端账本。
 - 照片会发送给真实模型服务，Mock 模式不发送。
 - 真实流式输出尚未实现，采用完整响应后的逐字显示。
+
 
