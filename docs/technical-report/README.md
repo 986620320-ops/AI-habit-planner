@@ -6,7 +6,7 @@
 
 ```text
 build_report.py    生成带内嵌截图的 report.html
-report.html        18 页 A4 技术报告源文件
+report.html        19 页 A4 技术报告源文件
 ```
 
 ## 重新生成 HTML
@@ -30,8 +30,9 @@ $html=(Resolve-Path '.\report.html').Path.Replace('\','/')
 
 ## 验收
 
-- 页数：18 页，小于比赛要求的 30 页
+- 页数：19 页，小于比赛要求的 30 页
 - 页面：A4 纵向
 - 检查项：每页 `.page` 的 `scrollHeight` 不超过 `clientHeight`
 - 截图：使用当前连续对话版真实产品界面
 - PDF 中不包含 API Key 或 `.env` 内容
+
