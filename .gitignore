@@ -1,0 +1,10 @@
+.env
+.env.local
+.netlify/
+node_modules/
+*.log
+
+# Local visual prototypes and delivery archives
+index.prototype.html
+index.sample.html
+*.zip
