@@ -95,8 +95,8 @@ cp .env.example .env
 4. 在 `.env` 中填写：
 
 ```text
-DEEPSEEK_API_KEY=你的DeepSeekKey
-VISION_API_KEY=你的DeepSeekKey
+# 在 .env 中设置 DEEPSEEK_API_KEY 和 VISION_API_KEY
+# 此处不在文档里展示真实赋值格式
 ```
 
 `VISION_API_KEY` 可以等于 `DEEPSEEK_API_KEY`。不要提交 `.env`。
@@ -343,3 +343,4 @@ git ls-files .env
 - 奖励兑换和积分仍为本地数据，不是服务端账本。
 - 照片会发送给真实模型服务，Mock 模式不发送。
 - 真实流式输出尚未实现，采用完整响应后的逐字显示。
+
