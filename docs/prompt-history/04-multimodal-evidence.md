@@ -73,3 +73,6 @@
 - `87ca801` 迭代13-经过用户使用根据用户反馈更换打卡识别方式
 - 早期拍照/口令相关提交：`b932ad4`、`b976b13`
 
+## 7. 对话证据说明
+
+截图 PNG 保存在独立比赛提交包，GitHub 不提供图片文件。完整文字记录见 [对话导出页](evidence/evidence-export.html)，源日志行号与哈希见 [manifest.json](evidence/manifest.json)。

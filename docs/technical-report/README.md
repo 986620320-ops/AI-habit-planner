@@ -1,40 +1,32 @@
 # 技术报告源文件
 
-生成的 PDF 不进入 Git 仓库，作为独立提交材料保存在本机。
+技术报告 PDF、产品截图和生成版 `report.html` 不纳入 GitHub，统一保存在独立比赛提交包。
 
-本目录保留可编辑源文件：
+本目录保留生成脚本：
 
 ```text
-build_report.py    生成带内嵌截图的 report.html
-report.html        24 页 A4 技术报告源文件
+build_report.py    生成带本地截图的 report.html
+render_pdf.js      将 report.html 打印为 PDF
 ```
 
-## 重新生成 HTML
+## 重新生成
 
-```bash
-cd docs/technical-report
-python build_report.py
-```
-
-`build_report.py` 从 `docs/assets/` 读取产品截图，并以内嵌 Base64 方式写入 HTML。
-
-## 重新打印 PDF
-
-在 Windows PowerShell 中运行：
+先在本地准备 `docs/assets/` 产品截图，再运行：
 
 ```powershell
-$chrome='C:\Program Files\Google\Chrome\Application\chrome.exe'
-$html=(Resolve-Path '.\report.html').Path.Replace('\','/')
-& $chrome --headless=new --no-sandbox --disable-gpu --print-to-pdf='..\..\..\提交材料\AI习惯教练_技术报告_20261031.pdf' --no-pdf-header-footer ('file:///' + $html)
+python -X utf8 docs\technical-report\build_report.py
+node docs\technical-report\render_pdf.js
 ```
+
+生成文件：
+
+- `docs/technical-report/report.html`：本地预览，已被 `.gitignore` 排除。
+- `docs/technical-report/AI习惯教练_技术报告.pdf`：独立提交材料，不提交 GitHub。
 
 ## 验收
 
-- 页数：24 页，小于比赛要求的 30 页
+- 页数：26 页，小于比赛要求的 30 页
 - 页面：A4 纵向
 - 检查项：每页 `.page` 的 `scrollHeight` 不超过 `clientHeight`
-- 截图：使用当前连续对话版真实产品界面
+- 截图：连续对话、打卡反馈、断签恢复与每周复盘
 - PDF 中不包含 API Key 或 `.env` 内容
-
-
-

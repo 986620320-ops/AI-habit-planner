@@ -66,7 +66,7 @@
 > ### 3. 单文件与部署
 >
 > - 保留合并后的 `index.html`，继续使用 `#checkin` / `#shop` 切换。
-> - 删除 `shop.html`；原版仍可从 `C:\Users\tony\Documents\ChatGPT\AI智能化习惯打卡项目\shop.html` 找回。
+> - 删除 `shop.html`；原版仍可从 `C:\Users\<用户>\Documents\ChatGPT\AI智能化习惯打卡项目\shop.html` 找回。
 > - 将 `api.js` 迁移为 `netlify/functions/api.js`，删除根目录旧副本，避免两份后端代码漂移。
 > - 新增 `netlify.toml`：
 >   - `publish = "."`
@@ -168,6 +168,3 @@ netlify/functions/api.js
 - `6eba6ef` 迭代9-积分商城逻辑优化，设定每日AI使用次数
 - `6eba6ef` api迭代2-新增 deepseek-flash 视觉识别、服务端口令派生、健康检查、每日额度
 - `2f25cbc` 迭代6：接入 DeepSeek-Flash，双模式设计
-
-
-
