@@ -1,0 +1,175 @@
+{
+  "generated_at": "2026-11-01T16:21:43.720171+00:00",
+  "generator": "docs/prompt-history/render_evidence.py",
+  "storage_policy": "截图 PNG 仅保存在本地比赛提交包，不纳入 GitHub；文字导出页和源日志哈希继续保留。",
+  "source": {
+    "file": "rollout-2026-10-18T21-03-01-01a14f1b-c1d2-7e30-a4a7-c42450283b8e.jsonl",
+    "sha256": "54186954e5f9b5e973fbdaf423fc6e6532d05480c0bfa31f23fb17074ae519b8",
+    "note": "原始会话日志未提交；截图中的源日志行号和哈希可用于核验。"
+  },
+  "chains": [
+    {
+      "id": "02",
+      "slug": "bug-fix-and-limits",
+      "title": "删除习惯积分漏洞与 20 个习惯上限",
+      "range": [
+        2364,
+        2429
+      ],
+      "current_commit": "b2b492f",
+      "commit_title": "迭代10-修复2个bug。一，删除习惯时清掉了打卡记录和连续奖励，但积分总额和流水还在；重新添加同名习惯后还能再次打卡得分。二，前端没有限制习惯数量，服务端最多处理 20 个",
+      "pages": [
+        {
+          "id": "02-01-prompt",
+          "title": "原始问题",
+          "source_lines": [
+            2364
+          ],
+          "image": "02-01-prompt.png"
+        },
+        {
+          "id": "02-02-ai-analysis",
+          "title": "AI 定位与修改方案",
+          "source_lines": [
+            2369,
+            2409
+          ],
+          "image": "02-02-ai-analysis.png"
+        },
+        {
+          "id": "02-03-implementation-test",
+          "title": "实际修改与回归测试",
+          "source_lines": [
+            2404,
+            2413
+          ],
+          "image": "02-03-implementation-test.png"
+        },
+        {
+          "id": "02-04-verification-commit",
+          "title": "写回校验与提交记录",
+          "source_lines": [
+            2418,
+            2429
+          ],
+          "image": "02-04-verification-commit.png"
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "slug": "multimodal-evidence",
+      "title": "手写口令失败后的多模态证据改造",
+      "range": [
+        4404,
+        5189
+      ],
+      "current_commit": "87ca801",
+      "commit_title": "迭代13-经过用户使用根据用户反馈更换打卡识别方式",
+      "pages": [
+        {
+          "id": "04-01-prompt-chain",
+          "title": "用户连续反馈与最终需求",
+          "source_lines": [
+            4404,
+            4425,
+            4486,
+            4503,
+            4584
+          ],
+          "image": "04-01-prompt-chain.png"
+        },
+        {
+          "id": "04-02-ai-analysis",
+          "title": "AI 诊断与多模态方案",
+          "source_lines": [
+            4559,
+            4589
+          ],
+          "image": "04-02-ai-analysis.png"
+        },
+        {
+          "id": "04-03-implementation-test",
+          "title": "接口改造、错误修复与测试",
+          "source_lines": [
+            4604,
+            4706,
+            4862,
+            4894,
+            4899
+          ],
+          "image": "04-03-implementation-test.png"
+        },
+        {
+          "id": "04-04-verification-commit",
+          "title": "浏览器回归、写回与提交记录",
+          "source_lines": [
+            5115,
+            5120,
+            5159,
+            5189
+          ],
+          "image": "04-04-verification-commit.png"
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "slug": "conversational-coach",
+      "title": "一键规划改为连续对话式 AI 教练",
+      "range": [
+        5214,
+        5623
+      ],
+      "current_commit": "269d715",
+      "commit_title": "迭代13-优化了ai生成计划，改为可连续对话",
+      "pages": [
+        {
+          "id": "05-01-prompt",
+          "title": "原始 Prompt 与需求澄清",
+          "source_lines": [
+            5214,
+            5234,
+            5252
+          ],
+          "image": "05-01-prompt.png"
+        },
+        {
+          "id": "05-02-ai-plan",
+          "title": "AI 给出的实施计划",
+          "source_lines": [
+            5262
+          ],
+          "image": "05-02-ai-plan.png"
+        },
+        {
+          "id": "05-03-implementation-test",
+          "title": "界面、接口与浏览器回归",
+          "source_lines": [
+            5267,
+            5296,
+            5333,
+            5376,
+            5447,
+            5458,
+            5477,
+            5495
+          ],
+          "image": "05-03-implementation-test.png"
+        },
+        {
+          "id": "05-04-verification-commit",
+          "title": "最终检查、写回与提交记录",
+          "source_lines": [
+            5507,
+            5543,
+            5567,
+            5572,
+            5623
+          ],
+          "image": "05-04-verification-commit.png"
+        }
+      ]
+    }
+  ]
+}

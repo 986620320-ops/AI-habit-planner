@@ -1,12 +1,20 @@
-# 产品截图
+# 产品截图说明
 
-本目录保存当前版本的真实产品界面：
+产品截图不纳入 GitHub 仓库，统一保存在独立比赛提交包中。
 
-- `chat-desktop-conversation.png`：桌面端连续对话和习惯候选卡片
-- `chat-mobile-reply.png`：手机端连续对话
-- `evidence-desktop-shop.png`：积分商城
-- `evidence-desktop-modal.png`：桌面端多模态证据打卡弹窗
+本目录只保留说明文件。回归脚本运行时会在本地生成以下图片，但 `.gitignore` 会阻止它们被提交：
 
-截图来自当前版本的浏览器回归测试，不包含 API Key、账号信息或真实用户隐私。
+- 连续对话与手机端回复
+- 多模态证据打卡
+- 打卡后反馈
+- 断签恢复
+- 每周 AI 复盘
+- 积分商城
 
-如果界面发生变化，应重新截图并同步更新技术报告。
+生成命令：
+
+```powershell
+node tests\capture_product.js
+```
+
+正式提交时请从本地比赛提交包取图，并注意不要包含 API Key、账号信息或真实用户隐私。

@@ -67,4 +67,6 @@
 
 - `269d715` 迭代13-优化了ai生成计划，改为可连续对话
 
+## 7. 对话证据说明
 
+截图 PNG 保存在独立比赛提交包，GitHub 不提供图片文件。完整文字记录见 [对话导出页](evidence/evidence-export.html)，源日志行号与哈希见 [manifest.json](evidence/manifest.json)。

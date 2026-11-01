@@ -15,3 +15,12 @@
 每份记录包含用户原始 Prompt、AI 修改建议、实际实现、Bug 修复过程、验证结果和对应提交。
 
 这些记录用于说明需求如何被拆解、AI 如何被约束、错误如何被发现和修复。
+
+## 对话证据说明
+
+GitHub 保留可核验的文字记录、源日志行号和哈希；截图 PNG 不纳入仓库，统一放在独立比赛提交包中。
+
+- [完整文字导出页](evidence/evidence-export.html)
+- [对话清单与源日志哈希](evidence/manifest.json)
+- 截图由 `render_evidence.py` 和 `capture_evidence.js` 从真实 JSONL 会话生成，不是人工补写。
+- 原始会话日志和截图 PNG 均不提交 GitHub；截图仍保存在本地提交包。

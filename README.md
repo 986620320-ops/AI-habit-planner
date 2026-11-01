@@ -2,11 +2,11 @@
 
 ## 作品简介
 
-这是一款面向不同人群的习惯养成 Web 应用。用户可以通过连续对话与 AI 制定计划，再用照片、文字或语音转文字提交每日完成证据。应用包含连续记录、积分兑换、AI 追问、手动复盘和数据备份。
+这是一款面向不同人群的习惯养成 Web 应用。用户可以通过连续对话与 AI 制定计划，再用照片、文字或语音转文字提交每日完成证据。打卡后，教练会给出下一步建议；漏掉一天时，用户可以把目标降为最低完成版；每周再根据真实记录复盘，只调整一个变量。应用同时包含连续记录、积分兑换、AI 追问、手动复盘和数据备份。
 
 ## 版本与入口
 
-- **当前版本**：v1.0.0-rc3 · 候选发布版
+- **当前版本**：v1.0.0-rc4 · 候选发布版
 - **上一线上版本**：v0.13.0 · 连续对话产品版 `6efa050`
 - **完整版本记录**：[CHANGELOG.md](CHANGELOG.md)
 - **在线演示**：https://ai-habit-demo.netlify.app/
@@ -23,7 +23,8 @@
 
 ```text
 AI 连续对话 → 导入建议习惯 → 照片 / 文字 / 语音证据
-→ AI 理解与追问 → 积分和连续奖励 → 奖励兑换
+→ AI 理解与追问 → 下一步反馈 → 断签恢复或每周复盘
+→ 积分、连续奖励与奖励兑换
 ```
 
 ## 10 分钟复现
@@ -128,7 +129,8 @@ http://localhost:8888/.netlify/functions/api?action=health
   "quota": {
     "chat": { "limit": 10, "remaining": 10 },
     "plan": { "limit": 10, "remaining": 10 },
-    "evidence": { "limit": 5, "remaining": 5 }
+    "evidence": { "limit": 5, "remaining": 5 },
+    "review": { "limit": 2, "remaining": 2 }
   }
 }
 ```
@@ -158,6 +160,7 @@ http://localhost:8888/.netlify/functions/api?action=health
 | `VISION_BASE_URL` | 视觉 API 地址 | `https://api.deepseek.com` |
 | `DEMO_PLAN_DAILY_LIMIT` | 每日真实 AI 对话轮数 | `10` |
 | `DEMO_VISION_DAILY_LIMIT` | 每日证据判断额度 | `5` |
+| `DEMO_REVIEW_DAILY_LIMIT` | 每日真实 AI 周复盘额度 | `2` |
 | `ALLOWED_ORIGINS` | 允许来源，逗号分隔；空值允许所有来源 | 空 |
 
 模型名称和 API 地址已在代码中提供默认值，通常只需配置两个 API Key 和额度。
@@ -225,9 +228,35 @@ GET /.netlify/functions/api?action=health
 }
 ```
 
+
+### 每周 AI 复盘
+
+```json
+{
+  "action": "review",
+  "scope": "weekly",
+  "weekStart": "2026-10-26",
+  "weekEnd": "2026-11-01",
+  "habits": [
+    { "name": "阅读", "completed": 5, "possible": 7, "misses": 2, "rate": 71, "streak": 3 }
+  ],
+  "summary": {
+    "completed": 5,
+    "possible": 7,
+    "rate": 71,
+    "bestHabit": "阅读",
+    "stalledHabit": "运动",
+    "recoveryReasons": [{ "reason": "太忙了", "count": 1 }]
+  }
+}
+```
+
+响应包含 `headline`、`summary`、`highlight`、`bottleneck`、`adjustment`、`experiment` 和独立 `quota.review`。请求只携带聚合数据与习惯名称，不含照片、聊天记录和原始证据文字。
+
 ## 数据与安全
 
 - 对话保存在 `ai-habit-checkin:ai-chat`，最多 30 条。
+- 恢复计划保存在 `ai-habit-checkin:recovery`；周复盘保存在 `ai-habit-checkin:weekly-reviews`，最多 8 周。
 - 习惯、打卡、积分、奖励和证据摘要保存在 localStorage。
 - 照片保存在 IndexedDB；真实模式下照片会发送给模型服务。
 - 服务端密钥只放在 Netlify 环境变量中，不进入前端。
@@ -257,7 +286,8 @@ GET /.netlify/functions/api?action=health
 Netlify Function: netlify/functions/api.js
 ├─ health：能力与额度
 ├─ chat：多轮上下文 + DeepSeek
-├─ evidence：照片/文字证据 + 追问
+├─ evidence：照片/文字证据 + 追问 + 下一步建议
+├─ review：周复盘聚合数据 + 单变量调整
 └─ 环境变量：API Key、额度、来源限制
 ```
 
@@ -315,6 +345,10 @@ git ls-files .env
 | AI 追问一次 | 通过 |
 | 手动复盘 +10 | 通过 |
 | 取消打卡 -10 | 通过 |
+| 断签恢复卡、原因选择和最低目标 | 通过 |
+| 打卡后下一步建议与对话草稿 | 通过，不自动发送 |
+| Mock 周复盘与刷新恢复 | 通过 |
+| 真实周复盘第 3 次 429 | 通过 |
 | 375px / 1440px 响应式 | 通过，无横向溢出 |
 | 重复 DOM ID | 无 |
 | 前端脚本与 API 语法 | 通过 |
@@ -334,9 +368,9 @@ git ls-files .env
 
 ## 评审材料
 
-- [Prompt 历史](docs/prompt-history/README.md)
+- [Prompt 历史与文字对话记录](docs/prompt-history/README.md)
 - [评审导航](docs/SUBMISSION_INDEX.md)
-- [产品截图](docs/assets/README.md)
+- 截图、技术报告 PDF 和演示视频不上传 GitHub，保存在本地比赛提交包
 
 ## 当前限制
 
@@ -345,6 +379,7 @@ git ls-files .env
 - 奖励兑换和积分仍为本地数据，不是服务端账本。
 - 照片会发送给真实模型服务，Mock 模式不发送。
 - 真实流式输出尚未实现，采用完整响应后的逐字显示。
+- 周复盘依赖聚合统计；恢复建议是本地规则，不调用模型。
 
 
 
