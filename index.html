@@ -615,6 +615,41 @@ body{
 #view-shop .toast.hide{opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s}
 .tabbar .tab[data-view="shop"].active{color:#d97706;background:#fff7ed}
 #view-shop .btn:disabled{opacity:.55;cursor:not-allowed;filter:none}
+
+/* ---------- 断签恢复与打卡后反馈 ---------- */
+.recovery-card{background:linear-gradient(165deg,#fff8f1 0%,#fff7ed 55%,#fef2f2 100%);border-color:#fed7aa;scroll-margin-top:12px}
+.recovery-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.recovery-kicker{display:inline-flex;align-items:center;min-height:24px;padding:2px 9px;border-radius:999px;background:#ffedd5;color:#9a3412;font-size:10px;font-weight:900;letter-spacing:.4px}
+.recovery-head h2{margin:7px 0 3px;font-size:17px;line-height:1.35;color:#7c2d12}
+.recovery-sub{margin:0;font-size:11px;line-height:1.6;color:#9a6b52}
+.recovery-dismiss{flex:none;min-width:44px;min-height:44px;border-radius:12px;background:#fff;border:1px solid #fed7aa;color:#9a3412;font-size:11px;font-weight:800}
+.recovery-dismiss:hover{background:#ffedd5}
+.recovery-list{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+.recovery-item{padding:11px;border-radius:14px;background:rgba(255,255,255,.92);border:1px solid #fed7aa}
+.recovery-item-head{display:flex;align-items:center;gap:8px;min-width:0}
+.recovery-item-icon{width:34px;height:34px;border-radius:10px;background:#fff7ed;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
+.recovery-item-name{min-width:0;flex:1;font-size:13px;font-weight:900;color:#7c2d12;word-break:break-all}
+.recovery-missed{flex:none;padding:3px 8px;border-radius:999px;background:#fef2f2;color:#b91c1c;font-size:9.5px;font-weight:800}
+.recovery-reasons{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.recovery-reason{min-height:38px;padding:6px 10px;border-radius:999px;background:#fff;border:1px solid #fed7aa;color:#9a3412;font-size:10.5px;font-weight:800}
+.recovery-reason.active{background:#ea580c;border-color:#ea580c;color:#fff}
+.recovery-suggestion{margin-top:9px;padding:10px;border-radius:12px;background:#fff7ed;border:1px dashed #fdba74;color:#7c2d12;font-size:11px;line-height:1.65}
+.recovery-suggestion b{display:block;margin-bottom:2px;font-size:10px;color:#c2410c}
+.recovery-actions{display:flex;gap:7px;margin-top:9px}
+.recovery-actions button{flex:1;min-height:44px;border-radius:11px;font-size:11px;font-weight:900}
+.recovery-accept{background:linear-gradient(135deg,#fb923c,#f97316);color:#fff;box-shadow:0 3px 0 #c2410c}
+.recovery-goto{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}
+.recovery-rule{margin:10px 0 0;font-size:9.5px;line-height:1.6;color:#a1846f}
+.habit-minimum{display:block;margin-top:4px;font-size:10px;line-height:1.5;color:#c2410c;font-weight:700}
+.evidence-next-step{margin-top:9px;padding:9px 10px;border-radius:11px;background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;font-size:11px;line-height:1.6}
+.evidence-next-step b{display:block;margin-bottom:2px;font-size:9.5px;color:#4338ca}
+.evidence-meta-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:9px}
+.evidence-engine{display:inline-flex;align-items:center;min-height:28px;padding:3px 8px;border-radius:999px;background:#f1f5f9;color:#475569;font-size:9.5px;font-weight:800}
+.evidence-talk{min-height:40px;padding:6px 11px;border-radius:10px;background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;font-size:10px;font-weight:900}
+.evidence-talk:hover{background:#e0e7ff}
+.evidence-privacy{margin:8px 0 0;font-size:9.5px;line-height:1.55;color:#94a3b8}
+@media(max-width:430px){.recovery-head{display:block}.recovery-dismiss{margin-top:9px}.recovery-actions{flex-direction:column}}
+@media(prefers-reduced-motion:reduce){.recovery-card{scroll-behavior:auto}}
 </style>
 </head>
 <body>
@@ -693,6 +728,21 @@ body{
       <div class="evidence-method"><span class="em-icon">🎙️</span><b>语音输入</b><small>浏览器转文字后可编辑</small></div>
     </div>
     <p class="evidence-foot" id="evidenceGuideFoot">AI 验证和手动确认都 +10 分；手动完成需填写 10～50 字复盘。<b>真实 AI 每日最多 5 次证据判断。</b></p>
+  </section>
+
+
+  <!-- 断签恢复：规则建议，不修改历史记录 -->
+  <section class="card recovery-card" id="recoveryCard" hidden aria-labelledby="recoveryTitle" aria-live="polite">
+    <div class="recovery-head">
+      <div>
+        <span class="recovery-kicker">习惯急救</span>
+        <h2 id="recoveryTitle">昨天没有完成，不需要从头再来</h2>
+        <p class="recovery-sub">选一个最接近的原因，今天只完成最低版本。</p>
+      </div>
+      <button class="recovery-dismiss" id="recoveryDismiss" type="button" aria-label="今天不再显示恢复提醒">稍后</button>
+    </div>
+    <div class="recovery-list" id="recoveryList"></div>
+    <p class="recovery-rule">恢复建议由本地规则生成；接受后只影响今天的打卡目标，不修改历史记录。</p>
   </section>
 
   <!-- 今日打卡 -->
@@ -961,6 +1011,15 @@ body{
       <div class="evidence-chips" id="evidenceChips"></div>
       <div class="evidence-result-reason" id="evidenceReason"></div>
       <div class="evidence-result-feedback" id="evidenceFeedback"></div>
+      <div class="evidence-next-step" id="evidenceNextStep" hidden>
+        <b>下一步</b>
+        <span id="evidenceNextStepText"></span>
+      </div>
+      <div class="evidence-meta-row">
+        <span class="evidence-engine" id="evidenceEngine">本次记录</span>
+        <button class="evidence-talk" id="evidenceTalkBtn" type="button">和教练继续聊</button>
+      </div>
+      <p class="evidence-privacy">照片仅保存在本机；真实模式下只发送本次选择的证据。服务端不持久化原始文字或语音。</p>
     </div>
 
     <div class="evidence-followup" id="evidenceFollowUpBox" hidden>
@@ -1004,6 +1063,7 @@ body{
   var POINTS_KEY = 'ai-habit-checkin:points';
   var REWARDS_KEY = 'ai-habit-checkin:rewards';
   var CHAT_KEY = 'ai-habit-checkin:ai-chat';
+  var RECOVERY_KEY = 'ai-habit-checkin:recovery';
   var PHOTO_DB = 'ai-habit-checkin-media';
   var PHOTO_STORE = 'photos';
 
@@ -1218,6 +1278,10 @@ body{
     return number < 10 ? '0' + number : String(number);
   }
 
+  function toSafeString(value, maxLength) {
+    return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
+  }
+
   /* 只保留最近 keepDays 天的数据，避免 localStorage 无限增长 */
   function pruneByDate(map, keepDays) {
     var keys = Object.keys(map || {});
@@ -1230,6 +1294,40 @@ body{
       if (key.slice(0, 10) >= limitKey) result[key] = map[key];
     });
     return result;
+  }
+
+  /* 恢复计划：{ plans: { date::habitId }, dismissed: { date: true } } */
+  function loadRecovery() {
+    var raw = readJSON(RECOVERY_KEY, {});
+    var plans = {};
+    var dismissed = {};
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { plans: plans, dismissed: dismissed };
+    if (raw.plans && typeof raw.plans === 'object' && !Array.isArray(raw.plans)) {
+      Object.keys(raw.plans).forEach(function (key) {
+        var item = raw.plans[key];
+        if (!/^\d{4}-\d{2}-\d{2}::/.test(key) || !item || typeof item !== 'object') return;
+        plans[key] = {
+          reason: toSafeString(item.reason, 20),
+          suggestion: toSafeString(item.suggestion, 140),
+          timing: toSafeString(item.timing, 40),
+          acceptedAt: typeof item.acceptedAt === 'number' && isFinite(item.acceptedAt) ? item.acceptedAt : Date.now()
+        };
+      });
+    }
+    if (raw.dismissed && typeof raw.dismissed === 'object' && !Array.isArray(raw.dismissed)) {
+      Object.keys(raw.dismissed).forEach(function (key) {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(key) && raw.dismissed[key] === true) dismissed[key] = true;
+      });
+    }
+    return { plans: pruneByDate(plans, 90), dismissed: pruneByDate(dismissed, 90) };
+  }
+
+  function saveRecovery(state) {
+    var safe = state && typeof state === 'object' ? state : {};
+    writeJSON(RECOVERY_KEY, {
+      plans: pruneByDate(safe.plans && typeof safe.plans === 'object' ? safe.plans : {}, 90),
+      dismissed: pruneByDate(safe.dismissed && typeof safe.dismissed === 'object' ? safe.dismissed : {}, 90)
+    });
   }
 
   /* 证据记录：{ 'YYYY-MM-DD::habitId': { status, evidenceType, confidence, matched, reason, feedback, engine, at } } */
@@ -1250,6 +1348,7 @@ body{
         matched: Array.isArray(item.matched) ? item.matched.filter(function (x) { return typeof x === 'string'; }).slice(0, 6).map(function (x) { return x.slice(0, 40); }) : [],
         reason: typeof item.reason === 'string' ? item.reason.slice(0, 220) : '',
         feedback: typeof item.feedback === 'string' ? item.feedback.slice(0, 120) : '',
+        nextStep: typeof item.nextStep === 'string' ? item.nextStep.slice(0, 80) : '',
         engine: typeof item.engine === 'string' ? item.engine.slice(0, 20) : '',
         at: typeof item.at === 'number' && isFinite(item.at) ? item.at : 0
       };
@@ -1429,9 +1528,12 @@ body{
     pointsKey: POINTS_KEY,
     rewardsKey: REWARDS_KEY,
     chatKey: CHAT_KEY,
+    recoveryKey: RECOVERY_KEY,
     verifyKey: VERIFY_KEY,
     loadChat: loadChat,
     saveChat: saveChat,
+    loadRecovery: loadRecovery,
+    saveRecovery: saveRecovery,
     loadVerify: loadVerify,
     saveVerify: saveVerify,
     load: loadHabits,
@@ -1494,11 +1596,20 @@ body{
     { name: '阅读', icon: '📖' },
     { name: '早睡', icon: '🌙' }
   ];
+  var RECOVERY_REASONS = [
+    { id: 'busy', label: '太忙了', tip: '今天只做最低限度，先保持连续性。' },
+    { id: 'forgot', label: '忘记了', tip: '把动作放到固定时间，只做 5 分钟。' },
+    { id: 'hard', label: '任务太难', tip: '把难度减半，只完成原目标的一小步。' },
+    { id: 'energy', label: '精力不足', tip: '改用低强度版本，完成后就休息。' },
+    { id: 'motivation', label: '不太想做', tip: '只做启动动作，开始 2 分钟即可。' }
+  ];
 
   var habits = HabitStore.load();
   var checkins = HabitStore.loadCheckins();
   var points = HabitStore.loadPoints();
   var verify = HabitStore.loadVerify();
+  var recoveryState = HabitStore.loadRecovery();
+  var recoveryDraft = {};
   var selectedHabitId = habits.length > 0 ? habits[0].id : null;
   var newHabitIcon = ICONS[0];
 
@@ -1579,6 +1690,14 @@ body{
   var evidenceChipsEl = document.getElementById('evidenceChips');
   var evidenceReasonEl = document.getElementById('evidenceReason');
   var evidenceFeedbackEl = document.getElementById('evidenceFeedback');
+  var evidenceNextStepEl = document.getElementById('evidenceNextStep');
+  var evidenceNextStepTextEl = document.getElementById('evidenceNextStepText');
+  var evidenceEngineEl = document.getElementById('evidenceEngine');
+  var evidenceTalkBtn = document.getElementById('evidenceTalkBtn');
+  var recoveryCardEl = document.getElementById('recoveryCard');
+  var recoveryTitleEl = document.getElementById('recoveryTitle');
+  var recoveryListEl = document.getElementById('recoveryList');
+  var recoveryDismissBtn = document.getElementById('recoveryDismiss');
   var evidenceFollowUpBox = document.getElementById('evidenceFollowUpBox');
   var evidenceQuestionEl = document.getElementById('evidenceQuestion');
   var evidenceFollowUpInput = document.getElementById('evidenceFollowUpInput');
@@ -1864,6 +1983,153 @@ body{
     if (dateKey < todayKeyStr) return 'fail';
     if (dateKey === todayKeyStr) return 'pending';
     return 'none';
+  }
+
+  function recoveryKeyOf(dateKey, habitId) {
+    return dateKey + '::' + habitId;
+  }
+
+  function yesterdayKey() {
+    var date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    date.setDate(date.getDate() - 1);
+    return formatKey(date);
+  }
+
+  function getRecoveryPlan(habitId) {
+    return recoveryState.plans[recoveryKeyOf(todayKeyStr, habitId)] || null;
+  }
+
+  function recoverySuggestion(habit, reason) {
+    var name = habit && habit.name ? habit.name : '这个习惯';
+    var map = {
+      busy: '今天只给「' + name + '」留 2～5 分钟，完成最小动作就算通过。',
+      forgot: '把「' + name + '」放到一个固定动作之后，例如晚饭后或洗漱前，先做 5 分钟。',
+      hard: '把「' + name + '」的难度减半，只要求完成平时的一小步。',
+      energy: '今天改用低强度版本：只做 3 分钟，完成后允许自己休息。',
+      motivation: '先做启动动作：打开材料、换上运动鞋或准备好工具，只开始 2 分钟。'
+    };
+    return map[reason.id] || map.busy;
+  }
+
+  function recoveryContext(habit) {
+    var plan = getRecoveryPlan(habit.id);
+    return plan ? '今日最低完成目标：' + plan.suggestion : '';
+  }
+
+  function acceptRecoveryPlan(habit, reason) {
+    if (!habit || !reason) return;
+    recoveryState.plans[recoveryKeyOf(todayKeyStr, habit.id)] = {
+      reason: reason.label,
+      suggestion: recoverySuggestion(habit, reason),
+      timing: '今天完成一次',
+      acceptedAt: Date.now()
+    };
+    HabitStore.saveRecovery(recoveryState);
+    delete recoveryDraft[habit.id];
+    renderAll();
+    toast('已生成今天的最低完成版');
+  }
+
+  function renderRecoveryCard() {
+    if (!recoveryCardEl || !recoveryListEl) return;
+    recoveryListEl.innerHTML = '';
+    if (recoveryState.dismissed[todayKeyStr]) {
+      recoveryCardEl.hidden = true;
+      return;
+    }
+
+    var yKey = yesterdayKey();
+    var candidates = habitsOn(yKey).filter(function (habit) {
+      return !isChecked(habit.id, yKey) && !isChecked(habit.id, todayKeyStr);
+    }).slice(0, 3);
+
+    if (candidates.length === 0) {
+      recoveryCardEl.hidden = true;
+      return;
+    }
+
+    recoveryCardEl.hidden = false;
+    recoveryTitleEl.textContent = candidates.length === 1
+      ? '「' + candidates[0].name + '」昨天没有完成'
+      : '有 ' + candidates.length + ' 个习惯昨天没有完成';
+
+    candidates.forEach(function (habit) {
+      var plan = getRecoveryPlan(habit.id);
+      var item = document.createElement('div');
+      item.className = 'recovery-item';
+      item.setAttribute('data-habit-id', habit.id);
+
+      var head = document.createElement('div');
+      head.className = 'recovery-item-head';
+      var icon = document.createElement('span');
+      icon.className = 'recovery-item-icon';
+      icon.textContent = habit.icon || '💧';
+      var name = document.createElement('span');
+      name.className = 'recovery-item-name';
+      name.textContent = habit.name;
+      var missed = document.createElement('span');
+      missed.className = 'recovery-missed';
+      missed.textContent = '昨天未完成';
+      head.appendChild(icon);
+      head.appendChild(name);
+      head.appendChild(missed);
+      item.appendChild(head);
+
+      if (plan) {
+        var done = document.createElement('div');
+        done.className = 'recovery-suggestion';
+        done.innerHTML = '<b>今天的最低完成版</b>';
+        done.appendChild(document.createTextNode(plan.suggestion));
+        item.appendChild(done);
+        var go = document.createElement('button');
+        go.type = 'button';
+        go.className = 'recovery-goto';
+        go.textContent = '去完成最低版本';
+        go.addEventListener('click', function () { openEvidenceModal(habit); });
+        var actionWrap = document.createElement('div');
+        actionWrap.className = 'recovery-actions';
+        actionWrap.appendChild(go);
+        item.appendChild(actionWrap);
+      } else {
+        var reasons = document.createElement('div');
+        reasons.className = 'recovery-reasons';
+        RECOVERY_REASONS.forEach(function (reason) {
+          var reasonBtn = document.createElement('button');
+          reasonBtn.type = 'button';
+          reasonBtn.className = 'recovery-reason' + (recoveryDraft[habit.id] === reason.id ? ' active' : '');
+          reasonBtn.textContent = reason.label;
+          reasonBtn.addEventListener('click', function () {
+            recoveryDraft[habit.id] = reason.id;
+            renderRecoveryCard();
+          });
+          reasons.appendChild(reasonBtn);
+        });
+        item.appendChild(reasons);
+
+        if (recoveryDraft[habit.id]) {
+          var reason = null;
+          RECOVERY_REASONS.forEach(function (itemReason) {
+            if (itemReason.id === recoveryDraft[habit.id]) reason = itemReason;
+          });
+          var suggestion = document.createElement('div');
+          suggestion.className = 'recovery-suggestion';
+          suggestion.innerHTML = '<b>今天先这样完成</b>';
+          suggestion.appendChild(document.createTextNode(recoverySuggestion(habit, reason)));
+          item.appendChild(suggestion);
+
+          var actions = document.createElement('div');
+          actions.className = 'recovery-actions';
+          var accept = document.createElement('button');
+          accept.type = 'button';
+          accept.className = 'recovery-accept';
+          accept.textContent = '接受最低完成版';
+          accept.addEventListener('click', function () { acceptRecoveryPlan(habit, reason); });
+          actions.appendChild(accept);
+          item.appendChild(actions);
+        }
+      }
+      recoveryListEl.appendChild(item);
+    });
   }
 
   /* 当前连续段：{ start, length }，没有连续段时 start 为空 */
@@ -2204,6 +2470,14 @@ body{
     });
     evidenceReasonEl.textContent = (data && data.reason) || '';
     evidenceFeedbackEl.textContent = (data && data.feedback) || '';
+    var nextStep = data && data.nextStep ? String(data.nextStep).trim().slice(0, 80) : '';
+    evidenceNextStepEl.hidden = nextStep === '';
+    evidenceNextStepTextEl.textContent = nextStep;
+    var engine = data && data.engine ? String(data.engine) : '';
+    evidenceEngineEl.textContent = engine === 'agent' ? '真实 AI 判断'
+      : engine === 'mock' ? 'Mock 演示'
+        : engine === 'manual' ? '手动记录' : '本次记录';
+    evidenceTalkBtn.hidden = !evidenceHabit;
   }
 
   function markEvidenceSessionComplete(status) {
@@ -2247,6 +2521,7 @@ body{
       matched: Array.isArray(data.matched) ? data.matched.slice(0, 6) : [],
       reason: clip(data.reason || '', 220),
       feedback: clip(data.feedback || '', 120),
+      nextStep: clip(data.nextStep || '', 80),
       engine: engine || 'agent',
       at: Date.now()
     };
@@ -2282,6 +2557,7 @@ body{
           matched: ['Mock 演示结果'],
           reason: 'Mock 模式模拟为证据与习惯相关。',
           feedback: '这是演示结果；切换到真实 AI 后会根据照片或文字实际判断。',
+          nextStep: '保持今天的难度，明天继续在相近时间完成一次。',
           model: 'mock',
           engine: 'mock',
           quota: null
@@ -2314,7 +2590,7 @@ body{
           action: 'evidence',
           habitId: habit.id,
           habitName: habit.name,
-          context: '',
+          context: recoveryContext(habit),
           evidence: { type: type, image: image || '', text: text },
           followUpAnswer: followUpAnswer || ''
         })
@@ -2461,7 +2737,9 @@ body{
       confidence: 0,
       matched: ['手动复盘确认'],
       reason: '用户填写复盘后手动完成',
-      feedback: '已记录你的复盘；本次手动完成同样获得 10 分。'
+      feedback: '已记录你的复盘；本次手动完成同样获得 10 分。',
+      nextStep: '明天先按更低门槛完成一次，再决定是否恢复原目标。',
+      engine: 'manual'
     }, 'manual', 'manual');
   }
 
@@ -2519,6 +2797,29 @@ body{
   });
   evidenceCloseBtn.addEventListener('click', closeEvidenceModal);
   evidenceCancelBtn.addEventListener('click', closeEvidenceModal);
+
+  evidenceTalkBtn.addEventListener('click', function () {
+    var habit = evidenceHabit;
+    if (!habit) return;
+    var record = verifyOf(habit.id);
+    var status = record.status === 'manual' ? '手动完成' : '证据已通过';
+    var draft = '我刚完成「' + habit.name + '」，本次是' + status + '。'
+      + (record.nextStep ? '教练建议：' + record.nextStep + '。' : '')
+      + '请帮我根据今天的完成情况，安排明天的具体行动。';
+    closeEvidenceModal();
+    aiComposerEl.value = draft.slice(0, 500);
+    aiComposerEl.style.height = 'auto';
+    try { document.querySelector('.ai-card').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (error) {}
+    setTimeout(function () { aiComposerEl.focus(); }, 120);
+    toast('已填入对话草稿，确认后再发送');
+  });
+
+  recoveryDismissBtn.addEventListener('click', function () {
+    recoveryState.dismissed[todayKeyStr] = true;
+    HabitStore.saveRecovery(recoveryState);
+    renderRecoveryCard();
+    toast('今天不再显示恢复提醒');
+  });
 
   var SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognitionCtor) {
@@ -2858,6 +3159,13 @@ body{
       sub.textContent = statusText
         + ' · 连续 ' + getCurrentStreak(habit.id) + ' 天 · 累计 ' + getCheckedDates(habit.id).length + ' 天';
       main.appendChild(sub);
+      var recoveryPlan = getRecoveryPlan(habit.id);
+      if (recoveryPlan) {
+        var minimumEl = document.createElement('span');
+        minimumEl.className = 'habit-minimum';
+        minimumEl.textContent = '今日最低：' + recoveryPlan.suggestion;
+        main.appendChild(minimumEl);
+      }
 
       var actions = document.createElement('div');
       actions.className = 'row-actions';
@@ -2921,6 +3229,7 @@ body{
     renderHeader();
     renderEvidenceGuide();
     renderCalendar();
+    renderRecoveryCard();
     renderToday();
   }
 
@@ -3821,6 +4130,7 @@ body{
     checkins = HabitStore.loadCheckins();
     points = HabitStore.loadPoints();
     verify = HabitStore.loadVerify();
+    recoveryState = HabitStore.loadRecovery();
     aiChatMessages = HabitStore.loadChat();
     if (!findHabit(selectedHabitId)) {
       selectedHabitId = habits.length > 0 ? habits[0].id : null;
@@ -4437,6 +4747,7 @@ body{
           points: HabitStore.loadPoints(),
           rewards: HabitStore.loadRewards(),
           evidence: HabitStore.loadVerify(),
+          recovery: HabitStore.loadRecovery(),
           aiChat: HabitStore.loadChat(),
           photos: photos || {}
         });
@@ -4481,6 +4792,7 @@ body{
       HabitStore.savePoints(data.points && typeof data.points === 'object' ? data.points : { total: 0, bonus: {}, ledger: [] });
       HabitStore.saveRewards(data.rewards && typeof data.rewards === 'object' ? data.rewards : { tiers: [], unlocked: [] });
       HabitStore.saveVerify(data.evidence && typeof data.evidence === 'object' ? data.evidence : {});
+      HabitStore.saveRecovery(data.recovery && typeof data.recovery === 'object' ? data.recovery : { plans: {}, dismissed: {} });
       HabitStore.saveChat(Array.isArray(data.aiChat) ? data.aiChat : []);
 
       // 照片单独存在 IndexedDB 里，这里一并恢复
@@ -4497,6 +4809,7 @@ body{
       rewards = HabitStore.loadRewards();
       restoreInput.value = '';
       renderAll();
+      try { window.dispatchEvent(new Event('storage')); } catch (error) {}
       toast('数据已恢复');
     };
     reader.readAsText(file);
