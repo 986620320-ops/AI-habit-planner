@@ -1,53 +1,40 @@
-# AI 习惯教练与多模态打卡
+# AI 习惯教练与多模态证据打卡
 
-## 作品简介
+一个可直接运行的 AI 习惯养成 Web 应用。用户可以连续对话制定计划，再用照片、文字或语音转文字提交当天证据。AI 会解释判断依据并给出下一步建议；漏掉一天时提供最低完成版；每周根据真实记录复盘，只调整一个变量。
 
-这是一款面向不同人群的习惯养成 Web 应用。用户可以通过连续对话与 AI 制定计划，再用照片、文字或语音转文字提交每日完成证据。打卡后，教练会给出下一步建议；漏掉一天时，用户可以把目标降为最低完成版；每周再根据真实记录复盘，只调整一个变量。应用同时包含连续记录、积分兑换、AI 追问、手动复盘和数据备份。
+当前版本：`v1.0.0-rc4`
 
-## 版本与入口
-
-- **当前版本**：v1.0.0-rc4 · 候选发布版
-- **上一线上版本**：v0.13.0 · 连续对话产品版 `6efa050`
-- **完整版本记录**：[CHANGELOG.md](CHANGELOG.md)
-- **在线演示**：https://ai-habit-demo.netlify.app/
-- **代码仓库**：https://github.com/986620320-ops/AI-habit-planner
-- **Prompt 历史**：[docs/prompt-history/README.md](docs/prompt-history/README.md)
-- **评审导航**：[docs/SUBMISSION_INDEX.md](docs/SUBMISSION_INDEX.md)
-- **文档导航**：[docs/README.md](docs/README.md)
-
-## 作品定位
-
-产品帮助用户把 AI 规划落实到每天的行动：先通过连续对话确定计划，再用真实场景证据打卡。AI 会结合上下文回应，遇到证据不足时最多追问一次。
-
-主要流程：
+## 目录
 
 ```text
-AI 连续对话 → 导入建议习惯 → 照片 / 文字 / 语音证据
-→ AI 理解与追问 → 下一步反馈 → 断签恢复或每周复盘
-→ 积分、连续奖励与奖励兑换
+.
+├─ index.html                单文件前端
+├─ netlify/functions/api.js  Netlify Function 后端
+├─ netlify.toml              发布与函数配置
+├─ .env.example              环境变量模板
+└─ README.md
 ```
 
-## 10 分钟复现
+比赛使用的截图、技术报告、Prompt 导出页和演示视频不放在此仓库，单独保存在提交材料中。
 
-### 环境要求
+## 功能
 
-| 工具 | 要求 | 用途 |
-|---|---|---|
-| Windows 10/11、macOS 或 Linux | 任意现代版本 | 运行环境 |
-| Chrome/Edge | 近两年版本 | 页面与相机功能 |
-| Git | 2.30+ | 克隆仓库 |
-| Python | 3.10+ | Mock 模式静态服务器 |
-| Node.js | 20 LTS 或更高，包含 npm | 本地运行 Netlify Function |
-| Netlify CLI | 最新版 | 完整真实 AI 本地复现 |
-| DeepSeek API Key | 可选 | 真实对话和证据判断 |
+- 连续 AI 对话、候选习惯导入和本地聊天记录
+- 照片、文字、语音转文字三种证据入口
+- AI 证据判断、一次追问和手动复盘降级
+- 打卡后下一步建议和“和教练继续聊”草稿
+- 漏签恢复、原因选择和最低完成版
+- 每周 AI 复盘、单变量调整和独立额度
+- 积分、连续奖励、奖励兑换和备份恢复
+- 默认 Mock 模式，手动切换真实 AI
 
-前端不需要 npm 运行时依赖。`index.html` 集中界面、状态和交互；后端由 Netlify Function 负责。
+## 本地运行
 
-### 方案 A：2 分钟运行 Mock 模式（无需 Key）
+### Mock 模式
 
-```bash
-git clone https://github.com/986620320-ops/AI-habit-planner.git
-cd AI-habit-planner
+无需 API Key：
+
+```powershell
 python -m http.server 8080
 ```
 
@@ -57,332 +44,82 @@ python -m http.server 8080
 http://localhost:8080/#checkin
 ```
 
-预期：
+Mock 模式不会调用模型，也不产生费用。
 
-- 左下/顶部 AI 模式显示 “Mock 演示”。
-- 三个快捷问题、AI 证据打卡和积分商城可以操作。
-- 不调用真实模型，不产生 API 费用。
-- 健康检查不可用时，页面会自动停留在 Mock 模式。
+### 真实 AI 模式
 
-### 方案 B：完整真实 AI 本地复现
+1. 安装 Netlify CLI。
+2. 将 `.env.example` 复制为 `.env` 并填写 Key。
+3. 启动：
 
-1. 确认 Node、npm 可用：
-
-```bash
-node -v
-npm -v
-```
-
-2. 安装并运行 Netlify CLI：
-
-```bash
-npm install -g netlify-cli
-netlify dev
-```
-
-也可以在项目目录直接运行：
-
-```bash
+```powershell
 npx netlify-cli dev
 ```
 
-3. 复制环境变量模板：
+打开 Netlify CLI 输出的地址，并点击页面右上角的“Mock 演示”切换为真实 AI。
 
-```bash
-copy .env.example .env
-```
-
-macOS/Linux 使用：
-
-```bash
-cp .env.example .env
-```
-
-4. 在 `.env` 中填写：
-
-```text
-# 在 .env 中设置 DEEPSEEK_API_KEY 和 VISION_API_KEY
-# 此处不在文档里展示真实赋值格式
-```
-
-`VISION_API_KEY` 可以等于 `DEEPSEEK_API_KEY`。不要提交 `.env`。
-
-5. 打开 Netlify CLI 输出的地址，通常为：
-
-```text
-http://localhost:8888/#checkin
-```
-
-6. 检查健康接口：
-
-```text
-http://localhost:8888/.netlify/functions/api?action=health
-```
-
-预期 JSON：
-
-```json
-{
-  "ok": true,
-  "realAI": true,
-  "vision": true,
-  "quota": {
-    "chat": { "limit": 10, "remaining": 10 },
-    "plan": { "limit": 10, "remaining": 10 },
-    "evidence": { "limit": 5, "remaining": 5 },
-    "review": { "limit": 2, "remaining": 2 }
-  }
-}
-```
-
-7. 点击页面模式标签切换到“真实 AI”，发送一条对话或证据。
-
-### 10 分钟验收时间表
-
-| 时间 | 操作 | 通过标准 |
-|---|---|---|
-| 0:00–2:00 | 克隆并启动 Python Mock 服务 | `#checkin` 打开，显示 Mock |
-| 2:00–4:00 | 点击快捷问题、导入 AI 推荐习惯 | 对话出现，习惯进入列表 |
-| 4:00–6:00 | 配置 `.env` 并运行 `netlify dev` | 健康接口三项为 true |
-| 6:00–8:00 | 提交文字和照片证据，完成一次打卡 | 积分增加 10 |
-| 8:00–9:00 | 取消打卡、进入积分商城 | 积分扣回，兑换按钮出现 |
-| 9:00–10:00 | 备份数据、刷新恢复、检查移动端 | 数据和聊天记录保留 |
-
-## 环境变量
-
-| 变量 | 说明 | 默认 |
-|---|---|---|
-| `DEEPSEEK_API_KEY` | 对话、规划与文字证据判断 Key | 必填 |
-| `VISION_API_KEY` | 照片证据判断 Key，可复用 DeepSeek Key | 必填 |
-| `DEEPSEEK_MODEL` | 文本模型 | `deepseek-flash` |
-| `DEEPSEEK_BASE_URL` | 文本 API 地址 | `https://api.deepseek.com` |
-| `VISION_MODEL` | 视觉模型 | `deepseek-flash` |
-| `VISION_BASE_URL` | 视觉 API 地址 | `https://api.deepseek.com` |
-| `DEMO_PLAN_DAILY_LIMIT` | 每日真实 AI 对话轮数 | `10` |
-| `DEMO_VISION_DAILY_LIMIT` | 每日证据判断额度 | `5` |
-| `DEMO_REVIEW_DAILY_LIMIT` | 每日真实 AI 周复盘额度 | `2` |
-| `ALLOWED_ORIGINS` | 允许来源，逗号分隔；空值允许所有来源 | 空 |
-
-模型名称和 API 地址已在代码中提供默认值，通常只需配置两个 API Key 和额度。
-
-## 使用真实 AI
-
-1. 打开页面，默认处于 `Mock 演示`。
-2. 点击模式标签切换到真实 AI。
-3. 在 AI 习惯教练中连续提问或点击快捷问题。
-4. AI 推荐习惯时，点击候选卡片导入。
-5. 点击习惯左侧的 AI 证据按钮，提交照片、文字或语音转文字。
-6. AI 返回 `passed`、`followup` 或 `manual_only`。
-7. AI 额度用完时可主动切换 Mock；手动完成需要 10～50 字复盘。
-
-## API 动作
-
-### 健康检查
+健康检查：
 
 ```text
 GET /.netlify/functions/api?action=health
 ```
 
-### AI 连续对话
+## 环境变量
 
-```json
-{
-  "action": "chat",
-  "messages": [{ "role": "user", "content": "我最近总是熬夜" }],
-  "habits": [{ "name": "阅读", "streak": 2, "totalDays": 8 }],
-  "totalPoints": 30,
-  "today": "2026-10-30"
-}
+| 变量 | 说明 | 默认值 |
+|---|---|---|
+| `DEEPSEEK_API_KEY` | 文本对话、规划和文字证据判断 | 必填 |
+| `VISION_API_KEY` | 图片证据判断，可复用 DeepSeek Key | 必填 |
+| `DEEPSEEK_MODEL` | 文本模型 | `deepseek-flash` |
+| `DEEPSEEK_BASE_URL` | 文本接口地址 | `https://api.deepseek.com` |
+| `VISION_MODEL` | 视觉模型 | `deepseek-flash` |
+| `VISION_BASE_URL` | 视觉接口地址 | `https://api.deepseek.com` |
+| `DEMO_PLAN_DAILY_LIMIT` | 真实 AI 每日对话轮数 | `10` |
+| `DEMO_VISION_DAILY_LIMIT` | 每日证据判断次数 | `5` |
+| `DEMO_REVIEW_DAILY_LIMIT` | 每日真实周复盘次数 | `2` |
+| `ALLOWED_ORIGINS` | 允许来源，逗号分隔 | 空 |
+
+不要提交 `.env` 或真实 API Key。
+
+## API
+
+后端统一入口：
+
+```text
+/.netlify/functions/api
 ```
 
-响应：
+支持：
 
-```json
-{
-  "ok": true,
-  "reply": "自然语言回复",
-  "audience": "可选场景",
-  "habits": [{ "name": "23点前放下手机", "icon": "📵" }],
-  "engine": "agent",
-  "model": "deepseek-flash",
-  "quota": {
-    "chat": { "limit": 10, "remaining": 9 },
-    "plan": { "limit": 10, "remaining": 9 }
-  }
-}
-```
-
-### 证据判断
-
-```json
-{
-  "action": "evidence",
-  "habitId": "h_xxx",
-  "habitName": "阅读",
-  "evidence": {
-    "type": "photo|text|mixed",
-    "image": "data:image/jpeg;base64,...",
-    "text": "今天读了 20 页"
-  },
-  "followUpAnswer": "可选"
-}
-```
-
-
-### 每周 AI 复盘
-
-```json
-{
-  "action": "review",
-  "scope": "weekly",
-  "weekStart": "2026-10-26",
-  "weekEnd": "2026-11-01",
-  "habits": [
-    { "name": "阅读", "completed": 5, "possible": 7, "misses": 2, "rate": 71, "streak": 3 }
-  ],
-  "summary": {
-    "completed": 5,
-    "possible": 7,
-    "rate": 71,
-    "bestHabit": "阅读",
-    "stalledHabit": "运动",
-    "recoveryReasons": [{ "reason": "太忙了", "count": 1 }]
-  }
-}
-```
-
-响应包含 `headline`、`summary`、`highlight`、`bottleneck`、`adjustment`、`experiment` 和独立 `quota.review`。请求只携带聚合数据与习惯名称，不含照片、聊天记录和原始证据文字。
+- `GET ?action=health`
+- `POST { action: "chat" }`
+- `POST { action: "evidence" }`
+- `POST { action: "review", scope: "weekly" }`
+- `POST { action: "plan" }`：兼容旧版一次规划接口
 
 ## 数据与安全
 
-- 对话保存在 `ai-habit-checkin:ai-chat`，最多 30 条。
-- 恢复计划保存在 `ai-habit-checkin:recovery`；周复盘保存在 `ai-habit-checkin:weekly-reviews`，最多 8 周。
-- 习惯、打卡、积分、奖励和证据摘要保存在 localStorage。
-- 照片保存在 IndexedDB；真实模式下照片会发送给模型服务。
-- 服务端密钥只放在 Netlify 环境变量中，不进入前端。
-- Git 历史已检查，未发现 `sk-` 真实 Key。
-- `.env` 被 `.gitignore` 排除。
-- 当前额度计数保存在函数实例内存中，只适合比赛演示。生产环境应改用持久化存储。
-- 当前没有账号体系，不同设备不会自动同步。
+- 习惯、打卡、积分、奖励、恢复计划和周复盘保存在 localStorage。
+- 照片保存在 IndexedDB。
+- Mock 模式不发送照片。
+- 真实模式只发送本次选择和填写的证据。
+- 服务端不持久化原始文字、语音或聊天记录。
+- API Key 只放在本地 `.env` 或部署平台环境变量中。
+- 额度和来源限制位于 Netlify Function 中。
 
 ## 积分规则
 
-- AI 证据通过：+10 分
-- 手动复盘完成：+10 分
-- 取消打卡：-10 分
-- 连续满 7 天：额外 +5 分
-- 删除习惯扣回该习惯贡献积分，最多扣到 0
-- 积分兑换可重复，记录保留
+- AI 验证通过：`+10`
+- 手动复盘完成：`+10`
+- 取消打卡：`-10`
+- 连续满 7 天：额外 `+5`
+- 删除习惯：最多扣到 0
+- 奖励可重复兑换
 
-## 架构概览
+## 开发检查
 
-```text
-浏览器
-├─ index.html：聊天、证据打卡、积分商城、备份
-├─ localStorage：习惯/积分/聊天/证据摘要
-└─ IndexedDB：照片 Blob
-        │
-        ▼
-Netlify Function: netlify/functions/api.js
-├─ health：能力与额度
-├─ chat：多轮上下文 + DeepSeek
-├─ evidence：照片/文字证据 + 追问 + 下一步建议
-├─ review：周复盘聚合数据 + 单变量调整
-└─ 环境变量：API Key、额度、来源限制
+```powershell
+node --check netlify/functions/api.js
 ```
 
-## 常见故障排查
-
-### 页面停留在 Mock，无法切换真实 AI
-
-- 检查 `.env` 是否存在且变量名正确。
-- 检查健康接口 `realAI` 是否为 true。
-- 修改环境变量后重启 `netlify dev`。
-
-### 健康接口 404
-
-- 确认函数路径是 `netlify/functions/api.js`。
-- 确认从项目根目录启动 Netlify CLI。
-- 确认 `netlify.toml` 的 functions 目录正确。
-
-### 页面要求登录 Netlify
-
-- 当前站点被设为 Private。
-- 进入 `Project configuration → General → Visitor access → Project visibility`，把 Production deploys 设为 Public。
-
-### Netlify 构建被密钥扫描拦截
-
-- 不要关闭安全扫描。
-- 删除不需要设置的公开模型名称和 Base URL 环境变量。
-- 密钥继续放在环境变量中，不写进仓库。
-
-### AI 额度用完
-
-- 页面会保留当前对话。
-- 真实 AI 对话第 11 轮会显示提示，可切换 Mock 继续。
-- 证据判断额度用完后仍可写 10～50 字复盘手动完成。
-
-### `.env` 是否泄漏
-
-```bash
-git check-ignore .env
-git ls-files .env
-```
-
-第一条应返回 `.env`，第二条应无输出。
-
-## 验证结果
-
-| 场景 | 结果 |
-|---|---|
-| AI 连续对话与上下文 | 通过 |
-| 聊天刷新恢复 | 通过 |
-| 新对话取消旧请求 | 通过 |
-| 单个/全部导入习惯 | 通过 |
-| Mock 不调用模型 | 通过 |
-| 第 11 轮对话额度 | 通过，保持真实模式并提示 |
-| 照片/文字/语音证据 | 通过 |
-| AI 追问一次 | 通过 |
-| 手动复盘 +10 | 通过 |
-| 取消打卡 -10 | 通过 |
-| 断签恢复卡、原因选择和最低目标 | 通过 |
-| 打卡后下一步建议与对话草稿 | 通过，不自动发送 |
-| Mock 周复盘与刷新恢复 | 通过 |
-| 真实周复盘第 3 次 429 | 通过 |
-| 375px / 1440px 响应式 | 通过，无横向溢出 |
-| 重复 DOM ID | 无 |
-| 前端脚本与 API 语法 | 通过 |
-
-## Git 演进
-
-仓库保留了从空白 HTML 到当前版本的逐步提交。主要阶段包括习惯与日历、积分商城、AI 接入、通用规划、多模态证据和连续对话。
-
-关键提交：
-
-- `8592055` 初始空白 HTML 骨架
-- `6eba6ef` 积分商城、额度与视觉接口基础
-- `b2b492f` 删除习惯积分漏洞与 20 个习惯上限
-- `5b6835d` 通用 AI 规划与补充信息
-- `87ca801` 多模态证据打卡
-- `269d715` 连续对话式 AI 教练
-
-## 评审材料
-
-- [Prompt 历史与文字对话记录](docs/prompt-history/README.md)
-- [评审导航](docs/SUBMISSION_INDEX.md)
-- 截图、技术报告 PDF 和演示视频不上传 GitHub，保存在本地比赛提交包
-
-## 当前限制
-
-- 无账号和跨设备同步。
-- AI 额度计数为函数实例内存，冷启动可能重置。
-- 奖励兑换和积分仍为本地数据，不是服务端账本。
-- 照片会发送给真实模型服务，Mock 模式不发送。
-- 真实流式输出尚未实现，采用完整响应后的逐字显示。
-- 周复盘依赖聚合统计；恢复建议是本地规则，不调用模型。
-
-
-
-
-
-
+前端为单文件 `index.html`，无需构建工具或 npm 运行时依赖。

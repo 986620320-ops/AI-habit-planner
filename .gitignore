@@ -3,19 +3,16 @@
 .netlify/
 node_modules/
 *.log
-
-# Local visual prototypes and delivery archives
-index.prototype.html
-index.sample.html
 *.zip
-
-# Generated PDF reports are submitted separately
 *.pdf
 
-# Screenshots and generated report HTML stay outside GitHub
-docs/assets/*.png
-docs/prompt-history/evidence/*.png
-docs/technical-report/report.html
-
-# Raw local screenshot archive; curated images live in docs/assets
+# Local prototypes and material archives
+index.prototype.html
+index.sample.html
 截图/
+
+# Submission-only documents and generated screenshots
+docs/
+tests/
+CHANGELOG.md
+VERSION
