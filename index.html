@@ -650,6 +650,32 @@ body{
 .evidence-privacy{margin:8px 0 0;font-size:9.5px;line-height:1.55;color:#94a3b8}
 @media(max-width:430px){.recovery-head{display:block}.recovery-dismiss{margin-top:9px}.recovery-actions{flex-direction:column}}
 @media(prefers-reduced-motion:reduce){.recovery-card{scroll-behavior:auto}}
+
+/* ---------- 每周 AI 复盘 ---------- */
+.weekly-review-card{background:linear-gradient(165deg,#f5f3ff 0%,#eef2ff 58%,#f8fafc 100%);border-color:#ddd6fe}
+.weekly-review-head{align-items:flex-start}
+.weekly-review-head .sub{display:block;margin-top:3px;line-height:1.55}
+.weekly-review-quota{flex:none;padding:4px 8px;border-radius:999px;background:#fff;color:#6d28d9;border:1px solid #ddd6fe;font-size:9.5px;font-weight:800}
+.weekly-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.weekly-metric{padding:9px 6px;border-radius:12px;background:rgba(255,255,255,.82);border:1px solid #e9e2ff;text-align:center;min-width:0}
+.weekly-metric b{display:block;font-size:15px;line-height:1.2;color:#4338ca;word-break:break-all}
+.weekly-metric span{display:block;margin-top:3px;font-size:9px;color:#7c7f94}
+.weekly-review-result{margin-top:10px;padding:11px;border-radius:14px;background:#fff;border:1px solid #ddd6fe}
+.weekly-review-result h3{margin:0 0 6px;font-size:14px;color:#4338ca;line-height:1.45}
+.weekly-review-summary{font-size:11px;line-height:1.65;color:#475569;white-space:pre-wrap}
+.weekly-review-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.weekly-review-box{padding:8px;border-radius:10px;background:#f8fafc;border:1px solid #eef2f7;min-width:0}
+.weekly-review-box b{display:block;margin-bottom:2px;font-size:9px;color:#64748b}
+.weekly-review-box span{font-size:10.5px;line-height:1.55;color:#334155}
+.weekly-review-adjustment{margin-top:8px;padding:9px;border-radius:10px;background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;font-size:10.5px;line-height:1.6}
+.weekly-review-adjustment b{display:block;font-size:9.5px;color:#4338ca;margin-bottom:2px}
+.weekly-review-status{margin-top:9px;padding:9px 10px;border-radius:11px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:10.5px;line-height:1.55}
+.weekly-review-status.error{background:#fff5f5;border-color:#fecaca;color:#b91c1c}
+.weekly-review-actions{display:flex;gap:8px;margin-top:10px}
+.weekly-review-btn{flex:1;min-height:44px;border-radius:11px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;font-size:11px;font-weight:900;box-shadow:0 3px 0 #4f46e5}
+.weekly-review-btn:disabled{background:#cbd5e1;color:#64748b;box-shadow:none;cursor:not-allowed}
+.weekly-review-privacy{margin:8px 0 0;font-size:9.5px;line-height:1.55;color:#94a3b8}
+@media(max-width:430px){.weekly-metrics{grid-template-columns:repeat(2,1fr)}.weekly-review-grid{grid-template-columns:1fr}.weekly-review-head{display:block}.weekly-review-quota{display:inline-flex;margin-top:7px}}
 </style>
 </head>
 <body>
@@ -713,6 +739,34 @@ body{
         <button class="ai-send-btn" id="aiSendBtn" type="button">发送</button>
       </div>
     </div>
+  </section>
+
+
+  <!-- 每周 AI 复盘：只发送聚合统计 -->
+  <section class="card weekly-review-card" aria-labelledby="weeklyReviewTitle">
+    <div class="card-head weekly-review-head">
+      <div>
+        <h2 id="weeklyReviewTitle">📊 每周 AI 复盘</h2>
+        <span class="sub">根据真实打卡记录，只调整下周的一个变量</span>
+      </div>
+      <span class="weekly-review-quota" id="weeklyReviewQuota">Mock 不消耗额度</span>
+    </div>
+    <div class="weekly-metrics" id="weeklyReviewMetrics"></div>
+    <div class="weekly-review-result" id="weeklyReviewResult" hidden>
+      <h3 id="weeklyReviewHeadline"></h3>
+      <div class="weekly-review-summary" id="weeklyReviewSummary"></div>
+      <div class="weekly-review-grid">
+        <div class="weekly-review-box"><b>本周亮点</b><span id="weeklyReviewHighlight"></span></div>
+        <div class="weekly-review-box"><b>主要瓶颈</b><span id="weeklyReviewBottleneck"></span></div>
+      </div>
+      <div class="weekly-review-adjustment" id="weeklyReviewAdjustment"></div>
+      <div class="weekly-review-adjustment"><b>下周小实验</b><span id="weeklyReviewExperiment"></span></div>
+    </div>
+    <div class="weekly-review-status" id="weeklyReviewStatus" hidden aria-live="polite"></div>
+    <div class="weekly-review-actions">
+      <button class="weekly-review-btn" id="weeklyReviewBtn" type="button">生成本周复盘</button>
+    </div>
+    <p class="weekly-review-privacy">只发送完成次数、完成率、连续天数和习惯名称，不发送照片、聊天记录或原始证据文字。</p>
   </section>
 
   <!-- AI 证据打卡说明 -->
@@ -1064,6 +1118,7 @@ body{
   var REWARDS_KEY = 'ai-habit-checkin:rewards';
   var CHAT_KEY = 'ai-habit-checkin:ai-chat';
   var RECOVERY_KEY = 'ai-habit-checkin:recovery';
+  var WEEKLY_REVIEW_KEY = 'ai-habit-checkin:weekly-reviews';
   var PHOTO_DB = 'ai-habit-checkin-media';
   var PHOTO_STORE = 'photos';
 
@@ -1330,6 +1385,19 @@ body{
     });
   }
 
+  /* 周复盘：只保留最近 8 周，结构由前端固定，便于恢复备份 */
+  function loadWeeklyReviews() {
+    var raw = readJSON(WEEKLY_REVIEW_KEY, []);
+    if (!Array.isArray(raw)) return [];
+    return raw.filter(function (item) {
+      return item && typeof item === 'object' && typeof item.weekStart === 'string' && item.review;
+    }).slice(-8);
+  }
+
+  function saveWeeklyReviews(items) {
+    writeJSON(WEEKLY_REVIEW_KEY, Array.isArray(items) ? items.slice(-8) : []);
+  }
+
   /* 证据记录：{ 'YYYY-MM-DD::habitId': { status, evidenceType, confidence, matched, reason, feedback, engine, at } } */
   function loadVerify() {
     var raw = readJSON(VERIFY_KEY, {});
@@ -1529,11 +1597,14 @@ body{
     rewardsKey: REWARDS_KEY,
     chatKey: CHAT_KEY,
     recoveryKey: RECOVERY_KEY,
+    weeklyReviewKey: WEEKLY_REVIEW_KEY,
     verifyKey: VERIFY_KEY,
     loadChat: loadChat,
     saveChat: saveChat,
     loadRecovery: loadRecovery,
     saveRecovery: saveRecovery,
+    loadWeeklyReviews: loadWeeklyReviews,
+    saveWeeklyReviews: saveWeeklyReviews,
     loadVerify: loadVerify,
     saveVerify: saveVerify,
     load: loadHabits,
@@ -1585,7 +1656,9 @@ body{
     chatLimit: 10,
     chatRemaining: null,
     evidenceLimit: 5,
-    evidenceRemaining: null
+    evidenceRemaining: null,
+    reviewLimit: 2,
+    reviewRemaining: null
   };
     var HABIT_COLORS = ['#4f7cff', '#a855f7', '#f97316', '#10b981', '#0ea5e9', '#f43f5e', '#eab308', '#14b8a6'];
   var ICONS = ['💧', '🏃', '📚', '📖', '🌙', '🍎', '💪', '🧘', '🥗', '✍️', '🎵', '🦷', '☀️', '🧹', '🚶', '📵', '💰', '🎨', '☕', '🚴', '🎯'];
@@ -1609,7 +1682,9 @@ body{
   var points = HabitStore.loadPoints();
   var verify = HabitStore.loadVerify();
   var recoveryState = HabitStore.loadRecovery();
+  var weeklyReviews = HabitStore.loadWeeklyReviews();
   var recoveryDraft = {};
+  var weeklyReviewBusy = false;
   var selectedHabitId = habits.length > 0 ? habits[0].id : null;
   var newHabitIcon = ICONS[0];
 
@@ -1698,6 +1773,17 @@ body{
   var recoveryTitleEl = document.getElementById('recoveryTitle');
   var recoveryListEl = document.getElementById('recoveryList');
   var recoveryDismissBtn = document.getElementById('recoveryDismiss');
+  var weeklyReviewQuotaEl = document.getElementById('weeklyReviewQuota');
+  var weeklyReviewMetricsEl = document.getElementById('weeklyReviewMetrics');
+  var weeklyReviewResultEl = document.getElementById('weeklyReviewResult');
+  var weeklyReviewHeadlineEl = document.getElementById('weeklyReviewHeadline');
+  var weeklyReviewSummaryEl = document.getElementById('weeklyReviewSummary');
+  var weeklyReviewHighlightEl = document.getElementById('weeklyReviewHighlight');
+  var weeklyReviewBottleneckEl = document.getElementById('weeklyReviewBottleneck');
+  var weeklyReviewAdjustmentEl = document.getElementById('weeklyReviewAdjustment');
+  var weeklyReviewExperimentEl = document.getElementById('weeklyReviewExperiment');
+  var weeklyReviewStatusEl = document.getElementById('weeklyReviewStatus');
+  var weeklyReviewBtn = document.getElementById('weeklyReviewBtn');
   var evidenceFollowUpBox = document.getElementById('evidenceFollowUpBox');
   var evidenceQuestionEl = document.getElementById('evidenceQuestion');
   var evidenceFollowUpInput = document.getElementById('evidenceFollowUpInput');
@@ -1772,6 +1858,11 @@ body{
       if (typeof evidence.limit === 'number') aiStatus.evidenceLimit = evidence.limit;
       if (typeof evidence.remaining === 'number') aiStatus.evidenceRemaining = evidence.remaining;
     }
+    var review = quota.review;
+    if (review) {
+      if (typeof review.limit === 'number') aiStatus.reviewLimit = review.limit;
+      if (typeof review.remaining === 'number') aiStatus.reviewRemaining = review.remaining;
+    }
   }
 
   function aiQuotaText() {
@@ -1781,6 +1872,9 @@ body{
     }
     if (typeof aiStatus.evidenceRemaining === 'number') {
       parts.push('证据判断剩余 ' + aiStatus.evidenceRemaining + '/' + aiStatus.evidenceLimit + ' 次');
+    }
+    if (typeof aiStatus.reviewRemaining === 'number') {
+      parts.push('周复盘剩余 ' + aiStatus.reviewRemaining + '/' + aiStatus.reviewLimit + ' 次');
     }
     return parts.length > 0 ? '今日额度：' + parts.join('，') + '。' : '';
   }
@@ -1805,6 +1899,7 @@ body{
       if (aiChatSubEl) aiChatSubEl.textContent = '正在检测服务端是否配置真实 AI…';
       if (aiChatQuotaEl) aiChatQuotaEl.textContent = '正在连接 AI 服务…';
       renderEvidenceGuide();
+      renderWeeklyReview();
       return;
     }
 
@@ -1816,6 +1911,7 @@ body{
         ? '真实对话剩余 ' + aiStatus.chatRemaining + '/' + aiStatus.chatLimit + ' 轮 · '
         : '') + 'Enter 发送 · Shift + Enter 换行';
       renderEvidenceGuide();
+      renderWeeklyReview();
       return;
     }
 
@@ -1828,6 +1924,7 @@ body{
     }
     if (aiChatQuotaEl) aiChatQuotaEl.textContent = 'Mock 模式不消耗额度 · Enter 发送 · Shift + Enter 换行';
     renderEvidenceGuide();
+    renderWeeklyReview();
   }
 
   function setRealMode(enable) {
@@ -2129,6 +2226,277 @@ body{
         }
       }
       recoveryListEl.appendChild(item);
+    });
+  }
+
+  function dateKeyAdd(key, days) {
+    var date = dateFromKey(key);
+    date.setDate(date.getDate() + days);
+    return formatKey(date);
+  }
+
+  function currentWeekStartKey() {
+    var date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    var offset = (date.getDay() + 6) % 7;
+    date.setDate(date.getDate() - offset);
+    return formatKey(date);
+  }
+
+  function buildWeeklyStats() {
+    var weekStart = currentWeekStartKey();
+    var weekEnd = todayKeyStr;
+    var habitStats = [];
+    var possible = 0;
+    var completed = 0;
+    var reasons = {};
+
+    Object.keys(recoveryState.plans).forEach(function (key) {
+      if (key.slice(0, 10) >= weekStart && key.slice(0, 10) <= weekEnd) {
+        var plan = recoveryState.plans[key];
+        if (plan && plan.reason) reasons[plan.reason] = (reasons[plan.reason] || 0) + 1;
+      }
+    });
+
+    habits.forEach(function (habit) {
+      var created = readDatePart(habit) || weekStart;
+      var start = created > weekStart ? created : weekStart;
+      if (start > weekEnd) return;
+      var day = start;
+      var itemPossible = 0;
+      var itemCompleted = 0;
+      while (day <= weekEnd) {
+        itemPossible++;
+        if (isChecked(habit.id, day)) itemCompleted++;
+        day = dateKeyAdd(day, 1);
+      }
+      possible += itemPossible;
+      completed += itemCompleted;
+      habitStats.push({
+        name: habit.name,
+        completed: itemCompleted,
+        possible: itemPossible,
+        misses: itemPossible - itemCompleted,
+        rate: itemPossible > 0 ? Math.round(itemCompleted / itemPossible * 100) : 0,
+        streak: getCurrentStreak(habit.id)
+      });
+    });
+
+    var best = null;
+    var stalled = null;
+    habitStats.forEach(function (item) {
+      if (item.completed > 0 && (!best || item.completed > best.completed || (item.completed === best.completed && item.rate > best.rate))) best = item;
+      if (item.misses > 0 && (!stalled || item.misses > stalled.misses || (item.misses === stalled.misses && item.rate < stalled.rate))) stalled = item;
+    });
+    return {
+      weekStart: weekStart,
+      weekEnd: weekEnd,
+      completed: completed,
+      possible: possible,
+      rate: possible > 0 ? Math.round(completed / possible * 100) : 0,
+      habits: habitStats,
+      bestHabit: best ? best.name : '还没有足够记录',
+      stalledHabit: stalled ? stalled.name : '还没有明显停滞',
+      recoveryReasons: Object.keys(reasons).slice(0, 5).map(function (name) { return { reason: name, count: reasons[name] }; })
+    };
+  }
+
+  function savedWeeklyReview(weekStart) {
+    for (var i = weeklyReviews.length - 1; i >= 0; i--) {
+      if (weeklyReviews[i] && weeklyReviews[i].weekStart === weekStart) return weeklyReviews[i];
+    }
+    return null;
+  }
+
+  function mockWeeklyReview(stats) {
+    var headline = stats.rate >= 80 ? '本周节奏已经基本稳住'
+      : stats.rate >= 50 ? '本周有一半以上完成，先保留有效动作'
+        : '本周完成率偏低，下周先把目标缩小';
+    var bottleneck = stats.recoveryReasons.length > 0
+      ? '恢复记录里最常见的原因是“' + stats.recoveryReasons[0].reason + '”。'
+      : stats.stalledHabit + ' 本周完成波动最大。';
+    return {
+      headline: headline,
+      summary: '本周共完成 ' + stats.completed + '/' + stats.possible + ' 次，完成率 ' + stats.rate + '%。',
+      highlight: stats.bestHabit + ' 是本周最稳定的习惯。',
+      bottleneck: bottleneck,
+      adjustment: {
+        habitName: stats.stalledHabit,
+        change: '下周只把目标降低一档，先连续完成 3 天。',
+        reason: '先恢复连续完成，再逐步提高难度。'
+      },
+      experiment: '下周只观察“是否在固定时段完成”，不增加新的习惯。'
+    };
+  }
+
+  function normalizeWeeklyReview(data) {
+    if (!data || typeof data !== 'object') return null;
+    var adjustment = data.adjustment && typeof data.adjustment === 'object' ? data.adjustment : {};
+    return {
+      headline: clip(data.headline || '本周复盘', 80),
+      summary: clip(data.summary || '', 320),
+      highlight: clip(data.highlight || '', 160),
+      bottleneck: clip(data.bottleneck || '', 160),
+      adjustment: {
+        habitName: clip(adjustment.habitName || '', 40),
+        change: clip(adjustment.change || '', 160),
+        reason: clip(adjustment.reason || '', 160)
+      },
+      experiment: clip(data.experiment || '', 180)
+    };
+  }
+
+  function renderWeeklyMetric(label, value) {
+    var box = document.createElement('div');
+    box.className = 'weekly-metric';
+    var strong = document.createElement('b');
+    strong.textContent = value;
+    var span = document.createElement('span');
+    span.textContent = label;
+    box.appendChild(strong);
+    box.appendChild(span);
+    return box;
+  }
+
+  function renderWeeklyReview() {
+    if (!weeklyReviewMetricsEl) return;
+    var stats = buildWeeklyStats();
+    weeklyReviewMetricsEl.innerHTML = '';
+    weeklyReviewMetricsEl.appendChild(renderWeeklyMetric('本周完成', stats.completed + '/' + stats.possible));
+    weeklyReviewMetricsEl.appendChild(renderWeeklyMetric('完成率', stats.rate + '%'));
+    weeklyReviewMetricsEl.appendChild(renderWeeklyMetric('最稳习惯', stats.bestHabit));
+    weeklyReviewMetricsEl.appendChild(renderWeeklyMetric('需要关注', stats.stalledHabit));
+    weeklyReviewQuotaEl.textContent = IS_REAL_AI
+      ? (typeof aiStatus.reviewRemaining === 'number'
+        ? '真实复盘剩余 ' + aiStatus.reviewRemaining + '/' + aiStatus.reviewLimit + ' 次'
+        : '真实复盘每日 ' + aiStatus.reviewLimit + ' 次')
+      : 'Mock 不消耗额度';
+    weeklyReviewBtn.disabled = weeklyReviewBusy || stats.possible === 0;
+    weeklyReviewBtn.textContent = weeklyReviewBusy
+      ? 'AI 正在复盘…'
+      : savedWeeklyReview(stats.weekStart) ? '重新生成周复盘' : '生成本周复盘';
+
+    var saved = savedWeeklyReview(stats.weekStart);
+    if (!saved) {
+      weeklyReviewResultEl.hidden = true;
+      return;
+    }
+    var review = normalizeWeeklyReview(saved.review);
+    if (!review) {
+      weeklyReviewResultEl.hidden = true;
+      return;
+    }
+    weeklyReviewResultEl.hidden = false;
+    weeklyReviewHeadlineEl.textContent = review.headline;
+    weeklyReviewSummaryEl.textContent = review.summary;
+    weeklyReviewHighlightEl.textContent = review.highlight;
+    weeklyReviewBottleneckEl.textContent = review.bottleneck;
+    weeklyReviewAdjustmentEl.innerHTML = '<b>下周只调整一个变量</b>';
+    weeklyReviewAdjustmentEl.appendChild(document.createTextNode(
+      (review.adjustment.habitName ? review.adjustment.habitName + '：' : '')
+      + review.adjustment.change + (review.adjustment.reason ? ' ' + review.adjustment.reason : '')
+    ));
+    weeklyReviewExperimentEl.textContent = review.experiment;
+  }
+
+  function saveWeeklyReview(stats, review, engine, model) {
+    weeklyReviews = weeklyReviews.filter(function (item) { return item && item.weekStart !== stats.weekStart; });
+    weeklyReviews.push({
+      weekStart: stats.weekStart,
+      weekEnd: stats.weekEnd,
+      stats: {
+        completed: stats.completed,
+        possible: stats.possible,
+        rate: stats.rate,
+        bestHabit: stats.bestHabit,
+        stalledHabit: stats.stalledHabit
+      },
+      review: review,
+      engine: engine || 'mock',
+      model: model || '',
+      createdAt: Date.now()
+    });
+    HabitStore.saveWeeklyReviews(weeklyReviews);
+  }
+
+  function setWeeklyReviewStatus(text, isError) {
+    weeklyReviewStatusEl.hidden = !text;
+    weeklyReviewStatusEl.className = 'weekly-review-status' + (isError ? ' error' : '');
+    weeklyReviewStatusEl.textContent = text || '';
+  }
+
+  function requestWeeklyReview() {
+    if (weeklyReviewBusy) return;
+    var stats = buildWeeklyStats();
+    if (stats.possible === 0) {
+      toast('至少需要一条打卡记录才能复盘');
+      return;
+    }
+    if (!IS_REAL_AI) {
+      weeklyReviewBusy = true;
+      setWeeklyReviewStatus('Mock 模式正在整理本周记录…', false);
+      renderWeeklyReview();
+      setTimeout(function () {
+        weeklyReviewBusy = false;
+        var review = mockWeeklyReview(stats);
+        saveWeeklyReview(stats, review, 'mock', 'mock');
+        setWeeklyReviewStatus('Mock 示例已生成，不会调用真实模型。', false);
+        if (stats.possible > 0) weeklyReviewStatusEl.hidden = true;
+        renderWeeklyReview();
+        toast('本周 Mock 复盘已生成');
+      }, 420);
+      return;
+    }
+    if (typeof fetch !== 'function') {
+      setWeeklyReviewStatus('当前浏览器不支持连接服务端。', true);
+      return;
+    }
+    weeklyReviewBusy = true;
+    setWeeklyReviewStatus('真实 AI 正在分析本周记录…', false);
+    renderWeeklyReview();
+    fetch(AI_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'review',
+        scope: 'weekly',
+        weekStart: stats.weekStart,
+        weekEnd: stats.weekEnd,
+        habits: stats.habits,
+        summary: {
+          completed: stats.completed,
+          possible: stats.possible,
+          rate: stats.rate,
+          bestHabit: stats.bestHabit,
+          stalledHabit: stats.stalledHabit,
+          recoveryReasons: stats.recoveryReasons
+        }
+      })
+    }).then(function (response) {
+      return response.json().then(function (data) { return { ok: response.ok, status: response.status, data: data }; });
+    }).then(function (result) {
+      if (result.data && result.data.quota) {
+        applyAiQuota(result.data.quota);
+        setAiModeUi();
+      }
+      if (!result.ok || !result.data || result.data.ok === false) {
+        var message = result.data && result.data.error ? result.data.error : 'AI 周复盘失败';
+        if (result.status === 429) message = '今日真实周复盘额度已用完，明天再试或切换 Mock。';
+        throw new Error(message);
+      }
+      var review = normalizeWeeklyReview(result.data.review);
+      if (!review) throw new Error('AI 返回内容无法解析');
+      weeklyReviewBusy = false;
+      saveWeeklyReview(stats, review, 'agent', result.data.model || '');
+      setWeeklyReviewStatus('真实 AI 复盘已生成。', false);
+      weeklyReviewStatusEl.hidden = true;
+      renderWeeklyReview();
+      toast('本周 AI 复盘已生成');
+    }).catch(function (error) {
+      weeklyReviewBusy = false;
+      var reasonText = (error && error.message ? error.message : 'AI 周复盘失败').replace(/[。！？!?；;]+$/, '');
+      var suggestion = /额度|明天再试|切换 Mock/.test(reasonText) ? '' : '；可以切换 Mock 或明天再试。';
+      setWeeklyReviewStatus(reasonText + suggestion, true);
+      renderWeeklyReview();
     });
   }
 
@@ -2477,7 +2845,7 @@ body{
     evidenceEngineEl.textContent = engine === 'agent' ? '真实 AI 判断'
       : engine === 'mock' ? 'Mock 演示'
         : engine === 'manual' ? '手动记录' : '本次记录';
-    evidenceTalkBtn.hidden = !evidenceHabit;
+    evidenceTalkBtn.hidden = !evidenceHabit || !(data && (data.status === 'passed' || data.status === 'manual'));
   }
 
   function markEvidenceSessionComplete(status) {
@@ -2528,7 +2896,7 @@ body{
     setVerify(habit.id, record);
     awardCheckinIfNeeded(habit, record.status === 'manual' ? 'manual' : (engine || 'agent'));
     renderAll();
-    showEvidenceResult(Object.assign({ verdict: record.status === 'manual' ? 'manual_only' : 'passed' }, record));
+    showEvidenceResult(Object.assign({ verdict: record.status === 'manual' ? 'manual_only' : 'passed', status: record.status }, record));
     markEvidenceSessionComplete(record.status);
     toast(record.status === 'manual'
       ? '已手动完成：' + habit.name + '，+10 积分'
@@ -2635,9 +3003,12 @@ body{
     if (checked && (state.status === 'passed' || state.status === 'manual')) {
       var viewData = {
         verdict: state.status === 'manual' ? 'manual_only' : 'passed',
+        status: state.status,
         matched: state.matched || [],
         reason: state.reason || (state.status === 'manual' ? '本次为手动完成。' : '本次证据已通过。'),
-        feedback: state.feedback || ''
+        feedback: state.feedback || '',
+        nextStep: state.nextStep || '',
+        engine: state.engine || ''
       };
       showEvidenceResult(viewData);
       markEvidenceSessionComplete(state.status);
@@ -2804,7 +3175,7 @@ body{
     var record = verifyOf(habit.id);
     var status = record.status === 'manual' ? '手动完成' : '证据已通过';
     var draft = '我刚完成「' + habit.name + '」，本次是' + status + '。'
-      + (record.nextStep ? '教练建议：' + record.nextStep + '。' : '')
+      + (record.nextStep ? '教练建议：' + record.nextStep.replace(/[。！？!?]+$/, '') + '。' : '')
       + '请帮我根据今天的完成情况，安排明天的具体行动。';
     closeEvidenceModal();
     aiComposerEl.value = draft.slice(0, 500);
@@ -2820,6 +3191,8 @@ body{
     renderRecoveryCard();
     toast('今天不再显示恢复提醒');
   });
+
+  weeklyReviewBtn.addEventListener('click', requestWeeklyReview);
 
   var SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognitionCtor) {
@@ -3231,6 +3604,7 @@ body{
     renderCalendar();
     renderRecoveryCard();
     renderToday();
+    renderWeeklyReview();
   }
 
   /* ---------- 习惯增删改 ---------- */
@@ -4131,6 +4505,7 @@ body{
     points = HabitStore.loadPoints();
     verify = HabitStore.loadVerify();
     recoveryState = HabitStore.loadRecovery();
+    weeklyReviews = HabitStore.loadWeeklyReviews();
     aiChatMessages = HabitStore.loadChat();
     if (!findHabit(selectedHabitId)) {
       selectedHabitId = habits.length > 0 ? habits[0].id : null;
@@ -4748,6 +5123,7 @@ body{
           rewards: HabitStore.loadRewards(),
           evidence: HabitStore.loadVerify(),
           recovery: HabitStore.loadRecovery(),
+          weeklyReviews: HabitStore.loadWeeklyReviews(),
           aiChat: HabitStore.loadChat(),
           photos: photos || {}
         });
@@ -4793,6 +5169,7 @@ body{
       HabitStore.saveRewards(data.rewards && typeof data.rewards === 'object' ? data.rewards : { tiers: [], unlocked: [] });
       HabitStore.saveVerify(data.evidence && typeof data.evidence === 'object' ? data.evidence : {});
       HabitStore.saveRecovery(data.recovery && typeof data.recovery === 'object' ? data.recovery : { plans: {}, dismissed: {} });
+      HabitStore.saveWeeklyReviews(Array.isArray(data.weeklyReviews) ? data.weeklyReviews : []);
       HabitStore.saveChat(Array.isArray(data.aiChat) ? data.aiChat : []);
 
       // 照片单独存在 IndexedDB 里，这里一并恢复
