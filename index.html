@@ -2249,8 +2249,12 @@ body{
     var possible = 0;
     var completed = 0;
     var reasons = {};
+    var habitIds = {};
+    habits.forEach(function (habit) { habitIds[habit.id] = true; });
 
     Object.keys(recoveryState.plans).forEach(function (key) {
+      var recoveryHabitId = key.slice(12);
+      if (!habitIds[recoveryHabitId]) return;
       if (key.slice(0, 10) >= weekStart && key.slice(0, 10) <= weekEnd) {
         var plan = recoveryState.plans[key];
         if (plan && plan.reason) reasons[plan.reason] = (reasons[plan.reason] || 0) + 1;
@@ -2298,6 +2302,25 @@ body{
       stalledHabit: stalled ? stalled.name : '还没有明显停滞',
       recoveryReasons: Object.keys(reasons).slice(0, 5).map(function (name) { return { reason: name, count: reasons[name] }; })
     };
+  }
+
+  function weeklyStatsSignature(stats) {
+    return JSON.stringify({
+      completed: stats.completed,
+      possible: stats.possible,
+      rate: stats.rate,
+      recoveryReasons: stats.recoveryReasons,
+      habits: (stats.habits || []).map(function (habit) {
+        return {
+          name: habit.name,
+          completed: habit.completed,
+          possible: habit.possible,
+          misses: habit.misses,
+          rate: habit.rate,
+          streak: habit.streak
+        };
+      })
+    });
   }
 
   function savedWeeklyReview(weekStart) {
@@ -2360,6 +2383,8 @@ body{
   function renderWeeklyReview() {
     if (!weeklyReviewMetricsEl) return;
     var stats = buildWeeklyStats();
+    var saved = savedWeeklyReview(stats.weekStart);
+    var stale = !!saved && String(saved.signature || '') !== weeklyStatsSignature(stats);
     weeklyReviewMetricsEl.innerHTML = '';
     weeklyReviewMetricsEl.appendChild(renderWeeklyMetric('本周完成', stats.completed + '/' + stats.possible));
     weeklyReviewMetricsEl.appendChild(renderWeeklyMetric('完成率', stats.rate + '%'));
@@ -2373,11 +2398,18 @@ body{
     weeklyReviewBtn.disabled = weeklyReviewBusy || stats.possible === 0;
     weeklyReviewBtn.textContent = weeklyReviewBusy
       ? 'AI 正在复盘…'
-      : savedWeeklyReview(stats.weekStart) ? '重新生成周复盘' : '生成本周复盘';
+      : stale ? '重新生成本周复盘'
+        : saved ? '重新生成周复盘' : '生成本周复盘';
 
-    var saved = savedWeeklyReview(stats.weekStart);
     if (!saved) {
       weeklyReviewResultEl.hidden = true;
+      return;
+    }
+    if (stale) {
+      weeklyReviewResultEl.hidden = true;
+      if (!weeklyReviewBusy && (weeklyReviewStatusEl.hidden || !weeklyReviewStatusEl.classList.contains('error'))) {
+        setWeeklyReviewStatus('本周打卡数据已变化，请重新生成复盘。', false);
+      }
       return;
     }
     var review = normalizeWeeklyReview(saved.review);
@@ -2410,6 +2442,7 @@ body{
         bestHabit: stats.bestHabit,
         stalledHabit: stats.stalledHabit
       },
+      signature: weeklyStatsSignature(stats),
       review: review,
       engine: engine || 'mock',
       model: model || '',
@@ -2560,27 +2593,25 @@ body{
 
   /*
    * 连续打卡奖励结算：每满 7 天一次性 +5 分。
-   * 只有连续段起点后移（前面被打断）才算中断并重置计数；往前补卡属于同一段，不重复发奖。
+   * 返回值是本次相对已有记录的变化：正数表示新增奖励，负数表示取消打卡后回退奖励。
+   * 新连续段开始时保留上一段已经获得的奖励，但取消当前段内的打卡会撤销该段尚未成立的奖励。
    */
   function syncStreakBonus(habitId) {
     var run = getCurrentRun(habitId);
     var tracked = points.bonus[habitId] || { runStart: '', awarded: 0 };
-    var gained = 0;
+    var previousAwarded = tracked.awarded || 0;
 
     if (tracked.runStart === '' || run.start > tracked.runStart) {
       tracked = { runStart: run.start, awarded: 0 };
+      previousAwarded = 0;
     } else if (run.start !== '' && run.start < tracked.runStart) {
       tracked.runStart = run.start;
     }
 
     var milestone = Math.floor(run.length / STREAK_STEP) * STREAK_STEP;
-    while (run.length >= STREAK_STEP && tracked.awarded + STREAK_STEP <= milestone) {
-      tracked.awarded += STREAK_STEP;
-      gained += STREAK_BONUS;
-    }
-
+    tracked.awarded = milestone;
     points.bonus[habitId] = tracked;
-    return gained;
+    return (tracked.awarded - previousAwarded) / STREAK_STEP * STREAK_BONUS;
   }
 
   function adjustPoints(delta, type, habit, dateKey, source) {
@@ -2870,11 +2901,13 @@ body{
     checkins[habit.id] = HabitStore.normalizeDates(dates);
 
     adjustPoints(CHECKIN_POINTS, 'checkin', habit, todayKeyStr, source || '');
-    var gained = syncStreakBonus(habit.id);
-    if (gained > 0) {
-      adjustPoints(gained, 'bonus', habit, todayKeyStr);
-      toast('🔥 ' + habit.name + ' 连续满 ' + getCurrentStreak(habit.id) + ' 天，额外 +5 积分');
+    var bonusDelta = syncStreakBonus(habit.id);
+    if (bonusDelta > 0) {
+      adjustPoints(bonusDelta, 'bonus', habit, todayKeyStr);
+      toast('🔥 ' + habit.name + ' 连续满 ' + getCurrentStreak(habit.id) + ' 天，额外 +' + bonusDelta + ' 积分');
       confetti();
+    } else if (bonusDelta < 0) {
+      adjustPoints(bonusDelta, 'bonus-adjust', habit, todayKeyStr, 'reconcile');
     }
 
     HabitStore.saveCheckins(checkins);
@@ -3123,10 +3156,14 @@ body{
           return date !== todayKeyStr;
         }));
         adjustPoints(-CHECKIN_POINTS, 'cancel', habit, todayKeyStr);
-        syncStreakBonus(habit.id);
+        var bonusDelta = syncStreakBonus(habit.id);
+        if (bonusDelta !== 0) {
+          adjustPoints(bonusDelta, bonusDelta > 0 ? 'bonus' : 'bonus-adjust', habit, todayKeyStr, bonusDelta < 0 ? 'cancel' : '');
+        }
         HabitStore.saveCheckins(checkins);
         HabitStore.savePoints(points);
-        toast('-10 积分 · 已取消 ' + habit.name + ' 今天的打卡');
+        var bonusNote = bonusDelta < 0 ? ' · 撤销连续奖励 ' + Math.abs(bonusDelta) + ' 分' : '';
+        toast('-10 积分' + bonusNote + ' · 已取消 ' + habit.name + ' 今天的打卡');
       } else {
         toast('已清除证据，可以重新打卡');
       }
@@ -3708,6 +3745,10 @@ body{
         habits = habits.filter(function (item) { return item.id !== habit.id; });
         delete checkins[habit.id];
         delete points.bonus[habit.id];
+        Object.keys(recoveryState.plans).forEach(function (key) {
+          if (key.slice(12) === habit.id) delete recoveryState.plans[key];
+        });
+        HabitStore.saveRecovery(recoveryState);
 
         Object.keys(verify).forEach(function (key) {
           if (key.slice(12) === habit.id) delete verify[key];
