@@ -85,18 +85,18 @@ npx netlify-cli dev
 健康检查：
 
 ```text
-GET /api?action=health
+GET /api/index?action=health
 ```
 
 ## EdgeOne Makers 部署
 
-仓库同时保留 Netlify 和 EdgeOne 两套后端入口。前端统一请求 `/api`：Netlify 通过重写转发到 `/.netlify/functions/api`，EdgeOne 直接匹配 `cloud-functions/api/[[default]].js`。
+仓库同时保留 Netlify 和 EdgeOne 两套后端入口。前端统一请求 `/api/index`：Netlify 通过重写转发到 `/.netlify/functions/api`，EdgeOne 直接匹配 `cloud-functions/api/[[default]].js`，实际入口为 `/api/index`。
 
 1. 将仓库导入 EdgeOne Makers，框架选择 Other。
 2. 构建命令使用 `node edgeone-build.mjs`，输出目录为 `.`。
 3. 添加 `MAKERS_MODELS_KEY`；普通聊天默认 V4 Flash，规划默认 V4 Pro。
 4. 照片识别单独配置 `VISION_API_KEY`、`VISION_BASE_URL` 和 `VISION_MODEL`。
-5. 部署后访问 `/api?action=health`，确认 `realAI`、`chatModel` 和 `planningModel`。
+5. 部署后访问 `/api/index?action=health`，确认 `realAI`、`chatModel` 和 `planningModel`。
 
 ## 环境变量
 
@@ -120,7 +120,9 @@ GET /api?action=health
 
 ## 连续对话路由
 
-- 首轮规划信息不足时，AI 只问一个最关键的问题；用户补充后再给出具体计划。
+- 规划是连续讨论：允许一次提出多个相关问题，不机械限制成“只能问一个问题”。
+- 每日真实 AI 对话上限为 10 轮；第 2、4、6 轮分别至少交付第 1、2、3 版可执行方案，从第 2 轮起不能只追问。
+- 第 2 轮起的里程碑若模型只返回问题或空内容，会自动重试；仍失败时返回基于前文的本地可调整方案，避免对话中断。
 - 当前会话一旦进入规划模式，制定和修改计划使用 `AI_PLANNING_MODEL`，普通聊天使用 `AI_CHAT_MODEL`。
 - 规划模型遇到 429、模型不可用或服务端错误时，会自动用普通聊天模型重试一次。
 - 聊天接口兼容纯文本和 JSON 返回，模型忽略 JSON 模式时仍会保留有效回复。
@@ -130,7 +132,7 @@ GET /api?action=health
 后端统一入口：
 
 ```text
-/api
+/api/index
 ```
 
 支持：
