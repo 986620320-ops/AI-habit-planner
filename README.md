@@ -8,10 +8,13 @@
 
 ```text
 .
-├─ index.html                单文件前端
-├─ netlify/functions/api.js  Netlify Function 后端
-├─ netlify.toml              发布与函数配置
-├─ .env.example              环境变量模板
+├─ index.html                         单文件前端
+├─ netlify/functions/api.js           Netlify Function 后端
+├─ cloud-functions/api/[[default]].js EdgeOne Cloud Function 后端
+├─ netlify.toml                        Netlify 发布、函数与 /api 重写
+├─ edgeone.json                        EdgeOne 构建与函数配置
+├─ edgeone-build.mjs                   EdgeOne 静态构建入口
+├─ .env.example                        环境变量模板
 └─ README.md
 ```
 
@@ -40,7 +43,7 @@ main 保留了从空白页面到当前版本的逐步演进。评审可以先查
 
 ## 功能
 
-- 连续 AI 对话、候选习惯导入和本地聊天记录
+- 连续 AI 对话、候选习惯导入和本地聊天记录；规划会话优先使用 V4 Pro，普通聊天使用 V4 Flash
 - 照片、文字、语音转文字三种证据入口
 - AI 证据判断、一次追问和手动复盘降级
 - 打卡后下一步建议和“和教练继续聊”草稿
@@ -82,16 +85,29 @@ npx netlify-cli dev
 健康检查：
 
 ```text
-GET /.netlify/functions/api?action=health
+GET /api?action=health
 ```
+
+## EdgeOne Makers 部署
+
+仓库同时保留 Netlify 和 EdgeOne 两套后端入口。前端统一请求 `/api`：Netlify 通过重写转发到 `/.netlify/functions/api`，EdgeOne 直接匹配 `cloud-functions/api/[[default]].js`。
+
+1. 将仓库导入 EdgeOne Makers，框架选择 Other。
+2. 构建命令使用 `node edgeone-build.mjs`，输出目录为 `.`。
+3. 添加 `MAKERS_MODELS_KEY`；普通聊天默认 V4 Flash，规划默认 V4 Pro。
+4. 照片识别单独配置 `VISION_API_KEY`、`VISION_BASE_URL` 和 `VISION_MODEL`。
+5. 部署后访问 `/api?action=health`，确认 `realAI`、`chatModel` 和 `planningModel`。
 
 ## 环境变量
 
 | 变量 | 说明 | 默认值 |
 |---|---|---|
-| `DEEPSEEK_API_KEY` | 文本对话、规划和文字证据判断 | 必填 |
-| `VISION_API_KEY` | 图片证据判断，可复用 DeepSeek Key | 必填 |
-| `DEEPSEEK_MODEL` | 文本模型 | `deepseek-flash` |
+| `MAKERS_MODELS_KEY` | EdgeOne Makers 内置模型 Key；启用后聊天用 Flash、规划用 Pro | 可选 |
+| `DEEPSEEK_API_KEY` | 自有 OpenAI 兼容文本模型 Key | 与 Makers Key 二选一 |
+| `VISION_API_KEY` | 图片证据判断；不配置时照片降级为人工复盘 | 可选 |
+| `AI_CHAT_MODEL` | 普通聊天与证据判断模型 | Makers 模式为 V4 Flash |
+| `AI_PLANNING_MODEL` | 制定或修改计划模型 | Makers 模式为 V4 Pro |
+| `DEEPSEEK_MODEL` | 自有模型模式的兼容模型名 | `deepseek-flash` |
 | `DEEPSEEK_BASE_URL` | 文本接口地址 | `https://api.deepseek.com` |
 | `VISION_MODEL` | 视觉模型 | `deepseek-flash` |
 | `VISION_BASE_URL` | 视觉接口地址 | `https://api.deepseek.com` |
@@ -102,18 +118,25 @@ GET /.netlify/functions/api?action=health
 
 不要提交 `.env` 或真实 API Key。
 
+## 连续对话路由
+
+- 首轮规划信息不足时，AI 只问一个最关键的问题；用户补充后再给出具体计划。
+- 当前会话一旦进入规划模式，制定和修改计划使用 `AI_PLANNING_MODEL`，普通聊天使用 `AI_CHAT_MODEL`。
+- 规划模型遇到 429、模型不可用或服务端错误时，会自动用普通聊天模型重试一次。
+- 聊天接口兼容纯文本和 JSON 返回，模型忽略 JSON 模式时仍会保留有效回复。
+
 ## API
 
 后端统一入口：
 
 ```text
-/.netlify/functions/api
+/api
 ```
 
 支持：
 
 - `GET ?action=health`
-- `POST { action: "chat" }`
+- `POST { action: "chat", planningContext?, messages, habits }`
 - `POST { action: "evidence" }`
 - `POST { action: "review", scope: "weekly" }`
 - `POST { action: "plan" }`：兼容旧版一次规划接口
@@ -126,7 +149,7 @@ GET /.netlify/functions/api?action=health
 - 真实模式只发送本次选择和填写的证据。
 - 服务端不持久化原始文字、语音或聊天记录。
 - API Key 只放在本地 `.env` 或部署平台环境变量中。
-- 额度和来源限制位于 Netlify Function 中。
+- 额度和来源限制位于后端函数中，Netlify 与 EdgeOne 共用同一套解析和模型路由逻辑。
 
 ## 积分规则
 

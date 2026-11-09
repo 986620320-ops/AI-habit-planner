@@ -1644,7 +1644,7 @@ body{
    * 点击右上角模式标签即可切换；选择保存在本机。
    * 真实证据判断受每日额度保护，额度用完后仍可手动复盘完成。
    */
-  var AI_ENDPOINT = '/.netlify/functions/api';
+  var AI_ENDPOINT = '/api';
   var AI_MODE_PREF_KEY = 'ai-habit-checkin:ai-mode-pref';
   var IS_REAL_AI = false;
   var aiModePref = loadAiModePref();
@@ -3797,8 +3797,8 @@ body{
   });
 
   /* ---------- AI 连续对话（Mock / 真实接口） ---------- */
-  var AI_CHAT_MAX_STORED = 30;
-  var AI_CHAT_CONTEXT_MESSAGES = 12;
+  var AI_CHAT_MAX_STORED = 40;
+  var AI_CHAT_CONTEXT_MESSAGES = 20;
 
   function aiHabitsSnapshot() {
     return habits.map(function (habit) {
@@ -4047,14 +4047,36 @@ body{
     renderAiChat();
   }
 
+  var AI_PLANNING_INTENT_PATTERN = /规划|计划|安排|目标|习惯|打卡|作息|失眠|熬夜|早睡|早起|学习|备考|专注|运动|减脂|减肥|健身|情绪|焦虑|压力|怎么开始|从哪开始/;
+
+  function chatPlanningContext() {
+    return aiChatMessages.some(function (message) {
+      if (message.role === 'user') {
+        return AI_PLANNING_INTENT_PATTERN.test(String(message.content || ''));
+      }
+      return message.role === 'assistant'
+        && Array.isArray(message.habits)
+        && message.habits.length > 0;
+    });
+  }
+
   function chatHistoryForApi() {
     return aiChatMessages.filter(function (message) {
       return (message.role === 'user' || message.role === 'assistant')
-        && message.mode === 'real'
         && typeof message.content === 'string'
         && message.content.trim() !== '';
     }).slice(-AI_CHAT_CONTEXT_MESSAGES).map(function (message) {
-      return { role: message.role, content: message.content.slice(0, 2000) };
+      var content = message.content.slice(0, 2000);
+      if (message.role === 'assistant' && Array.isArray(message.habits) && message.habits.length > 0) {
+        var habitNames = message.habits.map(function (habit) {
+          return String(habit && habit.name ? habit.name : '').trim();
+        }).filter(Boolean).slice(0, 5);
+        if (habitNames.length > 0) {
+          var suffix = '\n\n[上一轮推荐习惯：' + habitNames.join('、') + ']';
+          content = content.slice(0, Math.max(0, 2000 - suffix.length)) + suffix;
+        }
+      }
+      return { role: message.role, content: content };
     });
   }
 
@@ -4130,6 +4152,7 @@ body{
         today: todayKeyStr,
         totalPoints: points.total,
         habits: aiHabitsSnapshot(),
+        planningContext: chatPlanningContext(),
         messages: chatHistoryForApi()
       }),
       signal: aiAbortController ? aiAbortController.signal : undefined
