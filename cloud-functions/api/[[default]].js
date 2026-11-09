@@ -1,8 +1,8 @@
 'use strict';
 
 // EdgeOne Makers Cloud Function.
-// Route: /cloud-functions/api/[[default]].js -> /api and /api/*
-// The front end calls /api; all model keys stay in EdgeOne environment variables.
+// Route: /cloud-functions/api/[[default]].js -> /api/index and /api/*
+// The front end calls /api/index; all model keys stay in EdgeOne environment variables.
 let runtimeEnv = {};
 
 /**
@@ -88,11 +88,12 @@ const EVIDENCE_SYSTEM_PROMPT = [
 const CHAT_SYSTEM_PROMPT = [
   '你是一名温和、务实、善于持续对话的 AI 习惯教练。',
   '你会收到最近的对话、当前习惯、连续天数、累计打卡天数和积分。你必须把它们当作同一段连续对话，在已有信息上继续，不要每次重新开始。',
-  '规划流程：',
-  '1. 用户提出制定计划、寻求建议或描述主要困扰时，先判断是否已经知道「最想改善的问题、现实时间约束、当前最接近成功的动作」。缺少关键信息时，只问一个最有价值的问题，habits 返回空数组。',
-  '2. 用户补充信息后，给出 2～4 个与信息直接相关、带明确触发时机的习惯，并说明为什么适合用户；不要输出通用模板。',
-  '3. 用户继续补充、否定或修改方案时，在原方案上增量调整，保留仍然合适的部分，不重复询问已经回答过的问题。',
-  '4. 用户明确说「直接给方案」时，不再追问，直接给出可执行草案。',
+  '规划是一个连续的讨论过程，不是一次填表：',
+  '1. 先回应用户当前表达，再判断还缺哪些关键信息。可以一次提出最多 3 个相关且容易回答的问题，也可以先给初步建议，不要机械地限制为只能问一个问题。',
+  '2. 不要重复询问用户已经回答过的内容；主动引用前文提到的目标、困难、时间和已有习惯。',
+  '3. 每日真实 AI 对话额度为 10 轮。必须在第 2 轮前给出第 1 版可执行方案，在第 4 轮前给出第 2 版修订，在第 6 轮前给出第 3 版修订；从第 2 轮起，每轮都要包含具体方案或修订，不能只追问。',
+  '4. 信息不足时，把未确认内容标为假设，用条件式表达先给可调整草案，再在后续对话里继续修正；用户明确说「直接给方案」时立即给出具体方案。',
+  '5. 用户补充或否定方案时，在原方案上增量修改，保留仍然合适的部分，不要从头重来。',
   '5. 普通聊天时简洁自然地回应，habits 返回空数组。',
   '6. 建议必须低门槛、可执行，尊重用户已有习惯，不预设年龄、职业或身份。',
   '7. 对失眠、焦虑等话题只做生活节奏和行为建议，不诊断、不承诺治疗效果；如果用户描述持续严重失眠，提醒其咨询专业人士。',
@@ -612,7 +613,7 @@ async function callChatWithRouting(messages, maxTokens, planning) {
   };
 }
 
-function buildChatStatePrompt(payload) {
+function buildChatStatePrompt(payload, messages) {
   const habits = normalizeHabits(payload && payload.habits);
   const totalPoints = toSafeNumber(payload && payload.totalPoints);
   const today = toSafeText(payload && payload.today, 10) || serverDateKey();
@@ -628,8 +629,62 @@ function buildChatStatePrompt(payload) {
       lines.push('- ' + habit.name + '（连续 ' + habit.streak + ' 天 / 累计 ' + habit.totalDays + ' 天）');
     });
   }
+  const userTurns = Array.isArray(messages) ? messages.filter(function (message) { return message.role === 'user'; }).length : 0;
+  lines.push('当前是规划会话第 ' + Math.max(1, userTurns) + ' 次用户发言，每日真实 AI 对话额度上限为 10 次。');
+  if (userTurns <= 1) {
+    lines.push('这是首轮，可以一次提出最多 3 个关键问题，也可以先给初步方向；不要连续盘问。');
+  } else {
+    const planVersion = userTurns >= 6 ? '第三版' : userTurns >= 4 ? '第二版' : '第一版';
+    lines.push('本轮必须给出' + planVersion + '可执行方案或明确修订，至少包含 2～4 个具体习惯；不能只追问。信息不足时写出假设并使用条件式建议。');
+  }
+  if (userTurns >= 8) {
+    lines.push('已经接近 10 轮上限，优先收敛方案，给出不超过 3 个可立即执行的步骤。');
+  }
   lines.push('请优先使用最近对话中的目标和限制，在已有方案上继续，只回答最后一个用户问题。');
   return lines.join('\n');
+}
+
+function buildPlanningFallbackReply(messages, userTurns) {
+  const userText = (Array.isArray(messages) ? messages : [])
+    .filter(function (message) { return message.role === 'user'; })
+    .map(function (message) { return String(message.content || ''); })
+    .join('\n');
+  const planVersion = userTurns >= 6 ? '第三版' : userTurns >= 4 ? '第二版' : '第一版';
+  let audience = '通用习惯';
+  let habits = [
+    { name: '固定触发时间', icon: '⏰' },
+    { name: '最小行动10分钟', icon: '🎯' },
+    { name: '睡前记录完成情况', icon: '✍️' }
+  ];
+
+  if (/失眠|熬夜|早睡|睡眠|起床|作息/.test(userText)) {
+    audience = '睡眠调整';
+    habits = [
+      { name: '固定起床时间', icon: '⏰' },
+      { name: '睡前1小时放下手机', icon: '📵' },
+      { name: '睡前呼吸2分钟', icon: '🧘' }
+    ];
+  } else if (/学习|备考|阅读|专注/.test(userText)) {
+    audience = '学习专注';
+    habits = [
+      { name: '开始前清空桌面', icon: '🧹' },
+      { name: '专注25分钟', icon: '🎯' },
+      { name: '记录完成页数', icon: '📖' }
+    ];
+  } else if (/运动|减脂|减肥|健身|跑步/.test(userText)) {
+    audience = '运动习惯';
+    habits = [
+      { name: '饭后活动10分钟', icon: '🚶' },
+      { name: '运动前换好装备', icon: '👟' },
+      { name: '睡前拉伸3分钟', icon: '🧘' }
+    ];
+  }
+
+  return {
+    reply: '模型这次没有返回完整内容，我先基于你说过的信息给出' + planVersion + '可调整方案。先别一次全上，选择其中一项连续做 3 天，再根据实际感受一起修改。',
+    audience: audience,
+    habits: habits
+  };
 }
 
 async function handleChat(payload, event) {
@@ -651,9 +706,10 @@ async function handleChat(payload, event) {
   const planning = !!(payload && payload.planningContext)
     || messagesContainPlanningIntent(messages);
   const modelMessages = [
-    { role: 'system', content: CHAT_SYSTEM_PROMPT + '\n\n当前状态：\n' + buildChatStatePrompt(payload) }
+    { role: 'system', content: CHAT_SYSTEM_PROMPT + '\n\n当前状态：\n' + buildChatStatePrompt(payload, messages) }
   ].concat(messages);
-  const routed = await callChatWithRouting(modelMessages, 900, planning);
+  const userTurns = messages.filter(function (message) { return message.role === 'user'; }).length;
+  let routed = await callChatWithRouting(modelMessages, 1400, planning);
   if (!routed.config) {
     return jsonResponse(501, { ok: false, error: routed.result.error });
   }
@@ -664,7 +720,43 @@ async function handleChat(payload, event) {
       quota: { chat: quota, plan: quota }
     });
   }
-  const parsed = parseChatContent(routed.result.content);
+  let parsed = parseChatContent(routed.result.content);
+
+  // Plan milestones are deterministic: turns 2, 4 and 6 must produce a
+  // concrete draft. If the first response only asks questions, retry once with
+  // an explicit milestone reminder while still charging only one user quota.
+  if (planning && userTurns >= 2 && (!parsed || parsed.habits.length === 0)) {
+    const retryMessages = [{
+      role: 'system',
+      content: modelMessages[0].content + '\n\n强制要求：这是第 ' + userTurns + ' 次用户发言，本轮必须给出可调整方案，并在 habits 中提供 2～4 个具体习惯。不能只提问，只输出一个 JSON 对象。'
+    }].concat(messages);
+
+    const retryRouted = await callChatWithRouting(retryMessages, 1400, true);
+    if (retryRouted.config && retryRouted.result.ok) {
+      const retryParsed = parseChatContent(retryRouted.result.content);
+      if (retryParsed && retryParsed.habits.length > 0) {
+        routed = retryRouted;
+        parsed = retryParsed;
+      }
+    }
+
+    if (!parsed || parsed.habits.length === 0) {
+      const fallbackRouted = await callChatWithRouting(retryMessages, 1400, false);
+      if (fallbackRouted.config && fallbackRouted.result.ok) {
+        const fallbackParsed = parseChatContent(fallbackRouted.result.content);
+        if (fallbackParsed && fallbackParsed.habits.length > 0) {
+          routed = fallbackRouted;
+          parsed = fallbackParsed;
+        }
+      }
+    }
+  }
+
+  let usedLocalFallback = false;
+  if (planning && userTurns >= 2 && (!parsed || parsed.habits.length === 0)) {
+    parsed = buildPlanningFallbackReply(messages, userTurns);
+    usedLocalFallback = true;
+  }
   if (!parsed) {
     return jsonResponse(502, {
       ok: false,
@@ -677,8 +769,8 @@ async function handleChat(payload, event) {
     reply: parsed.reply,
     audience: parsed.audience,
     habits: parsed.habits,
-    engine: 'agent',
-    model: routed.config.model,
+    engine: usedLocalFallback ? 'fallback' : 'agent',
+    model: usedLocalFallback ? 'local-milestone-fallback' : routed.config.model,
     modelRole: planning ? 'planning' : 'chat',
     fallbackFrom: routed.fallbackFrom,
     quota: { chat: quota, plan: quota },
@@ -952,47 +1044,20 @@ async function handleApiEvent(event) {
 export async function onRequest(context) {
   runtimeEnv = context && context.env ? context.env : {};
   const request = context && context.request ? context.request : null;
-  if (!request) {
-    return new Response(JSON.stringify({ ok: false, error: 'Cloud Function 请求对象缺失' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' }
-    });
-  }
-
+  if (!request) return new Response(JSON.stringify({ ok: false, error: 'Cloud Function 请求对象缺失' }), { status: 500, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
   try {
     const headers = {};
     request.headers.forEach(function (value, key) { headers[key] = value; });
     if (context.clientIp && !headers['x-forwarded-for']) headers['x-forwarded-for'] = context.clientIp;
     const method = String(request.method || 'GET').toUpperCase();
     let body = '';
-    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
-      body = await request.text();
-    }
-    const event = {
-      httpMethod: method,
-      headers: headers,
-      body: body,
-      rawUrl: request.url,
-      path: new URL(request.url).pathname
-    };
-    const result = await handleApiEvent(event);
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH') body = await request.text();
+    const result = await handleApiEvent({ httpMethod: method, headers: headers, body: body, rawUrl: request.url, path: new URL(request.url).pathname });
     const status = result && result.statusCode ? result.statusCode : 200;
     const responseBody = status === 204 ? null : (result && result.body != null ? result.body : '');
-    return new Response(responseBody, {
-      status: status,
-      headers: result && result.headers ? result.headers : {}
-    });
+    return new Response(responseBody, { status: status, headers: result && result.headers ? result.headers : {} });
   } catch (error) {
     console.error('Cloud Function error:', error);
-    return new Response(JSON.stringify({
-      ok: false,
-      error: 'Cloud Function 内部错误: ' + (error && error.message ? error.message : '未知错误')
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': 'no-store'
-      }
-    });
+    return new Response(JSON.stringify({ ok: false, error: 'Cloud Function 内部错误: ' + (error && error.message ? error.message : '未知错误') }), { status: 500, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
   }
 }
