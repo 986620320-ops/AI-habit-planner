@@ -9,5 +9,6 @@
         "ap-guangzhou"
       ]
     }
-  }
+  },
+  "installCommand": "npm install"
 }

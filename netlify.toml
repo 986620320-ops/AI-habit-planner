@@ -1,4 +1,5 @@
 [build]
+  command = "node edgeone-build.mjs"
   publish = "."
   functions = "netlify/functions"
 
