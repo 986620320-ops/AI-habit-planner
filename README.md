@@ -2,7 +2,7 @@
 
 一个可直接运行的 AI 习惯养成 Web 应用。用户可以连续对话制定计划，再用照片、文字或语音转文字提交当天证据。AI 会解释判断依据并给出下一步建议；漏掉一天时提供最低完成版；每周根据真实记录复盘，只调整一个变量。
 
-当前版本：`v1.0.0-rc4`
+当前版本：`v1.1.0`
 
 ## 目录
 
@@ -13,7 +13,11 @@
 ├─ cloud-functions/api/[[default]].js EdgeOne Cloud Function 后端
 ├─ netlify.toml                        Netlify 发布、函数与 /api 重写
 ├─ edgeone.json                        EdgeOne 构建与函数配置
-├─ edgeone-build.mjs                   EdgeOne 静态构建入口
+├─ edgeone-build.mjs                   EdgeOne 构建、版本生成与函数同步
+├─ cloud-functions/api/quota-store.js  EdgeOne Blob 持久化额度适配器
+├─ scripts/verify-deploy.mjs           线上版本与接口检查
+├─ version.json                        构建版本信息（部署时自动更新）
+├─ package.json                        依赖与构建命令
 ├─ .env.example                        环境变量模板
 └─ README.md
 ```
@@ -50,7 +54,91 @@ main 保留了从空白页面到当前版本的逐步演进。评审可以先查
 - 漏签恢复、原因选择和最低完成版
 - 每周 AI 复盘、单变量调整和独立额度
 - 积分、连续奖励、奖励兑换和备份恢复
+- 当前方案 V1/V2/V3 面板、10 轮进度和“一键采用方案”
+- Git 自动部署、版本徽标和线上部署校验
+- EdgeOne Blob 持久化每日额度、IP 限频和全站日预算
 - 默认 Mock 模式，手动切换真实 AI
+
+## 产品使用攻略
+
+1. 打开页面，默认进入 Mock 演示；点击右上角模式标签可切换真实 AI。
+2. 在 AI 习惯教练里直接描述目标，例如“帮我制定规划”。
+3. 第 1 轮用于澄清；第 2、4、6 轮分别生成 V1、V2、V3 方案。
+4. 顶部进度条显示本次对话轮次、已交付方案数和下一里程碑。
+5. 在“当前方案”面板切换 V1/V2/V3，点击“采用此版本”会把缺失习惯导入今日习惯；已有习惯不会被删除。
+6. 点击习惯左侧的证据按钮，可提交照片、文字或语音转文字。AI 不确定时最多追问一次，也可填写复盘手动完成。
+7. 漏签时按恢复卡选择原因并接受最低完成版；每周可生成一次单变量调整的 AI 复盘。
+8. 积分商城支持奖励编辑、兑换记录和本地数据备份；重要数据建议定期导出。
+
+## 赛事要求的 10 分钟复现
+
+### 0:00～1:30 环境与文件
+
+- 使用 Node.js 20+、现代 Chrome/Edge。
+- 仓库根目录应包含 `index.html`、`edgeone.json`、`edgeone-build.mjs`、`cloud-functions/api/[[default]].js`。
+- 执行：
+
+```powershell
+npm install
+npm run build
+```
+
+### 1:30～3:00 Mock 主流程
+
+```powershell
+python -m http.server 8080
+```
+
+打开 `http://localhost:8080/#checkin`，演示：连续规划、选择方案版本、采用习惯、证据打卡、断签恢复和周复盘。
+
+### 3:00～4:30 EdgeOne Git 部署
+
+- EdgeOne Makers 项目绑定 GitHub 仓库 `986620320-ops/AI-habit-planner` 的 `main` 分支。
+- 构建命令：`node edgeone-build.mjs`
+- 安装命令：`npm install`
+- 输出目录：`.`
+- Node.js：`20.18.0`
+
+### 4:30～6:30 真实 AI
+
+配置：
+
+```text
+MAKERS_MODELS_KEY=你的 Makers Models Key
+VISION_API_KEY=你的视觉模型 Key
+VISION_BASE_URL=视觉模型地址/v1
+VISION_MODEL=支持图片输入的模型名
+```
+
+打开线上页面，切换真实 AI，完成 6 轮规划对话，确认 V1、V2、V3 均出现。
+
+### 6:30～8:00 接口与额度检查
+
+访问：
+
+```text
+/api/index?action=health
+```
+
+确认：
+
+- `realAI: true`
+- `chatModel` / `planningModel`
+- `storageMode: persistent`
+- `build.version` / `build.commit`
+
+### 8:00～9:00 自动部署校验
+
+```powershell
+npm run verify:deploy -- --url https://你的站点域名
+```
+
+脚本会比对线上版本、提交号、模型配置和 Blob 存储状态。
+
+### 9:00～10:00 截图与备份
+
+- 截图 AI 方案面板、真实 AI 连续对话、证据打卡和周复盘。
+- 在积分商城导出 JSON 备份，确认方案版本、习惯、打卡和聊天记录可恢复。
 
 ## 本地运行
 
@@ -93,10 +181,12 @@ GET /api/index?action=health
 仓库同时保留 Netlify 和 EdgeOne 两套后端入口。前端统一请求 `/api/index`：Netlify 通过重写转发到 `/.netlify/functions/api`，EdgeOne 直接匹配 `cloud-functions/api/[[default]].js`，实际入口为 `/api/index`。
 
 1. 将仓库导入 EdgeOne Makers，框架选择 Other。
-2. 构建命令使用 `node edgeone-build.mjs`，输出目录为 `.`。
-3. 添加 `MAKERS_MODELS_KEY`；普通聊天默认 V4 Flash，规划默认 V4 Pro。
-4. 照片识别单独配置 `VISION_API_KEY`、`VISION_BASE_URL` 和 `VISION_MODEL`。
-5. 部署后访问 `/api/index?action=health`，确认 `realAI`、`chatModel` 和 `planningModel`。
+2. 安装命令使用 `npm install`，构建命令使用 `node edgeone-build.mjs`，输出目录为 `.`，Node.js 为 `20.18.0`。
+3. 关联 Git 时生产分支选择 `main`；后续 `git push` 会自动部署。
+4. 添加 `MAKERS_MODELS_KEY`；普通聊天默认 V4 Flash，规划默认 V4 Pro。
+5. 照片识别单独配置 `VISION_API_KEY`、`VISION_BASE_URL` 和 `VISION_MODEL`。
+6. 部署后访问 `/api/index?action=health`，确认 `realAI`、`storageMode: "persistent"`、`chatModel`、`planningModel` 和 `build`。
+7. 执行 `npm run verify:deploy -- --url https://你的站点域名` 检查线上版本。
 
 ## 环境变量
 
@@ -114,7 +204,10 @@ GET /api/index?action=health
 | `DEMO_PLAN_DAILY_LIMIT` | 真实 AI 每日对话轮数 | `10` |
 | `DEMO_VISION_DAILY_LIMIT` | 每日证据判断次数 | `5` |
 | `DEMO_REVIEW_DAILY_LIMIT` | 每日真实周复盘次数 | `2` |
-| `ALLOWED_ORIGINS` | 允许来源，逗号分隔 | 空 |
+| `DEMO_GLOBAL_DAILY_LIMIT` | 全站每日 AI 调用总预算 | `100` |
+| `DEMO_CHAT_RATE_PER_MINUTE` | 单客户端每分钟聊天次数 | `6` |
+| `QUOTA_HASH_SALT` | 客户端 IP 哈希盐值 | 从模型 Key 派生 |
+| `ALLOWED_ORIGINS` | 允许来源，逗号分隔；建议生产填写 | 空 |
 
 不要提交 `.env` 或真实 API Key。
 
@@ -137,8 +230,9 @@ GET /api/index?action=health
 
 支持：
 
-- `GET ?action=health`
-- `POST { action: "chat", planningContext?, messages, habits }`
+- `GET ?action=health`：模型、版本、额度和存储状态
+- `POST { action: "chat", planningContext?, messages, habits }`：响应新增 `planning` 对象
+- 所有 POST 必须携带 `X-AI-Client: habit-coach-web/1`
 - `POST { action: "evidence" }`
 - `POST { action: "review", scope: "weekly" }`
 - `POST { action: "plan" }`：兼容旧版一次规划接口

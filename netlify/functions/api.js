@@ -1,5 +1,7 @@
 'use strict';
 
+const crypto = require('crypto');
+
 /**
  * Netlify 服务端函数：通用 AI 规划 + 多模态自由证据评估
  *
@@ -41,7 +43,7 @@ const REQUEST_TIMEOUT_MS = 25000;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, X-AI-Client',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
 };
 
@@ -49,6 +51,10 @@ const QUOTA_BUCKETS = new Map();
 const DEFAULT_PLAN_DAILY_LIMIT = 10;
 const DEFAULT_EVIDENCE_DAILY_LIMIT = 5;
 const DEFAULT_REVIEW_DAILY_LIMIT = 2;
+const DEFAULT_GLOBAL_DAILY_LIMIT = 100;
+const DEFAULT_CHAT_RATE_PER_MINUTE = 6;
+const AI_CLIENT_HEADER = 'habit-coach-web/1';
+const APP_VERSION = '1.1.0';
 
 const PLAN_SYSTEM_PROMPT = [
   '你是一名通用习惯规划师，不预设用户的年龄、职业、身份或生活阶段。',
@@ -144,49 +150,139 @@ function serverDateKey() {
   return shifted.toISOString().slice(0, 10);
 }
 
+function getExternalQuotaStore() {
+  const store = globalThis.__HABIT_QUOTA_STORE__;
+  return store && typeof store.list === 'function' && typeof store.set === 'function' ? store : null;
+}
+
+function quotaStorageMode() {
+  return getExternalQuotaStore() ? 'persistent' : 'memory';
+}
+
+function quotaSalt() {
+  return String(process.env.QUOTA_HASH_SALT || process.env.MAKERS_MODELS_KEY || process.env.DEEPSEEK_API_KEY || 'ai-habit-demo-v1');
+}
+
 function clientKeyFromEvent(event) {
   const headers = event && event.headers ? event.headers : {};
-  const raw = headers['x-nf-client-connection-ip']
-    || headers['x-forwarded-for']
-    || headers['client-ip']
-    || 'unknown';
-  return String(raw).split(',')[0].trim() || 'unknown';
+  const rawIp = headers['x-nf-client-connection-ip'] || headers['x-forwarded-for'] || headers['cf-connecting-ip'] || headers['client-ip'] || 'unknown';
+  const ip = String(rawIp).split(',')[0].trim() || 'unknown';
+  const ua = String(headers['user-agent'] || '').slice(0, 240);
+  return crypto.createHash('sha256').update(ip + '|' + ua + '|' + quotaSalt()).digest('hex').slice(0, 24);
 }
 
 function limitForKind(kind) {
-  if (kind === 'review') {
-    return envNonNegativeInt('DEMO_REVIEW_DAILY_LIMIT', DEFAULT_REVIEW_DAILY_LIMIT);
-  }
-  if (kind === 'evidence') {
-    return envNonNegativeInt('DEMO_VISION_DAILY_LIMIT', DEFAULT_EVIDENCE_DAILY_LIMIT);
-  }
+  if (kind === 'review') return envNonNegativeInt('DEMO_REVIEW_DAILY_LIMIT', DEFAULT_REVIEW_DAILY_LIMIT);
+  if (kind === 'evidence') return envNonNegativeInt('DEMO_VISION_DAILY_LIMIT', DEFAULT_EVIDENCE_DAILY_LIMIT);
   return envNonNegativeInt('DEMO_PLAN_DAILY_LIMIT', DEFAULT_PLAN_DAILY_LIMIT);
+}
+
+function globalLimit() {
+  return envNonNegativeInt('DEMO_GLOBAL_DAILY_LIMIT', DEFAULT_GLOBAL_DAILY_LIMIT);
+}
+
+function chatRateLimit() {
+  return envNonNegativeInt('DEMO_CHAT_RATE_PER_MINUTE', DEFAULT_CHAT_RATE_PER_MINUTE);
 }
 
 function pruneQuotaBuckets(dateKey) {
   if (QUOTA_BUCKETS.size < 500) return;
   QUOTA_BUCKETS.forEach(function (_value, key) {
-    if (key.indexOf(dateKey + '|') !== 0) QUOTA_BUCKETS.delete(key);
+    if (key.indexOf('quota/v1/' + dateKey + '/') !== 0) QUOTA_BUCKETS.delete(key);
   });
 }
 
-function quotaInfo(kind, event) {
-  const bucketKind = kind === 'chat' ? 'plan' : kind;
-  const dateKey = serverDateKey();
-  pruneQuotaBuckets(dateKey);
-  const limit = limitForKind(bucketKind);
-  const key = dateKey + '|' + bucketKind + '|' + clientKeyFromEvent(event);
-  const used = QUOTA_BUCKETS.get(key) || 0;
-  return { date: dateKey, limit: limit, used: used, remaining: Math.max(0, limit - used) };
+async function quotaList(prefix) {
+  const store = getExternalQuotaStore();
+  if (store) {
+    const result = await store.list(prefix);
+    return Array.isArray(result) ? result : (result && Array.isArray(result.keys) ? result.keys : []);
+  }
+  pruneQuotaBuckets(serverDateKey());
+  return Array.from(QUOTA_BUCKETS.keys()).filter(function (key) { return key.indexOf(prefix) === 0; });
 }
 
-function consumeQuota(kind, event) {
-  const info = quotaInfo(kind, event);
-  if (info.remaining <= 0) return Object.assign({ ok: false }, info);
+async function quotaSet(key, value) {
+  const store = getExternalQuotaStore();
+  if (store) { await store.set(key, value); return; }
+  QUOTA_BUCKETS.set(key, value);
+}
+
+async function quotaDelete(key) {
+  const store = getExternalQuotaStore();
+  if (store) { await store.delete(key); return; }
+  QUOTA_BUCKETS.delete(key);
+}
+
+function quotaTimestamp(key) {
+  const name = String(key).split('/').pop() || '';
+  const value = Number(name.split('_')[0]);
+  return Number.isFinite(value) ? value : 0;
+}
+
+async function quotaInfo(kind, event) {
   const bucketKind = kind === 'chat' ? 'plan' : kind;
-  const key = info.date + '|' + bucketKind + '|' + clientKeyFromEvent(event);
-  QUOTA_BUCKETS.set(key, info.used + 1);
-  return Object.assign({ ok: true }, info, { used: info.used + 1, remaining: info.remaining - 1 });
+  const dateKey = serverDateKey();
+  const client = clientKeyFromEvent(event);
+  const clientPrefix = 'quota/v1/' + dateKey + '/' + bucketKind + '/client_' + client + '/';
+  const globalPrefix = 'quota/v1/' + dateKey + '/global/';
+  const clientKeys = await quotaList(clientPrefix);
+  const globalKeys = await quotaList(globalPrefix);
+  const limit = limitForKind(bucketKind);
+  const used = clientKeys.length;
+  const globalCap = globalLimit();
+  const globalUsed = globalKeys.length;
+  const rateCap = bucketKind === 'plan' ? chatRateLimit() : 0;
+  const now = Date.now();
+  const recent = bucketKind === 'plan' ? clientKeys.filter(function (key) { return now - quotaTimestamp(key) < 60000; }).length : 0;
+  return {
+    date: dateKey,
+    limit: limit,
+    used: used,
+    remaining: Math.max(0, limit - used),
+    globalLimit: globalCap,
+    globalUsed: globalUsed,
+    globalRemaining: Math.max(0, globalCap - globalUsed),
+    rateLimit: rateCap,
+    rateUsed: recent,
+    rateRemaining: rateCap > 0 ? Math.max(0, rateCap - recent) : null,
+    storageMode: quotaStorageMode()
+  };
+}
+
+async function consumeQuota(kind, event) {
+  const info = await quotaInfo(kind, event);
+  if (info.remaining <= 0) return Object.assign({ ok: false, reason: 'client' }, info);
+  if (info.globalRemaining <= 0) return Object.assign({ ok: false, reason: 'global' }, info);
+  if (info.rateLimit > 0 && info.rateRemaining <= 0) return Object.assign({ ok: false, reason: 'rate' }, info);
+  const bucketKind = kind === 'chat' ? 'plan' : kind;
+  const stamp = Date.now() + '_' + crypto.randomBytes(6).toString('hex');
+  const clientKey = 'quota/v1/' + info.date + '/' + bucketKind + '/client_' + clientKeyFromEvent(event) + '/' + stamp;
+  const globalKey = 'quota/v1/' + info.date + '/global/' + bucketKind + '_' + stamp;
+  await quotaSet(clientKey, { at: Date.now(), kind: bucketKind });
+  await quotaSet(globalKey, { at: Date.now(), kind: bucketKind });
+  return Object.assign({}, info, {
+    ok: true,
+    used: info.used + 1,
+    remaining: Math.max(0, info.remaining - 1),
+    globalUsed: info.globalUsed + 1,
+    globalRemaining: Math.max(0, info.globalRemaining - 1),
+    rateUsed: info.rateLimit > 0 ? info.rateUsed + 1 : 0,
+    rateRemaining: info.rateLimit > 0 ? Math.max(0, info.rateRemaining - 1) : null,
+    marker: { clientKey: clientKey, globalKey: globalKey }
+  });
+}
+
+async function releaseQuota(quota) {
+  if (!quota || !quota.marker) return;
+  try { await quotaDelete(quota.marker.clientKey); } catch (error) {}
+  try { await quotaDelete(quota.marker.globalKey); } catch (error) {}
+}
+
+function quotaFailureMessage(quota, normalMessage) {
+  if (quota && quota.reason === 'global') return '今日全站 AI 调用额度已用完，请明天再试';
+  if (quota && quota.reason === 'rate') return '操作过于频繁，请稍等一分钟再试';
+  return normalMessage;
 }
 
 function originAllowed(event) {
@@ -194,8 +290,14 @@ function originAllowed(event) {
   if (allow === '' || allow === '*') return true;
   const headers = event && event.headers ? event.headers : {};
   const origin = String(headers.origin || headers.Origin || '').trim();
-  if (origin === '') return true;
+  if (origin === '') return event && event.httpMethod === 'GET';
   return allow.split(',').map(function (item) { return item.trim(); }).filter(Boolean).indexOf(origin) !== -1;
+}
+
+function getBuildInfo() {
+  if (globalThis.__HABIT_BUILD_INFO__) return globalThis.__HABIT_BUILD_INFO__;
+  try { return require('../../version.json'); } catch (error) {}
+  return { version: process.env.APP_VERSION || APP_VERSION, commit: process.env.BUILD_COMMIT || 'unknown', builtAt: '', source: 'runtime' };
 }
 
 function planConfig(role) {
@@ -241,10 +343,10 @@ function visionConfig() {
   };
 }
 
-function handleHealth(event) {
-  const chatQuota = quotaInfo('chat', event);
-  const evidenceQuota = quotaInfo('evidence', event);
-  const reviewQuota = quotaInfo('review', event);
+async function handleHealth(event) {
+  const chatQuota = await quotaInfo('chat', event);
+  const evidenceQuota = await await quotaInfo('evidence', event);
+  const reviewQuota = await quotaInfo('review', event);
   const chatConfig = planConfig('chat');
   const planningConfig = planConfig('planning');
   return jsonResponse(200, {
@@ -254,6 +356,8 @@ function handleHealth(event) {
     vision: !!visionConfig(),
     chatModel: chatConfig ? chatConfig.model : '',
     planningModel: planningConfig ? planningConfig.model : '',
+    build: getBuildInfo(),
+    storageMode: quotaStorageMode(),
     quota: { chat: chatQuota, plan: chatQuota, evidence: evidenceQuota, review: reviewQuota },
     date: chatQuota.date
   });
@@ -608,6 +712,26 @@ async function callChatWithRouting(messages, maxTokens, planning) {
   };
 }
 
+function buildPlanningMetadata(userTurns, hasPlan) {
+  const turn = Math.max(1, Math.min(10, Number(userTurns) || 1));
+  const planVersion = hasPlan ? (turn >= 6 ? 3 : turn >= 4 ? 2 : turn >= 2 ? 1 : null) : null;
+  return {
+    turn: turn,
+    turnLimit: 10,
+    planVersion: planVersion,
+    deliveredPlans: planVersion || 0,
+    nextMilestoneTurn: planVersion === 3 ? null : planVersion === 2 ? 6 : planVersion === 1 ? 4 : 2,
+    stage: planVersion === 3 ? 'final' : planVersion === 2 ? 'revision' : planVersion === 1 ? 'draft' : 'clarify'
+  };
+}
+
+function responseRuntimeMeta(quota) {
+  return {
+    storageMode: quota && quota.storageMode ? quota.storageMode : quotaStorageMode(),
+    build: getBuildInfo()
+  };
+}
+
 function buildChatStatePrompt(payload, messages) {
   const habits = normalizeHabits(payload && payload.habits);
   const totalPoints = toSafeNumber(payload && payload.totalPoints);
@@ -688,11 +812,11 @@ async function handleChat(payload, event) {
     return jsonResponse(400, { ok: false, error: '缺少有效的用户消息' });
   }
 
-  const quota = consumeQuota('chat', event);
+  const quota = await consumeQuota('chat', event);
   if (!quota.ok) {
     return jsonResponse(429, {
       ok: false,
-      error: '今日真实 AI 对话额度已用完',
+      error: quotaFailureMessage(quota, '今日真实 AI 对话额度已用完'),
       fallback: 'manual',
       quota: { chat: quota, plan: quota }
     });
@@ -706,9 +830,11 @@ async function handleChat(payload, event) {
   const userTurns = messages.filter(function (message) { return message.role === 'user'; }).length;
   let routed = await callChatWithRouting(modelMessages, 1400, planning);
   if (!routed.config) {
+    await releaseQuota(quota);
     return jsonResponse(501, { ok: false, error: routed.result.error });
   }
   if (!routed.result.ok) {
+    await releaseQuota(quota);
     return jsonResponse(502, {
       ok: false,
       error: routed.result.error,
@@ -753,6 +879,7 @@ async function handleChat(payload, event) {
     usedLocalFallback = true;
   }
   if (!parsed) {
+    await releaseQuota(quota);
     return jsonResponse(502, {
       ok: false,
       error: 'AI 没有返回有效回复，请重试',
@@ -768,8 +895,11 @@ async function handleChat(payload, event) {
     model: usedLocalFallback ? 'local-milestone-fallback' : routed.config.model,
     modelRole: planning ? 'planning' : 'chat',
     fallbackFrom: routed.fallbackFrom,
+    planning: planning ? buildPlanningMetadata(userTurns, parsed.habits.length > 0) : null,
     quota: { chat: quota, plan: quota },
-    date: quota.date
+    date: quota.date,
+    storageMode: responseRuntimeMeta(quota).storageMode,
+    build: responseRuntimeMeta(quota).build
   });
 }
 
@@ -854,11 +984,11 @@ async function handleReview(payload, event) {
   }
   const config = planConfig('chat');
   if (!config) return jsonResponse(501, { ok: false, error: '服务端未配置真实 AI' });
-  const quota = consumeQuota('review', event);
+  const quota = await consumeQuota('review', event);
   if (!quota.ok) {
     return jsonResponse(429, {
       ok: false,
-      error: '今日真实周复盘额度已用完',
+      error: quotaFailureMessage(quota, '今日真实周复盘额度已用完'),
       fallback: 'mock',
       quota: { review: quota }
     });
@@ -868,10 +998,12 @@ async function handleReview(payload, event) {
     { role: 'user', content: buildWeeklyReviewPrompt(payload) }
   ], 800);
   if (!result.ok) {
+    await releaseQuota(quota);
     return jsonResponse(502, { ok: false, error: result.error, quota: { review: quota } });
   }
   const review = parseWeeklyReviewContent(result.content);
   if (!review) {
+    await releaseQuota(quota);
     return jsonResponse(502, { ok: false, error: 'AI 复盘内容无法解析，请重试', quota: { review: quota } });
   }
   return jsonResponse(200, {
@@ -880,7 +1012,9 @@ async function handleReview(payload, event) {
     engine: 'agent',
     model: config.model,
     quota: { review: quota },
-    date: quota.date
+    date: quota.date,
+    storageMode: responseRuntimeMeta(quota).storageMode,
+    build: responseRuntimeMeta(quota).build
   });
 }
 
@@ -888,11 +1022,11 @@ async function handlePlan(payload, event) {
   if (!planConfig('planning')) {
     return jsonResponse(501, { ok: false, error: '服务端未配置真实 AI' });
   }
-  const quota = consumeQuota('plan', event);
+  const quota = await consumeQuota('plan', event);
   if (!quota.ok) {
     return jsonResponse(429, {
       ok: false,
-      error: '今日真实 AI 规划额度已用完',
+      error: quotaFailureMessage(quota, '今日真实 AI 规划额度已用完'),
       fallback: 'mock',
       quota: { plan: quota }
     });
@@ -906,6 +1040,7 @@ async function handlePlan(payload, event) {
     { role: 'user', content: buildPlanPrompt(habits, today, totalPoints, context) }
   ], 1000, true);
   if (!routed.result.ok) {
+    await releaseQuota(quota);
     return jsonResponse(502, { ok: false, error: routed.result.error, quota: { plan: quota } });
   }
   const parsed = parsePlanContent(routed.result.content);
@@ -918,7 +1053,10 @@ async function handlePlan(payload, event) {
     model: routed.config.model,
     modelRole: 'planning',
     fallbackFrom: routed.fallbackFrom,
-    quota: { plan: quota }
+    planning: buildPlanningMetadata(2, parsed.habits.length > 0),
+    quota: { plan: quota },
+    storageMode: responseRuntimeMeta(quota).storageMode,
+    build: responseRuntimeMeta(quota).build
   });
 }
 
@@ -958,15 +1096,15 @@ async function handleEvidence(payload, event) {
       nextStep: '',
       model: '',
       engine: 'manual',
-      quota: { evidence: quotaInfo('evidence', event) }
+      quota: { evidence: await quotaInfo('evidence', event) }
     });
   }
 
-  const quota = consumeQuota('evidence', event);
+  const quota = await consumeQuota('evidence', event);
   if (!quota.ok) {
     return jsonResponse(429, {
       ok: false,
-      error: '今日 AI 证据判断额度已用完',
+      error: quotaFailureMessage(quota, '今日 AI 证据判断额度已用完'),
       manualOnly: true,
       quota: { evidence: quota }
     });
@@ -982,6 +1120,7 @@ async function handleEvidence(payload, event) {
     { role: 'user', content: userContent }
   ], 600);
   if (!result.ok) {
+    await releaseQuota(quota);
     return jsonResponse(502, {
       ok: false,
       error: result.error,
@@ -1002,7 +1141,9 @@ async function handleEvidence(payload, event) {
     nextStep: parsed.nextStep,
     model: config.model,
     engine: 'agent',
-    quota: { evidence: quota }
+    quota: { evidence: quota },
+    storageMode: responseRuntimeMeta(quota).storageMode,
+    build: responseRuntimeMeta(quota).build
   });
 }
 
@@ -1016,6 +1157,16 @@ exports.handler = async function (event) {
   if (event.httpMethod === 'GET') return handleHealth(event);
   if (event.httpMethod !== 'POST') {
     return jsonResponse(405, { ok: false, error: '只支持 GET / POST 请求' });
+  }
+
+  const reqHeaders = event.headers || {};
+  const contentType = String(reqHeaders['content-type'] || reqHeaders['Content-Type'] || '').toLowerCase();
+  const aiClient = String(reqHeaders['x-ai-client'] || reqHeaders['X-AI-Client'] || '').trim();
+  if (contentType.indexOf('application/json') !== 0) {
+    return jsonResponse(415, { ok: false, error: '请求必须使用 application/json' });
+  }
+  if (aiClient !== AI_CLIENT_HEADER) {
+    return jsonResponse(403, { ok: false, error: '缺少有效的 AI 客户端标识' });
   }
 
   let payload = {};

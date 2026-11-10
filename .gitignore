@@ -16,3 +16,4 @@ docs/
 tests/
 CHANGELOG.md
 VERSION
+version.json
