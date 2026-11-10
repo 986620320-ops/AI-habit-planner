@@ -1902,6 +1902,27 @@ body{
   var evidenceRecognition = null;
   var calTimes = ['21:30'];        // 默认选中的提醒时间
 
+  function readApiJson(response) {
+    return response.text().then(function (text) {
+      var data = null;
+      try {
+        data = JSON.parse(text);
+      } catch (error) {
+        data = {
+          ok: false,
+          error: response.status === 504
+            ? 'AI 服务响应超时，请稍后重试'
+            : 'AI 服务暂不可用（HTTP ' + response.status + '）'
+        };
+      }
+      return {
+        ok: response.ok && (!data || data.ok !== false),
+        status: response.status,
+        data: data || { ok: false, error: 'AI 服务暂不可用' }
+      };
+    });
+  }
+
   function pad(number) {
     return number < 10 ? '0' + number : String(number);
   }
@@ -1928,7 +1949,7 @@ body{
 
   function setBuildBadge(info) {
     if (!buildBadgeEl || !info) return;
-    var version = info.version || '1.1.0';
+    var version = info.version || '1.1.1';
     var commit = String(info.commit || '').replace(/[^a-z0-9]/gi, '').slice(0, 7);
     buildBadgeEl.textContent = 'v' + version.replace(/^v/i, '') + (commit && commit !== 'unknown' ? ' · ' + commit : ' · local');
     buildBadgeEl.title = '构建时间：' + (info.builtAt || '未知') + '，来源：' + (info.source || 'runtime');
@@ -1936,13 +1957,13 @@ body{
 
   function refreshBuildBadge() {
     if (typeof fetch !== 'function') {
-      setBuildBadge({ version: '1.1.0', commit: 'local', builtAt: '', source: 'local' });
+      setBuildBadge({ version: '1.1.1', commit: 'local', builtAt: '', source: 'local' });
       return Promise.resolve();
     }
     return fetch('/version.json?ts=' + Date.now(), { cache: 'no-store' })
       .then(function (response) { return response.ok ? response.json() : null; })
-      .then(function (info) { setBuildBadge(info || { version: '1.1.0', commit: 'local', builtAt: '', source: 'local' }); })
-      .catch(function () { setBuildBadge({ version: '1.1.0', commit: 'local', builtAt: '', source: 'local' }); });
+      .then(function (info) { setBuildBadge(info || { version: '1.1.1', commit: 'local', builtAt: '', source: 'local' }); })
+      .catch(function () { setBuildBadge({ version: '1.1.1', commit: 'local', builtAt: '', source: 'local' }); });
   }
 
     function applyAiQuota(quota) {
@@ -2048,7 +2069,7 @@ body{
     setAiModeUi();
     aiHealthPromise = fetch(AI_ENDPOINT + '?action=health', { method: 'GET' })
       .then(function (response) {
-        return response.json().then(function (data) { return { ok: response.ok, data: data }; });
+        return readApiJson(response);
       })
       .then(function (result) {
         if (!result.ok || !result.data || result.data.ok === false) {
@@ -2606,7 +2627,7 @@ body{
         }
       })
     }).then(function (response) {
-      return response.json().then(function (data) { return { ok: response.ok, status: response.status, data: data }; });
+      return readApiJson(response);
     }).then(function (result) {
       if (result.data && result.data.quota) {
         applyAiQuota(result.data.quota);
@@ -3098,9 +3119,7 @@ body{
         })
       });
     }).then(function (response) {
-      return response.json().then(function (data) {
-        return { ok: response.ok, data: data };
-      });
+      return readApiJson(response);
     }).then(function (result) {
       if (result.data && result.data.quota) {
         applyAiQuota(result.data.quota);
@@ -4375,9 +4394,7 @@ body{
       }),
       signal: aiAbortController ? aiAbortController.signal : undefined
     }).then(function (response) {
-      return response.json().then(function (data) {
-        return { ok: response.ok, status: response.status, data: data };
-      });
+      return readApiJson(response);
     }).then(function (result) {
       if (token !== aiRequestToken) throw new Error('request-cancelled');
       if (result.data && result.data.quota) {

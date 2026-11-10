@@ -39,7 +39,7 @@ const MAX_CONTEXT_LENGTH = 300;
 const MAX_EVIDENCE_TEXT = 500;
 const MAX_FOLLOW_UP = 300;
 const MAX_IMAGE_CHARS = 8000000;
-const REQUEST_TIMEOUT_MS = 25000;
+const REQUEST_TIMEOUT_MS = 18000;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -54,7 +54,7 @@ const DEFAULT_REVIEW_DAILY_LIMIT = 2;
 const DEFAULT_GLOBAL_DAILY_LIMIT = 100;
 const DEFAULT_CHAT_RATE_PER_MINUTE = 6;
 const AI_CLIENT_HEADER = 'habit-coach-web/1';
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
 
 const PLAN_SYSTEM_PROMPT = [
   '你是一名通用习惯规划师，不预设用户的年龄、职业、身份或生活阶段。',
@@ -861,16 +861,6 @@ async function handleChat(payload, event) {
       }
     }
 
-    if (!parsed || parsed.habits.length === 0) {
-      const fallbackRouted = await callChatWithRouting(retryMessages, 1400, false);
-      if (fallbackRouted.config && fallbackRouted.result.ok) {
-        const fallbackParsed = parseChatContent(fallbackRouted.result.content);
-        if (fallbackParsed && fallbackParsed.habits.length > 0) {
-          routed = fallbackRouted;
-          parsed = fallbackParsed;
-        }
-      }
-    }
   }
 
   let usedLocalFallback = false;
