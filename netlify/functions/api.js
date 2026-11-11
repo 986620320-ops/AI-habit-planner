@@ -39,7 +39,9 @@ const MAX_CONTEXT_LENGTH = 300;
 const MAX_EVIDENCE_TEXT = 500;
 const MAX_FOLLOW_UP = 300;
 const MAX_IMAGE_CHARS = 8000000;
-const REQUEST_TIMEOUT_MS = 18000;
+const REQUEST_TIMEOUT_MS = 20000;
+const PLANNING_REQUEST_TIMEOUT_MS = 32000;
+const PLANNING_FALLBACK_TIMEOUT_MS = 18000;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -54,7 +56,7 @@ const DEFAULT_REVIEW_DAILY_LIMIT = 2;
 const DEFAULT_GLOBAL_DAILY_LIMIT = 100;
 const DEFAULT_CHAT_RATE_PER_MINUTE = 6;
 const AI_CLIENT_HEADER = 'habit-coach-web/1';
-const APP_VERSION = '1.1.1';
+const APP_VERSION = '1.1.2';
 
 const PLAN_SYSTEM_PROMPT = [
   '你是一名通用习惯规划师，不预设用户的年龄、职业、身份或生活阶段。',
@@ -146,7 +148,7 @@ function envNonNegativeInt(name, fallback) {
 }
 
 function serverDateKey() {
-  const shifted = new Date(Date.now() + 8 * 3600 * 1000 - 4 * 3600 * 1000);
+  const shifted = new Date(Date.now() + 8 * 3600 * 1000);
   return shifted.toISOString().slice(0, 10);
 }
 
@@ -544,9 +546,12 @@ function buildEvidencePrompt(habitName, context, evidenceText, hasImage, followU
 }
 
 async function callChat(config, messages, maxTokens, options) {
-  const controller = typeof AbortController === 'function' ? new AbortController() : null;
-  const timer = controller ? setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT_MS) : null;
   const requestOptions = options || {};
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const requestedTimeout = Number(requestOptions.timeoutMs);
+  const timeoutMs = Number.isFinite(requestedTimeout) && requestedTimeout > 0
+    ? requestedTimeout : REQUEST_TIMEOUT_MS;
+  const timer = controller ? setTimeout(function () { controller.abort(); }, timeoutMs) : null;
   const body = {
     model: config.model,
     messages: messages,
@@ -632,6 +637,25 @@ function normalizeChatHabits(input) {
   return result;
 }
 
+function extractJsonStringField(text, field) {
+  const match = new RegExp('"' + field + '"\\s*:\\s*"').exec(String(text || ''));
+  if (!match) return '';
+  let value = '';
+  let escaped = false;
+  for (let i = match.index + match[0].length; i < text.length; i++) {
+    const ch = text.charAt(i);
+    if (escaped) {
+      value += ch === 'n' ? '\n' : ch === 'r' ? '\r' : ch === 't' ? '\t' : ch;
+      escaped = false;
+      continue;
+    }
+    if (ch === '\\') { escaped = true; continue; }
+    if (ch === '"') break;
+    value += ch;
+  }
+  return value.trim();
+}
+
 function parseChatContent(content) {
   const text = cleanModelText(content);
   if (!text) return null;
@@ -649,6 +673,18 @@ function parseChatContent(content) {
       };
     }
   }
+  // Recover a readable reply from a truncated JSON object or string. This keeps
+  // technical JSON syntax out of the UI when the gateway cuts off a response.
+  const partialReply = extractJsonStringField(text, 'reply')
+    || extractJsonStringField(text, 'message')
+    || extractJsonStringField(text, 'content');
+  if (partialReply) {
+    return {
+      reply: toSafeText(partialReply, 2400),
+      audience: normalizeAudience(extractJsonStringField(text, 'audience')),
+      habits: []
+    };
+  }
   // Chat is user-facing prose. If the provider ignores JSON mode, preserve the
   // useful answer instead of turning a valid model reply into an error.
   return {
@@ -656,6 +692,55 @@ function parseChatContent(content) {
     audience: '',
     habits: []
   };
+}
+
+function inferHabitIcon(name) {
+  if (/睡|手机|屏幕|关灯|离床/.test(name)) return '🌙';
+  if (/起床|时间|闹钟/.test(name)) return '⏰';
+  if (/走|散步|运动|拉伸|跑/.test(name)) return '🚶';
+  if (/阅读|书|学习|专注/.test(name)) return '📖';
+  if (/呼吸|放松|冥想/.test(name)) return '🧘';
+  if (/水|饮/.test(name)) return '💧';
+  return '✨';
+}
+
+function extractHabitsFromText(content) {
+  const lines = String(content || '').split(/\r?\n/).map(function (line) {
+    return line.replace(/\*\*/g, '').trim();
+  }).filter(Boolean);
+  function candidate(line) {
+    let text = line
+      .replace(/^第[一二三四五六七八九十]+步\s*[:：、.．-]?\s*/, '')
+      .replace(/^\d{1,2}\s*[.、)）．:：]\s*/, '')
+      .replace(/^[-*•]\s*/, '')
+      .replace(/（[^）]*）|\([^)]*\)/g, '')
+      .replace(/[。；;]+$/, '')
+      .trim();
+    text = text.split(/[，,：:]/)[0].trim();
+    text = text.replace(/^(每天|建议|可以|先|只)\s*/, '').trim();
+    if (!text || text.length < 2 || text.length > 34) return '';
+    if (/^(目标|核心|原则|原因|注意|如果|当|为了|配合|其它|其他)/.test(text)) return '';
+    return toSafeText(text, 20);
+  }
+  const numbered = [];
+  const bullets = [];
+  lines.forEach(function (line) {
+    if (/^第[一二三四五六七八九十]+步/.test(line) || /^\d{1,2}\s*[.、)）．:：]/.test(line)) {
+      const value = candidate(line);
+      if (value) numbered.push(value);
+    } else if (/^[-*•]/.test(line)) {
+      const value = candidate(line);
+      if (value) bullets.push(value);
+    }
+  });
+  const selected = [];
+  const seen = {};
+  (numbered.length >= 2 ? numbered : numbered.concat(bullets)).forEach(function (name) {
+    if (seen[name] || selected.length >= 4) return;
+    seen[name] = true;
+    selected.push({ name: name, icon: inferHabitIcon(name) });
+  });
+  return selected;
 }
 
 const PLANNING_INTENT_PATTERN = /规划|计划|安排|目标|习惯|打卡|作息|失眠|熬夜|早睡|早起|学习|备考|专注|运动|减脂|减肥|健身|情绪|焦虑|压力|怎么开始|从哪开始/;
@@ -674,7 +759,8 @@ function sameModelConfig(left, right) {
 }
 
 function shouldFallbackPlanningModel(result) {
-  if (!result || result.ok) return false;
+  if (!result) return false;
+  if (result.ok) return !String(result.content || '').trim();
   return result.status === 0
     || result.status === 400
     || result.status === 404
@@ -694,8 +780,12 @@ async function callChatWithRouting(messages, maxTokens, planning) {
     };
   }
 
-  const result = await callChat(primary, messages, maxTokens, { jsonMode: true });
-  if (!planning || result.ok || !shouldFallbackPlanningModel(result)) {
+  const primaryTimeout = planning ? PLANNING_REQUEST_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
+  const result = await callChat(primary, messages, maxTokens, {
+    jsonMode: true,
+    timeoutMs: primaryTimeout
+  });
+  if (!planning || !shouldFallbackPlanningModel(result)) {
     return { config: primary, result: result, fallbackFrom: '' };
   }
 
@@ -704,11 +794,14 @@ async function callChatWithRouting(messages, maxTokens, planning) {
     return { config: primary, result: result, fallbackFrom: '' };
   }
 
-  const retried = await callChat(fallback, messages, maxTokens, { jsonMode: true });
+  const retried = await callChat(fallback, messages, maxTokens, {
+    jsonMode: true,
+    timeoutMs: PLANNING_FALLBACK_TIMEOUT_MS
+  });
   return {
     config: fallback,
     result: retried,
-    fallbackFrom: retried.ok ? primary.model : ''
+    fallbackFrom: primary.model
   };
 }
 
@@ -751,7 +844,7 @@ function buildChatStatePrompt(payload, messages) {
   const userTurns = Array.isArray(messages) ? messages.filter(function (message) { return message.role === 'user'; }).length : 0;
   lines.push('当前是规划会话第 ' + Math.max(1, userTurns) + ' 次用户发言，每日真实 AI 对话额度上限为 10 次。');
   if (userTurns <= 1) {
-    lines.push('这是首轮，可以一次提出最多 3 个关键问题，也可以先给初步方向；不要连续盘问。');
+    lines.push('这是首轮，可以一次提出最多 3 个容易回答的问题，也可以先给初步方向；除非用户明确要求直接给方案，否则 habits 必须为空，不要提前生成可导入方案。');
   } else {
     const planVersion = userTurns >= 6 ? '第三版' : userTurns >= 4 ? '第二版' : '第一版';
     lines.push('本轮必须给出' + planVersion + '可执行方案或明确修订，至少包含 2～4 个具体习惯；不能只追问。信息不足时写出假设并使用条件式建议。');
@@ -764,10 +857,11 @@ function buildChatStatePrompt(payload, messages) {
 }
 
 function buildPlanningFallbackReply(messages, userTurns) {
-  const userText = (Array.isArray(messages) ? messages : [])
+  const userMessages = (Array.isArray(messages) ? messages : [])
     .filter(function (message) { return message.role === 'user'; })
-    .map(function (message) { return String(message.content || ''); })
-    .join('\n');
+    .map(function (message) { return String(message.content || ''); });
+  const userText = userMessages.join('\n');
+  const latest = userMessages[userMessages.length - 1] || '';
   const planVersion = userTurns >= 6 ? '第三版' : userTurns >= 4 ? '第二版' : '第一版';
   let audience = '通用习惯';
   let habits = [
@@ -775,14 +869,34 @@ function buildPlanningFallbackReply(messages, userTurns) {
     { name: '最小行动10分钟', icon: '🎯' },
     { name: '睡前记录完成情况', icon: '✍️' }
   ];
+  const constraints = [];
 
   if (/失眠|熬夜|早睡|睡眠|起床|作息/.test(userText)) {
     audience = '睡眠调整';
-    habits = [
-      { name: '固定起床时间', icon: '⏰' },
-      { name: '睡前1小时放下手机', icon: '📵' },
-      { name: '睡前呼吸2分钟', icon: '🧘' }
-    ];
+    const wakeName = /七点|7\s*[:：]?\s*00|7\s*点/.test(userText) ? '7:00固定起床' : '固定起床时间';
+    const phoneName = /手机|刷手机|屏幕/.test(userText) ? '睡前30分钟手机离床' : '睡前30分钟降速';
+    const awakeName = '醒20分钟就离床';
+    if (/加班|十一点|11\s*点|23\s*点/.test(userText)) constraints.push('加班日保留最低完成版');
+    if (/周末/.test(userText)) constraints.push('周末照常起床');
+    if (planVersion === '第三版' || /收敛|三步|最终/.test(latest)) {
+      habits = [
+        { name: wakeName, icon: '⏰' },
+        { name: phoneName, icon: '📵' },
+        { name: awakeName, icon: '🛏️' }
+      ];
+    } else if (planVersion === '第二版') {
+      habits = [
+        { name: wakeName, icon: '⏰' },
+        { name: phoneName, icon: '📵' },
+        { name: constraints.indexOf('加班日保留最低完成版') >= 0 ? '加班日只做最低版' : awakeName, icon: '✅' }
+      ];
+    } else {
+      habits = [
+        { name: wakeName, icon: '⏰' },
+        { name: phoneName, icon: '📵' },
+        { name: awakeName, icon: '🛏️' }
+      ];
+    }
   } else if (/学习|备考|阅读|专注/.test(userText)) {
     audience = '学习专注';
     habits = [
@@ -799,8 +913,9 @@ function buildPlanningFallbackReply(messages, userTurns) {
     ];
   }
 
+  const constraintText = constraints.length ? '已保留你前面确认的约束：' + constraints.join('、') + '。' : '';
   return {
-    reply: '模型这次没有返回完整内容，我先基于你说过的信息给出' + planVersion + '可调整方案。先别一次全上，选择其中一项连续做 3 天，再根据实际感受一起修改。',
+    reply: '这轮模型响应较慢，我先把你已经确认的信息整理为' + planVersion + '，不丢掉前面的对话。' + constraintText + '先选其中一项连续做 3 天，再根据实际感受继续调整。',
     audience: audience,
     habits: habits
   };
@@ -812,7 +927,7 @@ async function handleChat(payload, event) {
     return jsonResponse(400, { ok: false, error: '缺少有效的用户消息' });
   }
 
-  const quota = await consumeQuota('chat', event);
+  let quota = await consumeQuota('chat', event);
   if (!quota.ok) {
     return jsonResponse(429, {
       ok: false,
@@ -833,40 +948,43 @@ async function handleChat(payload, event) {
     await releaseQuota(quota);
     return jsonResponse(501, { ok: false, error: routed.result.error });
   }
-  if (!routed.result.ok) {
-    await releaseQuota(quota);
-    return jsonResponse(502, {
-      ok: false,
-      error: routed.result.error,
-      quota: { chat: quota, plan: quota }
-    });
-  }
-  let parsed = parseChatContent(routed.result.content);
 
-  // Plan milestones are deterministic: turns 2, 4 and 6 must produce a
-  // concrete draft. If the first response only asks questions, retry once with
-  // an explicit milestone reminder while still charging only one user quota.
-  if (planning && userTurns >= 2 && (!parsed || parsed.habits.length === 0)) {
-    const retryMessages = [{
-      role: 'system',
-      content: modelMessages[0].content + '\n\n强制要求：这是第 ' + userTurns + ' 次用户发言，本轮必须给出可调整方案，并在 habits 中提供 2～4 个具体习惯。不能只提问，只输出一个 JSON 对象。'
-    }].concat(messages);
-
-    const retryRouted = await callChatWithRouting(retryMessages, 1400, true);
-    if (retryRouted.config && retryRouted.result.ok) {
-      const retryParsed = parseChatContent(retryRouted.result.content);
-      if (retryParsed && retryParsed.habits.length > 0) {
-        routed = retryRouted;
-        parsed = retryParsed;
-      }
-    }
-
-  }
-
+  let parsed = null;
   let usedLocalFallback = false;
-  if (planning && userTurns >= 2 && (!parsed || parsed.habits.length === 0)) {
+  if (routed.result.ok) {
+    parsed = parseChatContent(routed.result.content);
+  }
+  const emptyPlanningReply = planning && (!parsed || !String(parsed.reply || '').trim());
+  if (!routed.result.ok || emptyPlanningReply) {
+    await releaseQuota(quota);
+    quota = await quotaInfo('chat', event);
+    if (!planning) {
+      return jsonResponse(502, {
+        ok: false,
+        error: routed.result.error || 'AI 返回空内容，请重试',
+        quota: { chat: quota, plan: quota }
+      });
+    }
+    // A successful HTTP response can still contain an empty choice. Preserve
+    // the conversation with a deterministic, context-aware plan and refund it.
     parsed = buildPlanningFallbackReply(messages, userTurns);
     usedLocalFallback = true;
+  }
+
+  if (planning && parsed && userTurns >= 2 && parsed.habits.length === 0) {
+    // Some gateway models ignore JSON mode and answer with a readable numbered
+    // plan. Keep that answer and recover importable habits from its structure.
+    parsed.habits = extractHabitsFromText(parsed.reply);
+  }
+  if (planning && parsed && userTurns === 1) {
+    const lastUserText = String(messages[messages.length - 1].content || '');
+    const wantsPlanNow = /直接给方案|不用问|先给方案|立刻给|马上给/.test(lastUserText);
+    if (!wantsPlanNow) parsed.habits = [];
+  }
+  if (planning && parsed && userTurns >= 2 && parsed.habits.length === 0) {
+    const localPlan = buildPlanningFallbackReply(messages, userTurns);
+    parsed.habits = localPlan.habits;
+    if (!parsed.audience) parsed.audience = localPlan.audience;
   }
   if (!parsed) {
     await releaseQuota(quota);
@@ -882,7 +1000,7 @@ async function handleChat(payload, event) {
     audience: parsed.audience,
     habits: parsed.habits,
     engine: usedLocalFallback ? 'fallback' : 'agent',
-    model: usedLocalFallback ? 'local-milestone-fallback' : routed.config.model,
+    model: usedLocalFallback ? 'local-planning-fallback' : routed.config.model,
     modelRole: planning ? 'planning' : 'chat',
     fallbackFrom: routed.fallbackFrom,
     planning: planning ? buildPlanningMetadata(userTurns, parsed.habits.length > 0) : null,
