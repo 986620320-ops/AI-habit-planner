@@ -1949,7 +1949,7 @@ body{
 
   function setBuildBadge(info) {
     if (!buildBadgeEl || !info) return;
-    var version = info.version || '1.1.1';
+    var version = info.version || '1.1.2';
     var commit = String(info.commit || '').replace(/[^a-z0-9]/gi, '').slice(0, 7);
     buildBadgeEl.textContent = 'v' + version.replace(/^v/i, '') + (commit && commit !== 'unknown' ? ' · ' + commit : ' · local');
     buildBadgeEl.title = '构建时间：' + (info.builtAt || '未知') + '，来源：' + (info.source || 'runtime');
@@ -1957,13 +1957,13 @@ body{
 
   function refreshBuildBadge() {
     if (typeof fetch !== 'function') {
-      setBuildBadge({ version: '1.1.1', commit: 'local', builtAt: '', source: 'local' });
+      setBuildBadge({ version: '1.1.2', commit: 'local', builtAt: '', source: 'local' });
       return Promise.resolve();
     }
     return fetch('/version.json?ts=' + Date.now(), { cache: 'no-store' })
       .then(function (response) { return response.ok ? response.json() : null; })
-      .then(function (info) { setBuildBadge(info || { version: '1.1.1', commit: 'local', builtAt: '', source: 'local' }); })
-      .catch(function () { setBuildBadge({ version: '1.1.1', commit: 'local', builtAt: '', source: 'local' }); });
+      .then(function (info) { setBuildBadge(info || { version: '1.1.2', commit: 'local', builtAt: '', source: 'local' }); })
+      .catch(function () { setBuildBadge({ version: '1.1.2', commit: 'local', builtAt: '', source: 'local' }); });
   }
 
     function applyAiQuota(quota) {
