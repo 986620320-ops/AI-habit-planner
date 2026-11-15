@@ -56,7 +56,7 @@ const DEFAULT_REVIEW_DAILY_LIMIT = 2;
 const DEFAULT_GLOBAL_DAILY_LIMIT = 100;
 const DEFAULT_CHAT_RATE_PER_MINUTE = 6;
 const AI_CLIENT_HEADER = 'habit-coach-web/1';
-const APP_VERSION = '1.1.2';
+const APP_VERSION = '1.1.3';
 
 const PLAN_SYSTEM_PROMPT = [
   '你是一名通用习惯规划师，不预设用户的年龄、职业、身份或生活阶段。',
