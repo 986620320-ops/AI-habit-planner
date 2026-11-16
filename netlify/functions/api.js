@@ -22,7 +22,7 @@ const crypto = require('crypto');
  *   VISION_MODEL          默认 deepseek-flash
  *   VISION_BASE_URL       默认回退到 DEEPSEEK_BASE_URL
  *   DEMO_PLAN_DAILY_LIMIT AI 对话每日额度，默认 10
- *   DEMO_VISION_DAILY_LIMIT 证据判断每日额度，默认 5
+ *   DEMO_VISION_DAILY_LIMIT 证据判断每日额度，默认 10
  *   DEMO_REVIEW_DAILY_LIMIT 周复盘每日额度，默认 2
  *   ALLOWED_ORIGINS       可选，逗号分隔
  */
@@ -51,7 +51,7 @@ const CORS_HEADERS = {
 
 const QUOTA_BUCKETS = new Map();
 const DEFAULT_PLAN_DAILY_LIMIT = 10;
-const DEFAULT_EVIDENCE_DAILY_LIMIT = 5;
+const DEFAULT_EVIDENCE_DAILY_LIMIT = 10;
 const DEFAULT_REVIEW_DAILY_LIMIT = 2;
 const DEFAULT_GLOBAL_DAILY_LIMIT = 100;
 const DEFAULT_CHAT_RATE_PER_MINUTE = 6;
@@ -175,7 +175,7 @@ function clientKeyFromEvent(event) {
 
 function limitForKind(kind) {
   if (kind === 'review') return envNonNegativeInt('DEMO_REVIEW_DAILY_LIMIT', DEFAULT_REVIEW_DAILY_LIMIT);
-  if (kind === 'evidence') return envNonNegativeInt('DEMO_VISION_DAILY_LIMIT', DEFAULT_EVIDENCE_DAILY_LIMIT);
+  if (kind === 'evidence') return Math.max(DEFAULT_EVIDENCE_DAILY_LIMIT, envNonNegativeInt('DEMO_VISION_DAILY_LIMIT', DEFAULT_EVIDENCE_DAILY_LIMIT));
   return envNonNegativeInt('DEMO_PLAN_DAILY_LIMIT', DEFAULT_PLAN_DAILY_LIMIT);
 }
 
