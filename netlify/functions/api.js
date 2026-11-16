@@ -42,6 +42,8 @@ const MAX_IMAGE_CHARS = 8000000;
 const REQUEST_TIMEOUT_MS = 20000;
 const PLANNING_REQUEST_TIMEOUT_MS = 32000;
 const PLANNING_FALLBACK_TIMEOUT_MS = 18000;
+const NETLIFY_PLANNING_BUDGET_MS = 24000;
+const MIN_PLANNING_FALLBACK_MS = 3500;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -176,7 +178,7 @@ function clientKeyFromEvent(event) {
 function limitForKind(kind) {
   if (kind === 'review') return envNonNegativeInt('DEMO_REVIEW_DAILY_LIMIT', DEFAULT_REVIEW_DAILY_LIMIT);
   if (kind === 'evidence') return Math.max(DEFAULT_EVIDENCE_DAILY_LIMIT, envNonNegativeInt('DEMO_VISION_DAILY_LIMIT', DEFAULT_EVIDENCE_DAILY_LIMIT));
-  return envNonNegativeInt('DEMO_PLAN_DAILY_LIMIT', DEFAULT_PLAN_DAILY_LIMIT);
+  return Math.max(DEFAULT_PLAN_DAILY_LIMIT, envNonNegativeInt('DEMO_PLAN_DAILY_LIMIT', DEFAULT_PLAN_DAILY_LIMIT));
 }
 
 function globalLimit() {
@@ -780,7 +782,11 @@ async function callChatWithRouting(messages, maxTokens, planning) {
     };
   }
 
-  const primaryTimeout = planning ? PLANNING_REQUEST_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
+  const startedAt = Date.now();
+  const isNetlify = String(process.env.NETLIFY || '').toLowerCase() === 'true';
+  const primaryTimeout = planning
+    ? (isNetlify ? NETLIFY_PLANNING_BUDGET_MS : PLANNING_REQUEST_TIMEOUT_MS)
+    : REQUEST_TIMEOUT_MS;
   const result = await callChat(primary, messages, maxTokens, {
     jsonMode: true,
     timeoutMs: primaryTimeout
@@ -794,9 +800,17 @@ async function callChatWithRouting(messages, maxTokens, planning) {
     return { config: primary, result: result, fallbackFrom: '' };
   }
 
+  const elapsed = Date.now() - startedAt;
+  const fallbackTimeout = isNetlify
+    ? Math.min(PLANNING_FALLBACK_TIMEOUT_MS, NETLIFY_PLANNING_BUDGET_MS - elapsed)
+    : PLANNING_FALLBACK_TIMEOUT_MS;
+  if (fallbackTimeout < MIN_PLANNING_FALLBACK_MS) {
+    return { config: primary, result: result, fallbackFrom: '' };
+  }
+
   const retried = await callChat(fallback, messages, maxTokens, {
     jsonMode: true,
-    timeoutMs: PLANNING_FALLBACK_TIMEOUT_MS
+    timeoutMs: fallbackTimeout
   });
   return {
     config: fallback,
