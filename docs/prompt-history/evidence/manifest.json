@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-11-01T16:21:43.720171+00:00",
+  "generated_at": "2026-11-16T17:15:34.453640+00:00",
   "generator": "docs/prompt-history/render_evidence.py",
-  "storage_policy": "Prompt 截图、文字导出页和源日志哈希随仓库提交；原始 JSONL 日志因包含完整本地环境信息不直接提交。",
+  "storage_policy": "Prompt 截图、文字导出页和源日志哈希随仓库提交；原始 JSONL 日志不直接提交。",
   "source": {
     "file": "rollout-2026-10-18T21-03-01-01a14f1b-c1d2-7e30-a4a7-c42450283b8e.jsonl",
     "sha256": "54186954e5f9b5e973fbdaf423fc6e6532d05480c0bfa31f23fb17074ae519b8",
@@ -16,8 +16,8 @@
         2364,
         2429
       ],
-      "current_commit": "b2b492f",
-      "commit_title": "迭代10-修复2个bug。一，删除习惯时清掉了打卡记录和连续奖励，但积分总额和流水还在；重新添加同名习惯后还能再次打卡得分。二，前端没有限制习惯数量，服务端最多处理 20 个",
+      "current_commit": "cece752",
+      "commit_title": "迭代10-修复积分漏洞与习惯上限",
       "pages": [
         {
           "id": "02-01-prompt",
@@ -25,7 +25,10 @@
           "source_lines": [
             2364
           ],
-          "image": "02-01-prompt.png"
+          "image": "02-01-prompt.png",
+          "width": 1440,
+          "height": 900,
+          "sha256": "118555241277245582930b72e00b9c4bd6db98c525310be27ddde47ae2e069d8"
         },
         {
           "id": "02-02-ai-analysis",
@@ -34,7 +37,10 @@
             2369,
             2409
           ],
-          "image": "02-02-ai-analysis.png"
+          "image": "02-02-ai-analysis.png",
+          "width": 1440,
+          "height": 900,
+          "sha256": "8f68e6d2ba6c5cb604391221fa465c53a678564605f2f13b0c9f38db5336157e"
         },
         {
           "id": "02-03-implementation-test",
@@ -43,7 +49,10 @@
             2404,
             2413
           ],
-          "image": "02-03-implementation-test.png"
+          "image": "02-03-implementation-test.png",
+          "width": 1440,
+          "height": 2251,
+          "sha256": "39483f5a3b280076d39be4dbfd3117f5c6fa2ee98581b5fa7757c2cfc0ed544d"
         },
         {
           "id": "02-04-verification-commit",
@@ -52,7 +61,10 @@
             2418,
             2429
           ],
-          "image": "02-04-verification-commit.png"
+          "image": "02-04-verification-commit.png",
+          "width": 1440,
+          "height": 900,
+          "sha256": "36d1ca74736d88a57651d306ef2857cca40bceb6ffbc1491363d57a9e8117c4c"
         }
       ]
     },
@@ -64,8 +76,8 @@
         4404,
         5189
       ],
-      "current_commit": "87ca801",
-      "commit_title": "迭代13-经过用户使用根据用户反馈更换打卡识别方式",
+      "current_commit": "029386f",
+      "commit_title": "迭代13-多模态证据改造",
       "pages": [
         {
           "id": "04-01-prompt-chain",
@@ -77,7 +89,10 @@
             4503,
             4584
           ],
-          "image": "04-01-prompt-chain.png"
+          "image": "04-01-prompt-chain.png",
+          "width": 1440,
+          "height": 1033,
+          "sha256": "586fd9ea687ef9da5176eab186f8bdcf1effcb9131586f55054b3e88919024bf"
         },
         {
           "id": "04-02-ai-analysis",
@@ -86,7 +101,10 @@
             4559,
             4589
           ],
-          "image": "04-02-ai-analysis.png"
+          "image": "04-02-ai-analysis.png",
+          "width": 1440,
+          "height": 2692,
+          "sha256": "7d5f6fcd94a28c9039234d49b5cebb6a21909ef30ffdc83bc6b5b8d5b116a765"
         },
         {
           "id": "04-03-implementation-test",
@@ -98,7 +116,10 @@
             4894,
             4899
           ],
-          "image": "04-03-implementation-test.png"
+          "image": "04-03-implementation-test.png",
+          "width": 1440,
+          "height": 1155,
+          "sha256": "fa729c45c8a60bf142e9fd1c314228b4865837fe5f69980fb4fd8391301b61fe"
         },
         {
           "id": "04-04-verification-commit",
@@ -109,7 +130,10 @@
             5159,
             5189
           ],
-          "image": "04-04-verification-commit.png"
+          "image": "04-04-verification-commit.png",
+          "width": 1440,
+          "height": 3758,
+          "sha256": "a732f5034640428307b1116a61ceb2262c38ebf936d7b0e13c94a70e6964a7e4"
         }
       ]
     },
@@ -121,8 +145,8 @@
         5214,
         5623
       ],
-      "current_commit": "269d715",
-      "commit_title": "迭代13-优化了ai生成计划，改为可连续对话",
+      "current_commit": "a355f3a",
+      "commit_title": "迭代14-连续对话式AI教练",
       "pages": [
         {
           "id": "05-01-prompt",
@@ -132,7 +156,10 @@
             5234,
             5252
           ],
-          "image": "05-01-prompt.png"
+          "image": "05-01-prompt.png",
+          "width": 1440,
+          "height": 2858,
+          "sha256": "422be7e8d5e8ce26bb0336ed541f39de65b8efeb69c4a6e4377a852981dffaf5"
         },
         {
           "id": "05-02-ai-plan",
@@ -140,7 +167,10 @@
           "source_lines": [
             5262
           ],
-          "image": "05-02-ai-plan.png"
+          "image": "05-02-ai-plan.png",
+          "width": 1440,
+          "height": 2600,
+          "sha256": "25023433a1ef819c60f88ff7c7e6dccd46327255d42a8d07ec9e9e1c951fcf68"
         },
         {
           "id": "05-03-implementation-test",
@@ -155,7 +185,10 @@
             5477,
             5495
           ],
-          "image": "05-03-implementation-test.png"
+          "image": "05-03-implementation-test.png",
+          "width": 1440,
+          "height": 2828,
+          "sha256": "76be337d6b6f808490813bbe1957f9de6b103dd25db917783124d3cc74f42fff"
         },
         {
           "id": "05-04-verification-commit",
@@ -167,9 +200,90 @@
             5572,
             5623
           ],
-          "image": "05-04-verification-commit.png"
+          "image": "05-04-verification-commit.png",
+          "width": 1440,
+          "height": 3899,
+          "sha256": "30e0ace82242e53f06c626259df4f6adb538a86fd8bf0ba28048c11563182d61"
         }
       ]
     }
-  ]
+  ],
+  "capture": {
+    "captured_at": "2026-11-16T17:15:38.491Z",
+    "viewport_width": 1440,
+    "pages": [
+      {
+        "file": "02-01-prompt.png",
+        "width": 1440,
+        "height": 900,
+        "sha256": "118555241277245582930b72e00b9c4bd6db98c525310be27ddde47ae2e069d8"
+      },
+      {
+        "file": "02-02-ai-analysis.png",
+        "width": 1440,
+        "height": 900,
+        "sha256": "8f68e6d2ba6c5cb604391221fa465c53a678564605f2f13b0c9f38db5336157e"
+      },
+      {
+        "file": "02-03-implementation-test.png",
+        "width": 1440,
+        "height": 2251,
+        "sha256": "39483f5a3b280076d39be4dbfd3117f5c6fa2ee98581b5fa7757c2cfc0ed544d"
+      },
+      {
+        "file": "02-04-verification-commit.png",
+        "width": 1440,
+        "height": 900,
+        "sha256": "36d1ca74736d88a57651d306ef2857cca40bceb6ffbc1491363d57a9e8117c4c"
+      },
+      {
+        "file": "04-01-prompt-chain.png",
+        "width": 1440,
+        "height": 1033,
+        "sha256": "586fd9ea687ef9da5176eab186f8bdcf1effcb9131586f55054b3e88919024bf"
+      },
+      {
+        "file": "04-02-ai-analysis.png",
+        "width": 1440,
+        "height": 2692,
+        "sha256": "7d5f6fcd94a28c9039234d49b5cebb6a21909ef30ffdc83bc6b5b8d5b116a765"
+      },
+      {
+        "file": "04-03-implementation-test.png",
+        "width": 1440,
+        "height": 1155,
+        "sha256": "fa729c45c8a60bf142e9fd1c314228b4865837fe5f69980fb4fd8391301b61fe"
+      },
+      {
+        "file": "04-04-verification-commit.png",
+        "width": 1440,
+        "height": 3758,
+        "sha256": "a732f5034640428307b1116a61ceb2262c38ebf936d7b0e13c94a70e6964a7e4"
+      },
+      {
+        "file": "05-01-prompt.png",
+        "width": 1440,
+        "height": 2858,
+        "sha256": "422be7e8d5e8ce26bb0336ed541f39de65b8efeb69c4a6e4377a852981dffaf5"
+      },
+      {
+        "file": "05-02-ai-plan.png",
+        "width": 1440,
+        "height": 2600,
+        "sha256": "25023433a1ef819c60f88ff7c7e6dccd46327255d42a8d07ec9e9e1c951fcf68"
+      },
+      {
+        "file": "05-03-implementation-test.png",
+        "width": 1440,
+        "height": 2828,
+        "sha256": "76be337d6b6f808490813bbe1957f9de6b103dd25db917783124d3cc74f42fff"
+      },
+      {
+        "file": "05-04-verification-commit.png",
+        "width": 1440,
+        "height": 3899,
+        "sha256": "30e0ace82242e53f06c626259df4f6adb538a86fd8bf0ba28048c11563182d61"
+      }
+    ]
+  }
 }

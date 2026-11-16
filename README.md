@@ -4,7 +4,7 @@
 
 - 在线演示：https://ai-habit-demo.netlify.app
 - 当前版本：`v1.1.3`
-- 应用提交：`888b8f3`
+- 应用提交：`bee06ea`
 - 代码仓库：https://github.com/986620320-ops/AI-habit-planner
 - 演示视频脚本：[5–8 分钟分镜与旁白](docs/赛事演示视频脚本_5-8分钟.md)
 - 评审材料：[参赛提交材料对照清单](docs/参赛提交材料对照清单.md)

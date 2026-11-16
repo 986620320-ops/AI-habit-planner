@@ -25,8 +25,8 @@ CHAINS = [
         "id": "02",
         "slug": "bug-fix-and-limits",
         "title": "删除习惯积分漏洞与 20 个习惯上限",
-        "commit": "b2b492f",
-        "commit_title": "迭代10-修复2个bug。一，删除习惯时清掉了打卡记录和连续奖励，但积分总额和流水还在；重新添加同名习惯后还能再次打卡得分。二，前端没有限制习惯数量，服务端最多处理 20 个",
+        "commit": "cece752",
+        "commit_title": "迭代10-修复积分漏洞与习惯上限",
         "range": [2364, 2429],
         "pages": [
             ("01-prompt", "原始问题", [2364]),
@@ -39,8 +39,8 @@ CHAINS = [
         "id": "04",
         "slug": "multimodal-evidence",
         "title": "手写口令失败后的多模态证据改造",
-        "commit": "87ca801",
-        "commit_title": "迭代13-经过用户使用根据用户反馈更换打卡识别方式",
+        "commit": "029386f",
+        "commit_title": "迭代13-多模态证据改造",
         "range": [4404, 5189],
         "pages": [
             ("01-prompt-chain", "用户连续反馈与最终需求", [4404, 4425, 4486, 4503, 4584]),
@@ -53,8 +53,8 @@ CHAINS = [
         "id": "05",
         "slug": "conversational-coach",
         "title": "一键规划改为连续对话式 AI 教练",
-        "commit": "269d715",
-        "commit_title": "迭代13-优化了ai生成计划，改为可连续对话",
+        "commit": "a355f3a",
+        "commit_title": "迭代14-连续对话式AI教练",
         "range": [5214, 5623],
         "pages": [
             ("01-prompt", "原始 Prompt 与需求澄清", [5214, 5234, 5252]),
