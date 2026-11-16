@@ -12,7 +12,18 @@ index.sample.html
 截图/
 
 # Submission-only documents and generated screenshots
-docs/
+docs/*
+!docs/README.md
+!docs/SUBMISSION_INDEX.md
+!docs/赛事演示视频脚本_5-8分钟.md
+!docs/参赛提交材料对照清单.md
+!docs/prompt-history/
+!docs/prompt-history/**
+!docs/technical-report/
+docs/technical-report/*
+!docs/technical-report/README.md
+!docs/technical-report/build_report.py
+!docs/technical-report/render_pdf.js
 tests/
 CHANGELOG.md
 VERSION
