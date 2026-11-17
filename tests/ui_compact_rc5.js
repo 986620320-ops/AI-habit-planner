@@ -1,4 +1,5 @@
 'use strict';
+const WebSocket = require('ws');
 const os = require('node:os');
 const chromePath = require('./chrome-path');
 const assert=require('assert'),http=require('http'),fs=require('fs'),path=require('path'),{spawn}=require('child_process');

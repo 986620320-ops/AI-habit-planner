@@ -3,7 +3,7 @@
 - **作品名称**：AI 习惯教练与多模态证据打卡
 - **在线演示**：https://ai-habit-demo.netlify.app/
 - **代码仓库**：https://github.com/986620320-ops/AI-habit-planner
-- **当前版本**：v1.1.4（Git 标签 `v1.1.4`）
+- **当前版本**：v1.1.5（Git 标签 `v1.1.5`）
 - **版本核验**：以 `version.json` 和 `/api/index?action=health` 的 `build` 字段为准
 
 ## 核心材料

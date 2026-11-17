@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 'use strict';
+const WebSocket = require('ws');
 const os = require('node:os');
 const chromePath = require('./chrome-path');
 
