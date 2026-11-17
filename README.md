@@ -3,8 +3,8 @@
 一个支持连续 AI 规划、自由证据打卡、断签恢复、自动周复盘和积分奖励的习惯养成 Web 应用。
 
 - 在线演示：https://ai-habit-demo.netlify.app
-- 当前版本：`v1.1.3`
-- 发布标签：`v1.1.3`
+- 当前版本：`v1.1.4`
+- 发布标签：`v1.1.4`
 - 版本与提交核验：以构建产物 `version.json` 和健康接口 `build` 字段为准
 - 代码仓库：https://github.com/986620320-ops/AI-habit-planner
 - 演示视频脚本：[5–8 分钟分镜与旁白](docs/赛事演示视频脚本_5-8分钟.md)
@@ -91,7 +91,7 @@ cp .env.example .env
 | `DEMO_CHAT_RATE_PER_MINUTE` | 否 | `6` | 每客户端每分钟聊天请求上限 |
 | `ALLOWED_ORIGINS` | 生产必填 | 空 | 允许来源，逗号分隔；空值仅适合本地演示 |
 | `QUOTA_HASH_SALT` | 生产必填 | 空 | 匿名额度标识哈希盐 |
-| `APP_VERSION` | 否 | `1.1.3` | 无构建产物时的版本回退值 |
+| `APP_VERSION` | 否 | `1.1.4` | 无构建产物时的版本回退值 |
 | `BUILD_COMMIT` | 否 | `unknown` | 无构建产物时的提交号回退值 |
 
 构建阶段还支持 `GITHUB_SHA`、`COMMIT_SHA`、`EDGEONE_COMMIT_SHA`、`EDGEONE_ENV` 和 `NODE_ENV`。实际部署时请不要提交 `.env`。
@@ -213,7 +213,7 @@ GET /api/index?action=health
   "planningModel": "...",
   "storageMode": "persistent",
   "build": {
-    "version": "1.1.3",
+    "version": "1.1.4",
     "commit": "..."
   }
 }
