@@ -2,9 +2,21 @@
   "name": "ai-habit-planner",
   "version": "1.1.3",
   "private": true,
+  "description": "AI Habit Coach with multimodal evidence check-in",
+  "engines": {
+    "node": ">=20.18.0",
+    "npm": ">=10.8.0"
+  },
   "scripts": {
+    "dev": "node scripts/serve.mjs",
     "build": "node edgeone-build.mjs",
-    "verify:deploy": "node scripts/verify-deploy.mjs"
+    "check": "node --check netlify/functions/api.js && node --check edgeone-build.mjs && node --check scripts/verify-deploy.mjs && node --check scripts/serve.mjs && node --check cloud-functions/api/quota-store.js",
+    "test:core": "node tests/api_rc4.js && node tests/chat_rc4.js && node tests/quota_rc4.js",
+    "test:browser": "node tests/chat_browser_rc4.js && node tests/browser_rc4.js && node tests/ui_compact_rc5.js",
+    "test": "npm run test:core && npm run test:browser",
+    "reproduce": "npm run build && npm run check:generated && npm test",
+    "verify:deploy": "node scripts/verify-deploy.mjs",
+    "check:generated": "node --check \"cloud-functions/api/[[default]].js\""
   },
   "dependencies": {
     "@edgeone/pages-blob": "0.0.19"

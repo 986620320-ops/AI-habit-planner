@@ -15,7 +15,9 @@ const crypto = require('crypto');
  * POST { action: 'review', scope: 'weekly', weekStart, weekEnd, habits, summary }
  *
  * 环境变量：
- *   DEEPSEEK_API_KEY      文本规划与证据判断必填
+ *   MAKERS_MODELS_KEY     EdgeOne Makers 模型密钥（可选）
+ *   DEEPSEEK_API_KEY      DeepSeek 或兼容服务密钥（可选）
+ *   OPENAI_API_KEY        OpenAI 或兼容服务密钥（可选）
  *   DEEPSEEK_MODEL        默认 deepseek-flash
  *   DEEPSEEK_BASE_URL     默认 https://api.deepseek.com
  *   VISION_API_KEY        可选，默认回退到 DEEPSEEK_API_KEY
@@ -28,6 +30,7 @@ const crypto = require('crypto');
  */
 
 const DEFAULT_BASE_URL = 'https://api.deepseek.com';
+const OPENAI_BASE_URL = 'https://api.openai.com/v1';
 const DEFAULT_MODEL = 'deepseek-flash';
 const MAKERS_BASE_URL = 'https://ai-gateway.edgeone.link/v1';
 const MAKERS_CHAT_MODEL = '@makers/deepseek-v4-flash';
@@ -307,15 +310,15 @@ function getBuildInfo() {
 function planConfig(role) {
   const isPlanning = role === 'planning';
   const makersKey = String(process.env.MAKERS_MODELS_KEY || '').trim();
-  const apiKey = String(
-    makersKey
-      || process.env.DEEPSEEK_API_KEY
-      || process.env.OPENAI_API_KEY
-      || ''
-  ).trim();
+  const deepseekKey = String(process.env.DEEPSEEK_API_KEY || '').trim();
+  const openaiKey = String(process.env.OPENAI_API_KEY || '').trim();
+  const apiKey = makersKey || deepseekKey || openaiKey;
   if (!apiKey) return null;
 
-  const defaultBaseUrl = makersKey ? MAKERS_BASE_URL : DEFAULT_BASE_URL;
+  const usingOpenAIOnly = !makersKey && !deepseekKey && !!openaiKey;
+  const defaultBaseUrl = makersKey ? MAKERS_BASE_URL
+    : (usingOpenAIOnly ? OPENAI_BASE_URL : DEFAULT_BASE_URL);
+  const baseOverride = usingOpenAIOnly ? process.env.OPENAI_BASE_URL : process.env.DEEPSEEK_BASE_URL;
   const defaultModel = makersKey
     ? (isPlanning ? MAKERS_PLANNING_MODEL : MAKERS_CHAT_MODEL)
     : DEFAULT_MODEL;
@@ -325,23 +328,24 @@ function planConfig(role) {
 
   return {
     apiKey: apiKey,
-    baseUrl: String(process.env.DEEPSEEK_BASE_URL || defaultBaseUrl).replace(/\/+$/, ''),
+    baseUrl: String(baseOverride || defaultBaseUrl).replace(/\/+$/, ''),
     model: String(modelOverride || defaultModel).trim() || defaultModel,
     role: isPlanning ? 'planning' : 'chat'
   };
 }
 
 function visionConfig() {
-  const apiKey = String(
-    process.env.VISION_API_KEY
-      || process.env.DEEPSEEK_API_KEY
-      || process.env.OPENAI_API_KEY
-      || ''
-  ).trim();
+  const deepseekKey = String(process.env.DEEPSEEK_API_KEY || '').trim();
+  const openaiKey = String(process.env.OPENAI_API_KEY || '').trim();
+  const apiKey = String(process.env.VISION_API_KEY || deepseekKey || openaiKey || '').trim();
   if (!apiKey) return null;
+  const usingOpenAIOnly = !process.env.VISION_API_KEY && !deepseekKey && !!openaiKey;
+  const defaultBaseUrl = usingOpenAIOnly ? OPENAI_BASE_URL : DEFAULT_BASE_URL;
+  const baseOverride = process.env.VISION_BASE_URL
+    || (usingOpenAIOnly ? process.env.OPENAI_BASE_URL : process.env.DEEPSEEK_BASE_URL);
   return {
     apiKey: apiKey,
-    baseUrl: String(process.env.VISION_BASE_URL || process.env.DEEPSEEK_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, ''),
+    baseUrl: String(baseOverride || defaultBaseUrl).replace(/\/+$/, ''),
     model: String(process.env.VISION_MODEL || DEFAULT_MODEL).trim() || DEFAULT_MODEL,
     role: 'vision'
   };
@@ -349,7 +353,7 @@ function visionConfig() {
 
 async function handleHealth(event) {
   const chatQuota = await quotaInfo('chat', event);
-  const evidenceQuota = await await quotaInfo('evidence', event);
+  const evidenceQuota = await quotaInfo('evidence', event);
   const reviewQuota = await quotaInfo('review', event);
   const chatConfig = planConfig('chat');
   const planningConfig = planConfig('planning');

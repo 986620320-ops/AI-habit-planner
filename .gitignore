@@ -11,7 +11,10 @@ index.prototype.html
 index.sample.html
 截图/
 
-# Submission-only documents and generated screenshots
+# Local helper scripts
+scripts/_*.py
+
+# Submission-only generated documents
 docs/*
 !docs/README.md
 !docs/SUBMISSION_INDEX.md
@@ -24,7 +27,9 @@ docs/technical-report/*
 !docs/technical-report/README.md
 !docs/technical-report/build_report.py
 !docs/technical-report/render_pdf.js
-tests/
-CHANGELOG.md
-VERSION
+
+# Generated at build time; commit source and package-lock instead
 version.json
+
+/cloud-functions/api/*.js
+!/cloud-functions/api/quota-store.js

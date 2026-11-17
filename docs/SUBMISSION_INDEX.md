@@ -3,7 +3,8 @@
 - **作品名称**：AI 习惯教练与多模态证据打卡
 - **在线演示**：https://ai-habit-demo.netlify.app/
 - **代码仓库**：https://github.com/986620320-ops/AI-habit-planner
-- **当前版本**：v1.1.3（`bee06ea`）
+- **当前版本**：v1.1.3（Git 标签 `v1.1.3`）
+- **版本核验**：以 `version.json` 和 `/api/index?action=health` 的 `build` 字段为准
 
 ## 核心材料
 
@@ -15,6 +16,7 @@
 | 官方要求逐项核对 | [参赛提交材料对照清单.md](参赛提交材料对照清单.md) |
 | 外部提交材料 | 产品截图、技术报告 PDF 和最终视频文件；Prompt 快照已纳入仓库 |
 | 自动回归测试 | [../tests/README.md](../tests/README.md) |
+| 一键复现与 CI | `npm ci` → `npm run reproduce`；`.github/workflows/reproduce.yml` |
 | 技术报告说明与生成脚本 | [technical-report/README.md](technical-report/README.md) |
 
 ## 评分维度对照
@@ -24,7 +26,9 @@
 - 完整保留从空白骨架到当前版本的细粒度 Git 提交
 - 5 条核心 AI 迭代均包含 Prompt、修改、Bug 修复、验证和对应提交
 - 其中 3 条环节另有文字导出页、源日志行号和 SHA256；截图单独提交
-- README 提供 Mock 与真实 AI 两条复现路径
+- README 提供复现性声明、完整环境变量表、Mock 与真实 AI 两条复现路径
+- `package-lock.json` 固定依赖，`npm run reproduce` 一键构建并执行回归
+- GitHub Actions 在 Node.js 20.18.0 上自动验证安装、构建和测试
 
 ### 解题有效性与实用价值
 
@@ -68,6 +72,3 @@
 | AI 教练闭环 | `ae4ccc6`、`ffeefd1` | 打卡反馈、断签恢复和每周复盘 |
 | EdgeOne 与持续对话 | `8e18e5e`、`b448f3d`、`1dcba95` | 模型路由、十轮方案和版本校验 |
 | 最终体验优化 | `0f83943`、`bee06ea` | 真实 AI 稳定性、帮助弹窗、自动周复盘和折叠交互 |
-
-
-
